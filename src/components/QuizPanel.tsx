@@ -7,9 +7,10 @@ import type {
   QuizSessionRecord,
 } from '../types/bunpou';
 import { filterQuizPool, generateQuizQuestions } from '../utils/quizGenerator';
-import { createQuizSessionId } from '../utils/quizStats';
+import { createQuizSessionId, reconstructSessionReview } from '../utils/quizStats';
 import { stopJapaneseSpeech } from '../utils/speech';
 import { QuizAnswerHistoryModal } from './quiz/QuizAnswerHistoryModal';
+import { QUIZ_MODE_INFO } from './quiz/quizHelpers';
 import { QuizResultView } from './quiz/QuizResultView';
 import { QuizRunView } from './quiz/QuizRunView';
 import { QuizSetupView } from './quiz/QuizSetupView';
@@ -20,6 +21,8 @@ interface QuizPanelProps {
   masteredSet: Set<string>;
   difficultSet: Set<string>;
   sessions: QuizSessionRecord[];
+  isCloudSynced?: boolean;
+  syncingQuiz?: boolean;
   onCompleteSession: (record: QuizSessionRecord) => void;
   onClearHistory: () => void;
   onMarkPatternsDifficult: (patternIds: string[]) => void;
@@ -33,6 +36,8 @@ export function QuizPanel({
   masteredSet,
   difficultSet,
   sessions,
+  isCloudSynced = false,
+  syncingQuiz = false,
   onCompleteSession,
   onClearHistory,
   onMarkPatternsDifficult,
@@ -53,6 +58,7 @@ export function QuizPanel({
   const [selectedChoiceId, setSelectedChoiceId] = useState<string | null>(null);
   const [answers, setAnswers] = useState<QuizAnswerEntry[]>([]);
   const [historyModalOpen, setHistoryModalOpen] = useState<boolean>(false);
+  const [inspectedSession, setInspectedSession] = useState<QuizSessionRecord | null>(null);
 
   // Reset quiz range and state whenever book switches (N5 <-> N4)
   useEffect(() => {
@@ -65,6 +71,7 @@ export function QuizPanel({
     setCurrentIndex(0);
     setSelectedChoiceId(null);
     setHistoryModalOpen(false);
+    setInspectedSession(null);
   }, [book.id, minCh, maxCh]);
 
   const availableCount = useMemo(
@@ -79,6 +86,31 @@ export function QuizPanel({
       }).length,
     [book.patterns, fromChapter, toChapter, onlyDifficult, onlyUnmastered, masteredSet, difficultSet]
   );
+
+  const inspectedAnswers = useMemo(() => {
+    if (!inspectedSession) return null;
+    return reconstructSessionReview(inspectedSession, book.patterns);
+  }, [inspectedSession, book.patterns]);
+
+  const inspectedMeta = useMemo(() => {
+    if (!inspectedSession) return undefined;
+    const dateLabel = new Date(inspectedSession.completedAt).toLocaleString('id-ID', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+    const chapterRange =
+      inspectedSession.fromChapter === inspectedSession.toChapter
+        ? `Bab ${inspectedSession.fromChapter}`
+        : `Bab ${inspectedSession.fromChapter}–${inspectedSession.toChapter}`;
+    return {
+      title: `Detail Riwayat · ${QUIZ_MODE_INFO[inspectedSession.mode].title}`,
+      subtitle: `${chapterRange} · ${dateLabel}`,
+      isLegacy: !inspectedSession.answers || inspectedSession.answers.length === 0,
+    };
+  }, [inspectedSession]);
 
   const startQuizWithRange = (
     startCh: number,
@@ -105,6 +137,7 @@ export function QuizPanel({
     setCurrentIndex(0);
     setSelectedChoiceId(null);
     setAnswers([]);
+    setInspectedSession(null);
     setPhase('running');
   };
 
@@ -131,7 +164,7 @@ export function QuizPanel({
       return;
     }
 
-    // Complete session
+    // Complete session with detailed per-question V2 answer records
     const correctIds: string[] = [];
     const wrongIds: string[] = [];
     for (const a of answers) {
@@ -149,12 +182,22 @@ export function QuizPanel({
       correctCount: correctIds.length,
       wrongPatternIds: Array.from(new Set(wrongIds)),
       correctPatternIds: Array.from(new Set(correctIds)),
+      answers: answers.map((a, idx) => ({
+        questionNo: idx + 1,
+        mode: a.question.mode,
+        patternId: a.question.patternId,
+        selectedPatternId: a.isCorrect ? a.question.patternId : a.selectedChoiceId,
+        isCorrect: a.isCorrect,
+        exampleIndex: a.question.exampleIndex,
+      })),
       completedAt: new Date().toISOString(),
     };
 
     onCompleteSession(record);
     setPhase('result');
   };
+
+  const modalAnswers = inspectedAnswers ?? answers;
 
   return (
     <>
@@ -169,6 +212,8 @@ export function QuizPanel({
           onlyUnmastered={onlyUnmastered}
           availableCount={availableCount}
           sessions={sessions}
+          isCloudSynced={isCloudSynced}
+          syncingQuiz={syncingQuiz}
           onChangeMode={setMode}
           onChangeRange={(f, t) => {
             setFromChapter(f);
@@ -179,6 +224,10 @@ export function QuizPanel({
           onToggleUnmastered={() => setOnlyUnmastered(v => !v)}
           onStartQuiz={() => startQuizWithRange(fromChapter, toChapter)}
           onQuickStartChapter={ch => startQuizWithRange(ch, ch, false, false)}
+          onInspectSession={session => {
+            setInspectedSession(session);
+            setHistoryModalOpen(true);
+          }}
           onClearHistory={onClearHistory}
         />
       ) : phase === 'running' ? (
@@ -199,16 +248,23 @@ export function QuizPanel({
           answers={answers}
           onRetrySame={() => startQuizWithRange(fromChapter, toChapter)}
           onBackToSetup={() => setPhase('setup')}
-          onOpenHistoryModal={() => setHistoryModalOpen(true)}
+          onOpenHistoryModal={() => {
+            setInspectedSession(null);
+            setHistoryModalOpen(true);
+          }}
           onMarkWrongDifficult={ids => onMarkPatternsDifficult(ids)}
         />
       )}
 
       <QuizAnswerHistoryModal
         open={historyModalOpen}
-        answers={answers}
+        answers={modalAnswers}
         showFurigana={showFurigana}
-        onClose={() => setHistoryModalOpen(false)}
+        sessionMeta={inspectedMeta}
+        onClose={() => {
+          setHistoryModalOpen(false);
+          setInspectedSession(null);
+        }}
       />
     </>
   );

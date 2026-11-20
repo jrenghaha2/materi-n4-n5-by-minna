@@ -86,8 +86,11 @@ export function QuizRunView({
               ? 'Pilih pola bunpou yang melengkapi kalimat berikut:'
               : 'Pilih pola bahasa Jepang yang sesuai arti berikut:'}
           </p>
-          {question.mode !== 'pattern' ? (
-            <AudioButton text={question.prompt} label="Putar pengucapan soal" />
+          {question.mode === 'meaning' ? (
+            <AudioButton
+              text={question.promptSub || question.prompt}
+              label="Putar pengucapan contoh pola"
+            />
           ) : null}
         </div>
 
@@ -100,9 +103,18 @@ export function QuizRunView({
         </div>
 
         {question.promptSub ? (
-          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-jp">
-            {question.promptSub}
-          </p>
+          question.mode === 'meaning' ? (
+            <div className="pt-1.5 border-t border-slate-200/70 dark:border-slate-700/70 text-xs sm:text-sm text-slate-700 dark:text-slate-200 space-y-0.5">
+              <span className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                Contoh kalimat:
+              </span>
+              <JapaneseText text={question.promptSub} showFurigana={showFurigana} />
+            </div>
+          ) : (
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300">
+              {question.promptSub}
+            </p>
+          )
         ) : null}
       </div>
 
@@ -183,6 +195,15 @@ export function QuizRunView({
               <AudioButton text={question.exampleJapanese} label="Putar contoh kalimat lengkap" />
             ) : null}
           </div>
+
+          {question.formulas && question.formulas.length > 0 ? (
+            <div className="text-xs text-slate-600 dark:text-slate-300 font-jp bg-white/80 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-700/70 rounded-lg px-3 py-1.5">
+              <span className="font-sans font-semibold text-slate-500 dark:text-slate-400 mr-1.5">
+                Rumus:
+              </span>
+              {question.formulas.join('  /  ')}
+            </div>
+          ) : null}
 
           {question.exampleJapanese ? (
             <div className="text-xs sm:text-sm text-slate-700 dark:text-slate-200 space-y-0.5">

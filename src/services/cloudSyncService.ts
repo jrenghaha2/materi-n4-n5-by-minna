@@ -1,12 +1,19 @@
 import { doc, getDoc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
 import { db, logFirestoreError, OperationType } from '../firebase';
-import type { BookId, QuizMode, QuizSessionRecord, UserProfileDoc } from '../types/bunpou';
+import type {
+  BookId,
+  QuizMode,
+  QuizSavedAnswer,
+  QuizSessionRecord,
+  UserProfileDoc,
+} from '../types/bunpou';
 import {
   sanitizeAvatarUrl,
   sanitizeDisplayName,
   sanitizePatternIds,
   sanitizeQuizHistoryForBook,
 } from '../utils/bunpouSync';
+import { MAX_CLOUD_QUIZ_HISTORY_PER_BOOK } from '../utils/quizStats';
 
 export async function fetchUserProfileDoc(uid: string): Promise<UserProfileDoc | null> {
   const path = `users/${uid}`;
@@ -142,6 +149,13 @@ function modeToTypeCode(mode: QuizMode): number {
   return 2;
 }
 
+function typeCodeToMode(code: string, fallback: QuizMode): QuizMode {
+  if (code === '0') return 'cloze';
+  if (code === '1') return 'pattern';
+  if (code === '2') return 'meaning';
+  return fallback;
+}
+
 export function encodeQuizSessionToken(session: QuizSessionRecord): string {
   const focus = modeToFocus(session.mode);
   const typeCode = modeToTypeCode(session.mode);
@@ -160,14 +174,28 @@ export function encodeQuizSessionToken(session: QuizSessionRecord): string {
       : `${session.fromChapter}.${session.toChapter}`;
 
   const packedItems: string[] = [];
-  let no = 1;
-  for (const pid of session.correctPatternIds) {
-    packedItems.push(`${no}:${typeCode}:${pid}:1`);
-    no += 1;
-  }
-  for (const pid of session.wrongPatternIds) {
-    packedItems.push(`${no}:${typeCode}:${pid}:0`);
-    no += 1;
+  if (session.answers && session.answers.length > 0) {
+    // V2 detailed format: no:typeCode:patternId:isCorrectBit:selectedPatternId:exampleIndex
+    for (let i = 0; i < session.answers.length && i < 15; i += 1) {
+      const a = session.answers[i];
+      const no = i + 1;
+      const itemType = modeToTypeCode(a.mode);
+      const bit = a.isCorrect ? '1' : '0';
+      const selectedPid = a.isCorrect ? a.patternId : a.selectedPatternId || a.patternId;
+      const exIdx = Math.max(0, Math.min(3, Math.floor(a.exampleIndex || 0)));
+      packedItems.push(`${no}:${itemType}:${a.patternId}:${bit}:${selectedPid}:${exIdx}`);
+    }
+  } else {
+    // Legacy V1 fallback
+    let no = 1;
+    for (const pid of session.correctPatternIds) {
+      packedItems.push(`${no}:${typeCode}:${pid}:1`);
+      no += 1;
+    }
+    for (const pid of session.wrongPatternIds) {
+      packedItems.push(`${no}:${typeCode}:${pid}:0`);
+      no += 1;
+    }
   }
 
   return [
@@ -193,6 +221,7 @@ export function decodeQuizSessionToken(
   const [id, completedAt, focus, correctStr, totalStr, , scopeCode, answersPacked] = parts;
   const minBound = bookId === 'n5' ? 1 : 26;
   const maxBound = bookId === 'n5' ? 25 : 50;
+  const sessionMode = focusToMode(focus);
 
   let fromChapter = minBound;
   let toChapter = maxBound;
@@ -209,21 +238,40 @@ export function decodeQuizSessionToken(
 
   const correctPatternIds: string[] = [];
   const wrongPatternIds: string[] = [];
+  const answers: QuizSavedAnswer[] = [];
+
   if (answersPacked) {
     for (const entry of answersPacked.split(';')) {
       const segs = entry.split(':');
-      if (segs.length !== 4) continue;
+      if (segs.length !== 4 && segs.length !== 6) continue;
+      const questionNo = Number(segs[0]) || answers.length + 1;
+      const itemMode = typeCodeToMode(segs[1], sessionMode);
       const pid = segs[2];
       const bit = segs[3];
-      if (bit === '1') correctPatternIds.push(pid);
+      const isCorrect = bit === '1';
+
+      if (isCorrect) correctPatternIds.push(pid);
       else if (bit === '0') wrongPatternIds.push(pid);
+
+      if (segs.length === 6) {
+        const selectedPatternId = segs[4] || pid;
+        const exampleIndex = Math.max(0, Math.min(3, Number(segs[5]) || 0));
+        answers.push({
+          questionNo,
+          mode: itemMode,
+          patternId: pid,
+          selectedPatternId: isCorrect ? pid : selectedPatternId,
+          isCorrect,
+          exampleIndex,
+        });
+      }
     }
   }
 
-  return {
+  const record: QuizSessionRecord = {
     id,
     bookId,
-    mode: focusToMode(focus),
+    mode: sessionMode,
     fromChapter,
     toChapter,
     totalQuestions: Number(totalStr),
@@ -232,6 +280,12 @@ export function decodeQuizSessionToken(
     wrongPatternIds,
     completedAt,
   };
+
+  if (answers.length > 0) {
+    record.answers = answers;
+  }
+
+  return record;
 }
 
 export async function fetchQuizHistoryDoc(
@@ -261,8 +315,11 @@ export async function saveQuizHistoryDoc(
 ): Promise<void> {
   const path = `users/${uid}/quizHistory/${bookId}`;
   const ref = doc(db, 'users', uid, 'quizHistory', bookId);
-  const clean = sanitizeQuizHistoryForBook(sessions, bookId).slice(0, 15);
-  const tokens = Array.from(new Set(clean.map(encodeQuizSessionToken))).slice(0, 15);
+  const clean = sanitizeQuizHistoryForBook(sessions, bookId).slice(0, MAX_CLOUD_QUIZ_HISTORY_PER_BOOK);
+  const tokens = Array.from(new Set(clean.map(encodeQuizSessionToken))).slice(
+    0,
+    MAX_CLOUD_QUIZ_HISTORY_PER_BOOK
+  );
 
   try {
     const existing = await getDoc(ref);

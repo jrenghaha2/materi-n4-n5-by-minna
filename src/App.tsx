@@ -322,6 +322,8 @@ export default function App() {
                 masteredSet={activeProgress.mastered}
                 difficultSet={activeProgress.difficult}
                 sessions={quizSync.quizHistory[activeBookId]}
+                isCloudSynced={Boolean(authActions.user && authActions.isVerified)}
+                syncingQuiz={quizSync.syncingQuiz}
                 onCompleteSession={record => {
                   quizSync.recordQuizSession(record);
                   daily.recordQuizCompleted();

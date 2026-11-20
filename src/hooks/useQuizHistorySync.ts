@@ -66,7 +66,17 @@ export function useQuizHistorySync({
         const remote = await fetchQuizHistoryDoc(user.uid, bookId);
         const merged = mergeQuizHistory(next[bookId], remote ?? [], bookId);
         next[bookId] = merged;
-        if (!remote || merged.length !== remote.length) {
+
+        const remoteSig = (remote ?? [])
+          .slice(0, 30)
+          .map(s => `${s.id}:${s.answers?.length ?? 0}`)
+          .join(',');
+        const mergedSig = merged
+          .slice(0, 30)
+          .map(s => `${s.id}:${s.answers?.length ?? 0}`)
+          .join(',');
+
+        if (!remote || mergedSig !== remoteSig) {
           await saveQuizHistoryDoc(user.uid, bookId, merged);
         }
       }

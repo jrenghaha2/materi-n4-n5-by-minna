@@ -91,20 +91,22 @@ service cloud.firestore {
 
     // Compact pure-ASCII quiz session token validation (per-book chapter range & patternId prefix enforced):
     // Format: id|completedAt|focus|correct|total|score|scopeCode|answersPacked
-    // answersPacked items separated by ';': no:typeCode:patternId:isCorrectBit
-    // typeCode: 0=cloze, 1=formula, 2=function; isCorrectBit: 1=right, 0=wrong
+    // answersPacked items separated by ';':
+    //   V1 legacy:   no:typeCode:patternId:isCorrectBit
+    //   V2 detailed: no:typeCode:patternId:isCorrectBit:selectedPatternId:exampleIndex
+    // typeCode: 0=cloze, 1=formula/pattern, 2=function/meaning; isCorrectBit: 1=right, 0=wrong; exampleIndex: 0..3
     function isValidN5QuizToken(val) {
       return val is string
         && val.size() >= 24
         && val.size() <= 8000
-        && val.matches('^[a-zA-Z0-9_\\-]+\\|[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,3})?Z\\|(mixed|cloze|formula|function)\\|[0-9]{1,3}\\|[1-9][0-9]{0,2}\\|(100|[0-9]{1,2})\\|(all|([1-9]|1[0-9]|2[0-5])(\\.([1-9]|1[0-9]|2[0-5]))*)\\|(|[1-9][0-9]{0,2}:[0-2]:n5-bab-([1-9]|1[0-9]|2[0-5])-p[1-9][0-9]?:[01](;[1-9][0-9]{0,2}:[0-2]:n5-bab-([1-9]|1[0-9]|2[0-5])-p[1-9][0-9]?:[01])*)$');
+        && val.matches('^[a-zA-Z0-9_\\-]+\\|[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,3})?Z\\|(mixed|cloze|formula|function)\\|[0-9]{1,3}\\|[1-9][0-9]{0,2}\\|(100|[0-9]{1,2})\\|(all|([1-9]|1[0-9]|2[0-5])(\\.([1-9]|1[0-9]|2[0-5]))*)\\|(|[1-9][0-9]{0,2}:[0-2]:n5-bab-([1-9]|1[0-9]|2[0-5])-p[1-9][0-9]?:[01](:n5-bab-([1-9]|1[0-9]|2[0-5])-p[1-9][0-9]?:[0-3])?(;[1-9][0-9]{0,2}:[0-2]:n5-bab-([1-9]|1[0-9]|2[0-5])-p[1-9][0-9]?:[01](:n5-bab-([1-9]|1[0-9]|2[0-5])-p[1-9][0-9]?:[0-3])?)*)$');
     }
 
     function isValidN4QuizToken(val) {
       return val is string
         && val.size() >= 24
         && val.size() <= 8000
-        && val.matches('^[a-zA-Z0-9_\\-]+\\|[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,3})?Z\\|(mixed|cloze|formula|function)\\|[0-9]{1,3}\\|[1-9][0-9]{0,2}\\|(100|[0-9]{1,2})\\|(all|(2[6-9]|[34][0-9]|50)(\\.(2[6-9]|[34][0-9]|50))*)\\|(|[1-9][0-9]{0,2}:[0-2]:n4-bab-(2[6-9]|[34][0-9]|50)-p[1-9][0-9]?:[01](;[1-9][0-9]{0,2}:[0-2]:n4-bab-(2[6-9]|[34][0-9]|50)-p[1-9][0-9]?:[01])*)$');
+        && val.matches('^[a-zA-Z0-9_\\-]+\\|[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,3})?Z\\|(mixed|cloze|formula|function)\\|[0-9]{1,3}\\|[1-9][0-9]{0,2}\\|(100|[0-9]{1,2})\\|(all|(2[6-9]|[34][0-9]|50)(\\.(2[6-9]|[34][0-9]|50))*)\\|(|[1-9][0-9]{0,2}:[0-2]:n4-bab-(2[6-9]|[34][0-9]|50)-p[1-9][0-9]?:[01](:n4-bab-(2[6-9]|[34][0-9]|50)-p[1-9][0-9]?:[0-3])?(;[1-9][0-9]{0,2}:[0-2]:n4-bab-(2[6-9]|[34][0-9]|50)-p[1-9][0-9]?:[01](:n4-bab-(2[6-9]|[34][0-9]|50)-p[1-9][0-9]?:[0-3])?)*)$');
     }
 
     function isValidQuizSessionToken(val, bookId) {
@@ -112,12 +114,9 @@ service cloud.firestore {
         || (bookId == 'n4' && isValidN4QuizToken(val));
     }
 
-    // Element-wise bounded validation across all 15 slots
-    function isValidQuizHistorySessions(arr, bookId) {
-      return arr is list
-        && arr.size() <= 15
-        && arr.toSet().size() == arr.size()
-        && (arr.size() <= 0 || isValidQuizSessionToken(arr[0], bookId))
+    // Element-wise bounded validation across all 30 slots (split into 2 helpers for readability)
+    function isValidQuizHistoryBatchA(arr, bookId) {
+      return (arr.size() <= 0 || isValidQuizSessionToken(arr[0], bookId))
         && (arr.size() <= 1 || isValidQuizSessionToken(arr[1], bookId))
         && (arr.size() <= 2 || isValidQuizSessionToken(arr[2], bookId))
         && (arr.size() <= 3 || isValidQuizSessionToken(arr[3], bookId))
@@ -132,6 +131,32 @@ service cloud.firestore {
         && (arr.size() <= 12 || isValidQuizSessionToken(arr[12], bookId))
         && (arr.size() <= 13 || isValidQuizSessionToken(arr[13], bookId))
         && (arr.size() <= 14 || isValidQuizSessionToken(arr[14], bookId));
+    }
+
+    function isValidQuizHistoryBatchB(arr, bookId) {
+      return (arr.size() <= 15 || isValidQuizSessionToken(arr[15], bookId))
+        && (arr.size() <= 16 || isValidQuizSessionToken(arr[16], bookId))
+        && (arr.size() <= 17 || isValidQuizSessionToken(arr[17], bookId))
+        && (arr.size() <= 18 || isValidQuizSessionToken(arr[18], bookId))
+        && (arr.size() <= 19 || isValidQuizSessionToken(arr[19], bookId))
+        && (arr.size() <= 20 || isValidQuizSessionToken(arr[20], bookId))
+        && (arr.size() <= 21 || isValidQuizSessionToken(arr[21], bookId))
+        && (arr.size() <= 22 || isValidQuizSessionToken(arr[22], bookId))
+        && (arr.size() <= 23 || isValidQuizSessionToken(arr[23], bookId))
+        && (arr.size() <= 24 || isValidQuizSessionToken(arr[24], bookId))
+        && (arr.size() <= 25 || isValidQuizSessionToken(arr[25], bookId))
+        && (arr.size() <= 26 || isValidQuizSessionToken(arr[26], bookId))
+        && (arr.size() <= 27 || isValidQuizSessionToken(arr[27], bookId))
+        && (arr.size() <= 28 || isValidQuizSessionToken(arr[28], bookId))
+        && (arr.size() <= 29 || isValidQuizSessionToken(arr[29], bookId));
+    }
+
+    function isValidQuizHistorySessions(arr, bookId) {
+      return arr is list
+        && arr.size() <= 30
+        && arr.toSet().size() == arr.size()
+        && isValidQuizHistoryBatchA(arr, bookId)
+        && isValidQuizHistoryBatchB(arr, bookId);
     }
 
     // Standalone Validation Blueprint for UserProfile (safe for both create and update)

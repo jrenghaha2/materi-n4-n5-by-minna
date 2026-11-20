@@ -75,7 +75,7 @@
     },
     "BunpouQuizHistory": {
       "title": "BunpouQuizHistory",
-      "description": "Per-book compact quiz performance history (up to 15 latest sessions) stored as pure ASCII reference tokens.",
+      "description": "Per-book compact detailed quiz answer history (up to 30 latest sessions) stored as pure ASCII reference tokens including selected choice and example index.",
       "type": "object",
       "properties": {
         "uid": {
@@ -92,7 +92,7 @@
         },
         "sessions": {
           "type": "array",
-          "description": "Up to 15 compact pure-ASCII quiz session reference tokens."
+          "description": "Up to 30 compact pure-ASCII quiz session tokens with per-question detailed answer records (V1 legacy and V2 detailed with selectedPatternId & exampleIndex)."
         },
         "createdAt": {
           "type": "string",

@@ -96,6 +96,8 @@ export interface QuizQuestion {
   mode: QuizMode;
   prompt: string;
   promptSub?: string;
+  formulas?: string[];
+  exampleIndex: number;
   exampleJapanese?: string;
   exampleIndonesian?: string;
   choices: QuizChoice[];
@@ -109,6 +111,15 @@ export interface QuizAnswerEntry {
   isCorrect: boolean;
 }
 
+export interface QuizSavedAnswer {
+  questionNo: number;
+  mode: QuizMode;
+  patternId: string;
+  selectedPatternId: string;
+  isCorrect: boolean;
+  exampleIndex: number;
+}
+
 export interface QuizSessionRecord {
   id: string;
   bookId: BookId;
@@ -119,6 +130,7 @@ export interface QuizSessionRecord {
   correctCount: number;
   wrongPatternIds: string[];
   correctPatternIds: string[];
+  answers?: QuizSavedAnswer[];
   completedAt: string;
 }
 

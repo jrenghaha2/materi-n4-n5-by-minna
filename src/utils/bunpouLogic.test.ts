@@ -29,7 +29,13 @@ import {
   stripFuriganaMarkup,
   toKanaReading,
 } from './furiganaConverter.ts';
-import { buildRubySafeCloze, extractGrammarTargets, generateQuizQuestions } from './quizGenerator.ts';
+import {
+  buildClozeForExample,
+  buildRubySafeCloze,
+  extractGrammarTargets,
+  generateQuizQuestions,
+  getQuizPatternLabel,
+} from './quizGenerator.ts';
 import { mergePatternSets, sanitizePatternIds } from './bunpouSync.ts';
 
 const BARE_KANJI_REGEX = /[\u4e00-\u9faf\u3400-\u4dbf々]/;
@@ -265,6 +271,83 @@ test('furigana alignment places ruby strictly over kanji only and never over oku
           );
         }
       }
+    }
+  }
+});
+
+test('all 185 patterns produce spoiler-free quiz labels and 100% valid cloze blanking', () => {
+  const PAREN_LATIN_CLUE_REGEX = /[（(][^）)]*[a-z]{3,}[^）)]*[）)]/;
+  const INDONESIAN_CLUE_WORD_REGEX =
+    /\b(?:tujuan|agar|katanya|pengandaian|seharusnya|kemungkinan|menyatakan|menanyakan|meminta|melarang|mengajak|berencana|rencana|saran|alasan|pasif|kausatif|hormat|merendah|cara|membentuk|kalimat|percakapan|kasual|negatif|lampau|subjek|objek|tempat|waktu|kendaraan|orang|jumlah|frekuensi|perbandingan)\b/i;
+
+  const spoilerViolations: string[] = [];
+  const clozeFailures: string[] = [];
+
+  for (const p of ALL_MINNA_PATTERNS) {
+    const label = stripFuriganaMarkup(getQuizPatternLabel(p));
+    if (PAREN_LATIN_CLUE_REGEX.test(label) || INDONESIAN_CLUE_WORD_REGEX.test(label)) {
+      spoilerViolations.push(`${p.id}: "${label}" (from "${p.title}")`);
+    }
+
+    // Check at least 1 of the 4 examples produces a clean ruby-safe cloze blank
+    const hasCloze = p.examples.some(ex => {
+      const res = buildClozeForExample(p, ex.japanese);
+      return Boolean(
+        res &&
+          res.clozeMarkup.includes('（　　）') &&
+          !res.clozeMarkup.includes('{|') &&
+          !res.clozeMarkup.includes('|}')
+      );
+    });
+    if (!hasCloze) {
+      clozeFailures.push(`${p.id} (${label})`);
+    }
+  }
+
+  assert.deepEqual(
+    spoilerViolations,
+    [],
+    `Quiz spoiler clues leaked in labels:\n${spoilerViolations.join('\n')}`
+  );
+  assert.deepEqual(
+    clozeFailures,
+    [],
+    `Patterns failed cloze blanking:\n${clozeFailures.join('\n')}`
+  );
+});
+
+test('meaning mode never leaks Indonesian hints in promptSub and all choices have unique labels', () => {
+  for (const book of MINNA_BOOKS) {
+    const minCh = book.chapters[0].chapter;
+    const maxCh = book.chapters[book.chapters.length - 1].chapter;
+
+    const meaningQs = generateQuizQuestions(book.patterns, {
+      bookId: book.id,
+      mode: 'meaning',
+      fromChapter: minCh,
+      toChapter: maxCh,
+      questionCount: 15,
+      onlyDifficult: false,
+      onlyUnmastered: false,
+      masteredSet: new Set(),
+      difficultSet: new Set(),
+    });
+
+    for (const q of meaningQs) {
+      // promptSub in meaning mode must be Japanese context sentence, not formula or Indonesian
+      if (q.promptSub) {
+        assert.ok(
+          /[\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf]/.test(q.promptSub),
+          `Expected Japanese promptSub in meaning mode for ${q.patternId}, got: ${q.promptSub}`
+        );
+        assert.ok(
+          !q.promptSub.includes('KK ('),
+          `Formula leaked into meaning mode promptSub for ${q.patternId}: ${q.promptSub}`
+        );
+      }
+      assert.ok(q.formulas && q.formulas.length >= 1, `Missing formulas on question ${q.patternId}`);
+      const choiceLabels = new Set(q.choices.map(c => c.label.toLowerCase()));
+      assert.equal(choiceLabels.size, 4, `Duplicate choice labels found for ${q.patternId}`);
     }
   }
 });

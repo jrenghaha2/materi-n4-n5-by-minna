@@ -16,11 +16,13 @@ test('firestore.rules enforces default-deny, email_verified, Master Gate, and N5
   // Closed schema
   assert.ok(rules.includes('keys().hasOnly('), 'Missing closed schema hasOnly check');
 
-  // N5 (Bab 1-25) & N4 (Bab 26-50) book scoping
+  // N5 (Bab 1-25) & N4 (Bab 26-50) book scoping & 30-slot detailed quiz history validation
   assert.ok(rules.includes("bookId == 'n5'"), 'Missing n5 bookId scoping');
   assert.ok(rules.includes("bookId == 'n4'"), 'Missing n4 bookId scoping');
   assert.ok(rules.includes('isValidBunpouList'), 'Missing dual-separator full-array validation');
-  assert.ok(rules.includes('isValidQuizHistorySessions'), 'Missing 15-slot quiz session validation');
+  assert.ok(rules.includes('isValidQuizHistorySessions'), 'Missing 30-slot quiz session validation');
+  assert.ok(rules.includes('arr.size() <= 30'), 'Expected 30-slot cloud quiz history cap');
+  assert.ok(rules.includes('[0-3]'), 'Expected strict exampleIndex [0-3] bound in V2 quiz token');
 
   // Mutual exclusion & strict server timestamps
   assert.ok(

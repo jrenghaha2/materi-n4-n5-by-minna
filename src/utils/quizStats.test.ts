@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import test from 'node:test';
 import { N4_BOOK_DATA, N5_BOOK_DATA } from '../data/minnaDataset.ts';
 import {
   computeQuizOverviewStats,
   mergeQuizHistory,
+  reconstructSessionReview,
   sanitizeQuizSessionRecord,
 } from './quizStats.ts';
 
@@ -63,8 +65,8 @@ test('sanitizeQuizSessionRecord validates N5 (Bab 1-25) and N4 (Bab 26-50) bound
   assert.ok(validN4 !== null);
 });
 
-test('mergeQuizHistory deduplicates by ID and computes weak pattern/chapter stats', () => {
-  const s1 = sanitizeQuizSessionRecord(
+test('mergeQuizHistory deduplicates by ID, prefers richer V2 detailed answers, and computes weak stats', () => {
+  const s1Legacy = sanitizeQuizSessionRecord(
     {
       id: 'qz_m1',
       bookId: 'n5',
@@ -76,6 +78,22 @@ test('mergeQuizHistory deduplicates by ID and computes weak pattern/chapter stat
       wrongPatternIds: ['n5-bab-4-p1', 'n5-bab-4-p2'],
       correctPatternIds: ['n5-bab-1-p1', 'n5-bab-2-p1', 'n5-bab-3-p1'],
       completedAt: '2026-05-01T10:00:00.000Z',
+    },
+    'n5'
+  )!;
+  const s1Detailed = sanitizeQuizSessionRecord(
+    {
+      ...s1Legacy,
+      answers: [
+        {
+          questionNo: 1,
+          mode: 'meaning',
+          patternId: 'n5-bab-4-p1',
+          selectedPatternId: 'n5-bab-3-p1',
+          isCorrect: false,
+          exampleIndex: 2,
+        },
+      ],
     },
     'n5'
   )!;
@@ -95,9 +113,12 @@ test('mergeQuizHistory deduplicates by ID and computes weak pattern/chapter stat
     'n5'
   )!;
 
-  const merged = mergeQuizHistory([s1], [s1, s2], 'n5');
+  const merged = mergeQuizHistory([s1Legacy], [s1Detailed, s2], 'n5');
   assert.equal(merged.length, 2);
   assert.equal(merged[0].id, 'qz_m2');
+  assert.equal(merged[1].id, 'qz_m1');
+  assert.equal(merged[1].answers?.length, 1);
+  assert.equal(merged[1].answers?.[0].selectedPatternId, 'n5-bab-3-p1');
 
   const stats = computeQuizOverviewStats(merged, N5_BOOK_DATA.patterns);
   assert.equal(stats.totalSessions, 2);
@@ -107,4 +128,92 @@ test('mergeQuizHistory deduplicates by ID and computes weak pattern/chapter stat
   assert.equal(stats.weakPatterns[0].wrongCount, 2);
   assert.equal(stats.weakChapters[0].chapter, 4);
   assert.ok(N4_BOOK_DATA.patterns.length > 0);
+});
+
+test('reconstructSessionReview restores exact wrong choice, exampleIndex, and formulas for V2 sessions and handles V1 legacy sessions', () => {
+  const v2Session = sanitizeQuizSessionRecord(
+    {
+      id: 'qz_v2_n4',
+      bookId: 'n4',
+      mode: 'meaning',
+      fromChapter: 26,
+      toChapter: 50,
+      totalQuestions: 2,
+      correctCount: 1,
+      correctPatternIds: ['n4-bab-31-p3'],
+      wrongPatternIds: ['n4-bab-36-p1'],
+      answers: [
+        {
+          questionNo: 1,
+          mode: 'meaning',
+          patternId: 'n4-bab-31-p3',
+          selectedPatternId: 'n4-bab-31-p3',
+          isCorrect: true,
+          exampleIndex: 1,
+        },
+        {
+          questionNo: 2,
+          mode: 'meaning',
+          patternId: 'n4-bab-36-p1',
+          selectedPatternId: 'n4-bab-36-p2',
+          isCorrect: false,
+          exampleIndex: 2,
+        },
+      ],
+      completedAt: '2026-11-20T08:00:00.000Z',
+    },
+    'n4'
+  )!;
+
+  const review = reconstructSessionReview(v2Session, N4_BOOK_DATA.patterns);
+  assert.equal(review.length, 2);
+  assert.equal(review[0].isCorrect, true);
+  assert.equal(review[0].question.patternId, 'n4-bab-31-p3');
+  assert.equal(review[0].question.exampleIndex, 1);
+  assert.ok(review[0].question.formulas && review[0].question.formulas.length >= 2);
+
+  assert.equal(review[1].isCorrect, false);
+  assert.equal(review[1].question.patternId, 'n4-bab-36-p1');
+  assert.equal(review[1].selectedChoiceId, 'n4-bab-36-p2');
+  assert.equal(review[1].question.exampleIndex, 2);
+  assert.ok(review[1].question.choices.some(c => c.id === 'n4-bab-36-p2'));
+
+  // Verify V2 cloud token string strictly matches firestore.rules N4 & N5 token regexes
+  const rulesText = fs.readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8');
+  const n5RegexMatch = rulesText.match(/function isValidN5QuizToken\(val\) \{[\s\S]*?val\.matches\('([^']+)'\)/);
+  const n4RegexMatch = rulesText.match(/function isValidN4QuizToken\(val\) \{[\s\S]*?val\.matches\('([^']+)'\)/);
+  assert.ok(n5RegexMatch && n4RegexMatch, 'Could not locate N5/N4 token regexes in firestore.rules');
+  const n5RuleRegex = new RegExp(n5RegexMatch[1].replace(/\\\\/g, '\\'));
+  const n4RuleRegex = new RegExp(n4RegexMatch[1].replace(/\\\\/g, '\\'));
+
+  const n4PackedToken =
+    'qz_v2_n4|2026-11-20T08:00:00.000Z|function|1|2|50|all|1:2:n4-bab-31-p3:1:n4-bab-31-p3:1;2:2:n4-bab-36-p1:0:n4-bab-36-p2:2';
+  const n5PackedToken =
+    'qz_v2_n5|2026-11-20T08:00:00.000Z|cloze|2|2|100|1.25|1:0:n5-bab-19-p2:1:n5-bab-19-p2:0;2:0:n5-bab-22-p3:1:n5-bab-22-p3:3';
+
+  assert.ok(n4RuleRegex.test(n4PackedToken), `N4 V2 token rejected by firestore.rules: ${n4PackedToken}`);
+  assert.ok(n5RuleRegex.test(n5PackedToken), `N5 V2 token rejected by firestore.rules: ${n5PackedToken}`);
+  // Cross-book tokens must be rejected
+  assert.equal(n4RuleRegex.test(n5PackedToken), false);
+  assert.equal(n5RuleRegex.test(n4PackedToken), false);
+
+  // Legacy V1 session without answers array still reconstructs cleanly
+  const v1Session = sanitizeQuizSessionRecord(
+    {
+      id: 'qz_v1_n4',
+      bookId: 'n4',
+      mode: 'cloze',
+      fromChapter: 26,
+      toChapter: 35,
+      totalQuestions: 2,
+      correctCount: 1,
+      correctPatternIds: ['n4-bab-26-p1'],
+      wrongPatternIds: ['n4-bab-27-p1'],
+      completedAt: '2026-11-19T08:00:00.000Z',
+    },
+    'n4'
+  )!;
+  const legacyReview = reconstructSessionReview(v1Session, N4_BOOK_DATA.patterns);
+  assert.equal(legacyReview.length, 2);
+  assert.equal(legacyReview[1].selectedChoiceId, '__legacy_wrong__');
 });

@@ -13,6 +13,8 @@ interface QuizSetupViewProps {
   onlyUnmastered: boolean;
   availableCount: number;
   sessions: QuizSessionRecord[];
+  isCloudSynced?: boolean;
+  syncingQuiz?: boolean;
   onChangeMode: (mode: QuizMode) => void;
   onChangeRange: (from: number, to: number) => void;
   onChangeCount: (count: number) => void;
@@ -20,6 +22,7 @@ interface QuizSetupViewProps {
   onToggleUnmastered: () => void;
   onStartQuiz: () => void;
   onQuickStartChapter: (chapter: number) => void;
+  onInspectSession: (session: QuizSessionRecord) => void;
   onClearHistory: () => void;
 }
 
@@ -35,6 +38,8 @@ export function QuizSetupView({
   onlyUnmastered,
   availableCount,
   sessions,
+  isCloudSynced = false,
+  syncingQuiz = false,
   onChangeMode,
   onChangeRange,
   onChangeCount,
@@ -42,6 +47,7 @@ export function QuizSetupView({
   onToggleUnmastered,
   onStartQuiz,
   onQuickStartChapter,
+  onInspectSession,
   onClearHistory,
 }: QuizSetupViewProps) {
   const presets = CHAPTER_PRESETS_BY_BOOK[book.id];
@@ -272,7 +278,10 @@ export function QuizSetupView({
         <QuizStatsPanel
           book={book}
           sessions={sessions}
+          isCloudSynced={isCloudSynced}
+          syncingQuiz={syncingQuiz}
           onQuickPracticeChapter={onQuickStartChapter}
+          onInspectSession={onInspectSession}
           onClearHistory={onClearHistory}
         />
       </section>

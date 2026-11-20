@@ -1,11 +1,17 @@
 import type {
   BookId,
   BunpouPattern,
+  QuizAnswerEntry,
+  QuizChoice,
   QuizMode,
+  QuizSavedAnswer,
   QuizSessionRecord,
 } from '../types/bunpou';
+import { stripFuriganaMarkup } from './furiganaConverter';
+import { buildClozeForExample, getQuizPatternLabel } from './quizGenerator';
 
 export const MAX_QUIZ_HISTORY_PER_BOOK = 60;
+export const MAX_CLOUD_QUIZ_HISTORY_PER_BOOK = 30;
 const MAX_PATTERN_LIST_PER_SESSION = 15;
 
 const SESSION_ID_REGEX = /^[A-Za-z0-9_-]{4,64}$/;
@@ -43,6 +49,50 @@ function sanitizePatternIdArray(raw: unknown, bookId: BookId): string[] {
   return out;
 }
 
+function sanitizeSavedAnswers(
+  raw: unknown,
+  bookId: BookId,
+  fallbackMode: QuizMode
+): QuizSavedAnswer[] | undefined {
+  if (!Array.isArray(raw) || raw.length === 0) return undefined;
+  const regex = PATTERN_ID_REGEX_BY_BOOK[bookId];
+  const out: QuizSavedAnswer[] = [];
+
+  for (let i = 0; i < raw.length && out.length < MAX_PATTERN_LIST_PER_SESSION; i += 1) {
+    const item = raw[i];
+    if (!item || typeof item !== 'object') continue;
+    const obj = item as Record<string, unknown>;
+    const patternId = typeof obj.patternId === 'string' && regex.test(obj.patternId) ? obj.patternId : null;
+    if (!patternId) continue;
+
+    const selectedPatternId =
+      typeof obj.selectedPatternId === 'string' && regex.test(obj.selectedPatternId)
+        ? obj.selectedPatternId
+        : patternId;
+    const isCorrect = Boolean(obj.isCorrect);
+    const questionNo =
+      typeof obj.questionNo === 'number' && Number.isFinite(obj.questionNo) && obj.questionNo >= 1
+        ? Math.floor(obj.questionNo)
+        : out.length + 1;
+    const mode = isValidMode(obj.mode) ? obj.mode : fallbackMode;
+    const exampleIndex =
+      typeof obj.exampleIndex === 'number' && Number.isFinite(obj.exampleIndex)
+        ? Math.max(0, Math.min(3, Math.floor(obj.exampleIndex)))
+        : 0;
+
+    out.push({
+      questionNo,
+      mode,
+      patternId,
+      selectedPatternId: isCorrect ? patternId : selectedPatternId,
+      isCorrect,
+      exampleIndex,
+    });
+  }
+
+  return out.length > 0 ? out : undefined;
+}
+
 export function sanitizeQuizSessionRecord(
   raw: unknown,
   expectedBookId: BookId
@@ -68,8 +118,9 @@ export function sanitizeQuizSessionRecord(
 
   const wrongPatternIds = sanitizePatternIdArray(r.wrongPatternIds, expectedBookId);
   const correctPatternIds = sanitizePatternIdArray(r.correctPatternIds, expectedBookId);
+  const answers = sanitizeSavedAnswers(r.answers, expectedBookId, r.mode);
 
-  return {
+  const record: QuizSessionRecord = {
     id: r.id,
     bookId: expectedBookId,
     mode: r.mode,
@@ -81,21 +132,31 @@ export function sanitizeQuizSessionRecord(
     correctPatternIds,
     completedAt: r.completedAt,
   };
+
+  if (answers) {
+    record.answers = answers;
+  }
+
+  return record;
 }
 
 export function sanitizeQuizHistory(raw: unknown, bookId: BookId): QuizSessionRecord[] {
   if (!Array.isArray(raw)) return [];
-  const seen = new Set<string>();
-  const list: QuizSessionRecord[] = [];
+  const byId = new Map<string, QuizSessionRecord>();
 
   for (const item of raw) {
     const clean = sanitizeQuizSessionRecord(item, bookId);
-    if (!clean || seen.has(clean.id)) continue;
-    seen.add(clean.id);
-    list.push(clean);
+    if (!clean) continue;
+    const prev = byId.get(clean.id);
+    if (!prev) {
+      byId.set(clean.id, clean);
+    } else if ((clean.answers?.length ?? 0) > (prev.answers?.length ?? 0)) {
+      // Prefer the richer V2 record when merging local & cloud duplicates
+      byId.set(clean.id, clean);
+    }
   }
 
-  return list
+  return Array.from(byId.values())
     .sort((a, b) => b.completedAt.localeCompare(a.completedAt))
     .slice(0, MAX_QUIZ_HISTORY_PER_BOOK);
 }
@@ -112,6 +173,112 @@ export function createQuizSessionId(): string {
   const ts = Date.now().toString(36);
   const rand = Math.random().toString(36).slice(2, 8);
   return `qz_${ts}_${rand}`;
+}
+
+/**
+ * Reconstructs full question-by-question QuizAnswerEntry items for any saved
+ * QuizSessionRecord (supports both detailed V2 records and legacy V1 records).
+ */
+export function reconstructSessionReview(
+  session: QuizSessionRecord,
+  patterns: BunpouPattern[]
+): QuizAnswerEntry[] {
+  const patternById = new Map(patterns.map(p => [p.id, p]));
+
+  const savedItems: QuizSavedAnswer[] =
+    session.answers && session.answers.length > 0
+      ? session.answers
+      : [
+          ...session.correctPatternIds.map((pid, idx) => ({
+            questionNo: idx + 1,
+            mode: session.mode,
+            patternId: pid,
+            selectedPatternId: pid,
+            isCorrect: true,
+            exampleIndex: 0,
+          })),
+          ...session.wrongPatternIds.map((pid, idx) => ({
+            questionNo: session.correctPatternIds.length + idx + 1,
+            mode: session.mode,
+            patternId: pid,
+            selectedPatternId: pid, // V1 legacy didn't record which wrong option was picked
+            isCorrect: false,
+            exampleIndex: 0,
+          })),
+        ];
+
+  const entries: QuizAnswerEntry[] = [];
+
+  for (let i = 0; i < savedItems.length; i += 1) {
+    const item = savedItems[i];
+    const targetPattern = patternById.get(item.patternId);
+    if (!targetPattern) continue;
+
+    const selectedPattern =
+      !item.isCorrect && item.selectedPatternId !== item.patternId
+        ? patternById.get(item.selectedPatternId)
+        : undefined;
+
+    const ex = targetPattern.examples[item.exampleIndex] ?? targetPattern.examples[0];
+    const targetLabel = getQuizPatternLabel(targetPattern);
+    const mode = item.mode;
+
+    const isJapaneseChoice = mode !== 'meaning';
+    const correctChoice: QuizChoice = {
+      id: targetPattern.id,
+      label: isJapaneseChoice ? targetLabel : targetPattern.meaning,
+      subLabel: targetPattern.formulas.join(' / '),
+      isJapanese: isJapaneseChoice,
+    };
+
+    const choices: QuizChoice[] = [correctChoice];
+    let selectedChoiceId = targetPattern.id;
+
+    if (!item.isCorrect && selectedPattern) {
+      selectedChoiceId = selectedPattern.id;
+      choices.push({
+        id: selectedPattern.id,
+        label: isJapaneseChoice ? getQuizPatternLabel(selectedPattern) : selectedPattern.meaning,
+        subLabel: selectedPattern.formulas.join(' / '),
+        isJapanese: isJapaneseChoice,
+      });
+    } else if (!item.isCorrect) {
+      selectedChoiceId = '__legacy_wrong__';
+    }
+
+    let prompt = targetLabel;
+    let promptSub = ex?.japanese;
+    if (mode === 'pattern') {
+      prompt = targetPattern.meaning;
+      promptSub = ex?.indonesian;
+    } else if (mode === 'cloze' && ex) {
+      const cloze = buildClozeForExample(targetPattern, ex.japanese);
+      prompt = cloze ? cloze.clozeMarkup : ex.japanese;
+      promptSub = ex.indonesian;
+    }
+
+    entries.push({
+      question: {
+        id: `${session.id}-q${item.questionNo}-${i}`,
+        patternId: targetPattern.id,
+        chapter: targetPattern.chapter,
+        mode,
+        prompt,
+        promptSub,
+        formulas: targetPattern.formulas,
+        exampleIndex: item.exampleIndex,
+        exampleJapanese: ex?.japanese,
+        exampleIndonesian: ex?.indonesian,
+        choices,
+        correctChoiceId: targetPattern.id,
+        explanation: `${stripFuriganaMarkup(targetLabel)} — ${targetPattern.meaning}`,
+      },
+      selectedChoiceId,
+      isCorrect: item.isCorrect,
+    });
+  }
+
+  return entries;
 }
 
 export interface QuizOverviewStats {

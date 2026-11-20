@@ -296,8 +296,8 @@ export const MINNA_N5_CHAPTERS_PART_2: RawChapterDef[] = [
       {
         title: '〜たことが あります',
         formulas: ['KK (F.た) + ことが あります／ありません'],
-        meaning: 'pernah / belum pernah mengalami ...',
-        notes: 'Menyatakan pengalaman hidup secara umum, bukan kejadian rutin minggu lalu.',
+        meaning: 'pernah mengalami / melakukan ...',
+        notes: 'Menyatakan pengalaman hidup secara umum, bukan kejadian rutin minggu lalu. Bentuk negatifnya memakai 〜たことが ありません (belum pernah).',
         examples: [
           { japanese: '{馬|うま}に {乗|の}ったことが あります。', indonesian: 'Saya pernah menunggang kuda.' },
           { japanese: '{北海道|ほっかいどう}へ {行|い}ったことが ありません。', indonesian: 'Saya belum pernah pergi ke Hokkaido.' },
@@ -449,8 +449,8 @@ export const MINNA_N5_CHAPTERS_PART_2: RawChapterDef[] = [
       {
         title: '〜{時間|じかん}・{約束|やくそく}・{用事|ようじ}',
         formulas: ['KK (F.Kamus) + 時間／約束／用事 が あります／ありません'],
-        meaning: 'memiliki / tidak memiliki waktu, janji, atau urusan untuk ...',
-        notes: 'Sangat sering dipakai dalam percakapan sehari-hari untuk menolak ajakan atau menjelaskan jadwal.',
+        meaning: 'waktu, janji, atau urusan untuk melakukan ...',
+        notes: 'Sangat sering dipakai bersama あります / ありません dalam percakapan sehari-hari untuk menolak ajakan atau menjelaskan jadwal.',
         examples: [
           { japanese: '{朝|あさ}ごはんを {食|た}べる {時間|じかん}が ありません。', indonesian: 'Saya tidak punya waktu untuk sarapan.' },
           { japanese: '{今日|きょう}は {友|とも}だちと {映画|えいが}を {見|み}る {約束|やくそく}が あります。', indonesian: 'Hari ini saya ada janji menonton film dengan teman.' },

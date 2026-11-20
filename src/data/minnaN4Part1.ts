@@ -273,8 +273,8 @@ export const MINNA_N4_CHAPTERS_PART_1: RawChapterDef[] = [
       {
         title: '〜つもりです',
         formulas: ['KK (F.Kamus) + つもりです', 'KK (F.ない) + つもりです'],
-        meaning: 'berencana / bertekad kuat untuk (tidak) ...',
-        notes: 'Menyatakan niat yang lebih tegas dan mantap dibandingkan 〜ようと思っています.',
+        meaning: 'berencana / bertekad kuat untuk melakukan ...',
+        notes: 'Menyatakan niat yang lebih tegas dan mantap dibandingkan 〜ようと思っています. Gunakan bentuk ない (〜ないつもりです) untuk menyatakan tekad tidak melakukan sesuatu.',
         examples: [
           { japanese: '{来年|らいねん}、{国|くに}へ {帰|かえ}る つもりです。', indonesian: 'Tahun depan saya berencana pulang ke negara saya.' },
           { japanese: 'たばこは もう {吸|す}わない つもりです。', indonesian: 'Saya bertekad untuk tidak merokok lagi.' },
