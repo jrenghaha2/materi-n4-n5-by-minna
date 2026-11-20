@@ -1,0 +1,23 @@
+{
+  "name": "Materi N4 N5 by Minna",
+  "short_name": "Materi N4 N5",
+  "description": "Aplikasi web interaktif belajar Bunpou & Flashcard Kotoba JLPT N5 (Bab 1-25) dan JLPT N4 (Bab 26-50) dari Minna no Nihongo.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#4338ca",
+  "icons": [
+    {
+      "src": "./icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

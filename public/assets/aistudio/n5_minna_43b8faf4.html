@@ -1,0 +1,2055 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JLPT N5 — Bunpou & Kotoba</title>
+<style>
+:root{
+  --bg:#FAF7F1; --bg2:#F2ECDF; --card:#FFFFFF; --line:#E9E1CF;
+  --text:#26242B; --text2:#71695A;
+  --accent:#3E4FA8; --sakura:#D97A93;
+  --accent-soft:#ECEDF9;
+  --green:#4C8055; --green-soft:#E9F2E6;
+  --orange:#C96A1F; --orange-soft:#FBEDDC;
+  --red:#C94F47; --red-soft:#FAE9E7;
+  --purple:#8A5FA8; --purple-soft:#F4EFF8;
+  --rt:#5870CE;
+  --grad:linear-gradient(135deg,#39468F 0%,#4B3D92 55%,#6C3F83 100%);
+  --hero-grad:linear-gradient(125deg,#2E3A8C 0%,#4B3D92 52%,#7C3F74 100%);
+  --shadow:0 1px 2px rgba(70,58,32,.05), 0 6px 20px rgba(70,58,32,.07);
+  --shadow-lg:0 2px 4px rgba(70,58,32,.07), 0 16px 38px rgba(70,58,32,.13);
+  --ring:0 0 0 3px rgba(62,79,168,.20);
+  /* structural theme values (overridden in dark below) */
+  --body-bg:
+    radial-gradient(1100px 480px at 50% -200px, rgba(62,79,168,.08), transparent 62%),
+    radial-gradient(rgba(62,79,168,.055) 1px, transparent 1.6px),
+    var(--bg);
+  --tab-on-bg:#FFFFFF;
+  --tab-on-shadow:0 1px 4px rgba(60,48,20,.14);
+  --switch-track-off:#DCD5C4;
+  --switch-knob:#FFFFFF;
+  --hero-btn-bg:rgba(255,255,255,.14);
+  --stat-bg:rgba(255,255,255,.13);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#12141C; --bg2:#191C27; --card:#1F2331; --line:#31374B;
+    --text:#ECEDF2; --text2:#9BA1B6;
+    --accent:#96A6EE; --sakura:#E59AAF;
+    --accent-soft:#2A3050;
+    --green:#86C796; --green-soft:#223129;
+    --orange:#E09A55; --orange-soft:#362818;
+    --red:#E07B73; --red-soft:#3B2327;
+    --purple:#BE93D8; --purple-soft:#2E2739;
+    --rt:#A3B5F2;
+    --grad:linear-gradient(135deg,#2A3560 0%,#3B2F63 55%,#522F66 100%);
+    --hero-grad:linear-gradient(125deg,#232B66 0%,#3A2F6B 52%,#5C2F57 100%);
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 6px 20px rgba(0,0,0,.42);
+    --shadow-lg:0 2px 4px rgba(0,0,0,.42), 0 16px 38px rgba(0,0,0,.5);
+    --ring:0 0 0 3px rgba(150,166,238,.28);
+    --body-bg:
+      radial-gradient(1100px 480px at 50% -200px, rgba(150,166,238,.09), transparent 62%),
+      radial-gradient(rgba(150,166,238,.05) 1px, transparent 1.6px),
+      var(--bg);
+    --tab-on-bg:#2B3145;
+    --tab-on-shadow:0 1px 4px rgba(0,0,0,.5);
+    --switch-track-off:#3C4358;
+    --switch-knob:#E9EBF3;
+    --hero-btn-bg:rgba(255,255,255,.10);
+    --stat-bg:rgba(255,255,255,.10);
+  }
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:var(--body-bg);
+  background-size:auto, 24px 24px, auto;
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic UI","Meiryo","Noto Sans JP","Noto Sans CJK JP",sans-serif;
+  line-height:1.6;
+}
+::selection{background:var(--accent-soft)}
+.wrap{max-width:980px;margin:0 auto;padding:28px 20px 64px}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:none;box-shadow:var(--ring)}
+.kj-card:focus-visible{outline:none;box-shadow:var(--ring)}
+@keyframes rise{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+
+/* ===== Home ===== */
+.hero{
+  position:relative;overflow:hidden;border-radius:22px;margin:4px 0 6px;
+  padding:36px 32px 30px;background:var(--hero-grad);color:#fff;box-shadow:var(--shadow-lg);
+}
+.hero::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:
+    radial-gradient(560px 240px at 90% -10%, rgba(255,255,255,.18), transparent 60%),
+    radial-gradient(460px 240px at -6% 116%, rgba(217,122,147,.38), transparent 62%);
+}
+.hero::after{
+  content:"桜";position:absolute;right:18px;bottom:-46px;pointer-events:none;
+  font-size:170px;font-weight:700;line-height:1;color:rgba(255,255,255,.11);
+  font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif CJK JP","Noto Serif JP",serif;
+  transform:rotate(-7deg);
+}
+.hero>*{position:relative;z-index:1}
+.hero .kicker{font-size:12.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#F2C6D3}
+.hero h1{font-size:clamp(28px,4.8vw,40px);line-height:1.15;margin:8px 0 10px;letter-spacing:-.02em;font-weight:800;color:#fff;text-shadow:0 2px 10px rgba(20,16,50,.35)}
+.hero p.sub{color:rgba(255,255,255,.82);max-width:620px;font-size:15px}
+.hero p.sub b{color:#fff}
+.stats{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+.stat{
+  background:var(--stat-bg);border:1px solid rgba(255,255,255,.22);border-radius:12px;
+  padding:10px 16px;display:flex;align-items:baseline;gap:8px;
+}
+.stat b{font-size:20px;color:#fff}
+.stat span{font-size:12.5px;color:rgba(255,255,255,.82)}
+.hero .btn{
+  background:var(--hero-btn-bg);border-color:rgba(255,255,255,.30);color:#fff;box-shadow:none;
+}
+.hero .btn:hover{background:rgba(255,255,255,.24);border-color:rgba(255,255,255,.55);color:#fff}
+/* backdrop-filter dipakai hemat, hanya bila didukung; fallback = latar rgba di atas */
+@supports ((backdrop-filter: blur(8px)) or (-webkit-backdrop-filter: blur(8px))){
+  .stat{backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+  .hero .btn{backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+  .kj-backdrop{backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+}
+.searchbar{margin:24px 0 16px;position:relative}
+.searchbar svg{position:absolute;left:16px;top:50%;transform:translateY(-50%);width:17px;height:17px;stroke:var(--text2)}
+.searchbar input{
+  width:100%;padding:13px 16px 13px 44px;border-radius:999px;border:1px solid var(--line);
+  background:var(--card);color:var(--text);font:inherit;font-size:15px;outline:none;box-shadow:var(--shadow);
+  transition:border-color .15s ease, box-shadow .15s ease;
+}
+.searchbar input::placeholder{color:var(--text2);opacity:.85}
+.searchbar input:focus{border-color:var(--accent);box-shadow:var(--shadow), var(--ring)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:14px}
+.card{
+  text-align:left;background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:18px 18px 16px;box-shadow:var(--shadow);
+  transition:transform .16s ease, border-color .16s ease, box-shadow .16s ease;
+  display:flex;flex-direction:column;gap:9px;position:relative;overflow:hidden;
+}
+/* animasi masuk dibatasi hanya 12 kartu pertama demi performa */
+.grid>.card:nth-child(-n+12){animation:rise .3s ease both}
+.card::before{
+  content:"";position:absolute;top:0;left:0;right:0;height:4px;
+  background:linear-gradient(90deg,var(--accent),var(--purple),var(--sakura));
+  opacity:0;transition:opacity .18s ease;
+}
+.grid>.card:nth-child(2){animation-delay:.04s}
+.grid>.card:nth-child(3){animation-delay:.08s}
+.grid>.card:nth-child(4){animation-delay:.12s}
+.grid>.card:nth-child(5){animation-delay:.16s}
+.grid>.card:nth-child(6){animation-delay:.20s}
+.grid>.card:nth-child(7){animation-delay:.24s}
+.grid>.card:nth-child(8){animation-delay:.28s}
+.card:hover{transform:translateY(-3px);border-color:rgba(62,79,168,.45);box-shadow:var(--shadow-lg)}
+.card:hover::before{opacity:1}
+.card .hari{font-size:12px;font-weight:800;letter-spacing:.10em;text-transform:uppercase;color:var(--accent)}
+.card .done-badge{position:absolute;top:12px;right:12px;font-size:11.5px;font-weight:700;color:var(--green);background:var(--green-soft);border:1px solid rgba(76,128,85,.28);border-radius:99px;padding:2px 10px}
+.card h3{font-size:15.5px;line-height:1.45;font-weight:700;letter-spacing:-.005em}
+.card .kt{font-size:13px;color:var(--text2);display:flex;gap:6px;align-items:baseline}
+.card .kt .tag{flex:none;font-size:10.5px;font-weight:800;letter-spacing:.06em;color:var(--purple);background:var(--purple-soft);border-radius:5px;padding:2px 7px;text-transform:uppercase}
+.card .kt.b .tag{color:var(--accent);background:var(--accent-soft)}
+.empty{padding:44px 12px;text-align:center;color:var(--text2)}
+
+/* ===== Shared ===== */
+.topbar{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap}
+.btn{
+  display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--card);
+  border-radius:10px;padding:8px 14px;font-size:13.5px;font-weight:600;box-shadow:var(--shadow);
+  transition:transform .14s ease, border-color .14s ease, color .14s ease, background .14s ease;
+}
+.btn:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.btn.done-on{border-color:rgba(76,128,85,.4);color:var(--green);background:var(--green-soft)}
+.mini{font-size:12.5px;font-weight:600;color:var(--text2);border:1px solid var(--line);border-radius:99px;padding:5px 13px;background:var(--card);box-shadow:var(--shadow);transition:border-color .14s ease, color .14s ease}
+.mini:hover{color:var(--accent);border-color:var(--accent)}
+.spacer{flex:1}
+
+/* ===== Bab view ===== */
+.bab-head{padding:4px 2px 16px}
+.bab-head .hari{font-size:12.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.bab-head h2{font-size:clamp(23px,3.8vw,31px);line-height:1.25;margin-top:3px;letter-spacing:-.015em;font-weight:800}
+.tabs{display:inline-flex;gap:4px;background:var(--bg2);border:1px solid var(--line);border-radius:999px;padding:4px;margin-bottom:20px}
+.tab{padding:8px 18px;font-size:14px;font-weight:700;color:var(--text2);border-radius:999px;transition:color .14s ease, background .14s ease, box-shadow .14s ease}
+.tab:hover{color:var(--text)}
+.tab.on{background:var(--tab-on-bg);color:var(--accent);box-shadow:var(--tab-on-shadow)}
+.toolrow{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+
+/* grammar point */
+.gp{
+  background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);
+  margin-bottom:12px;overflow:hidden;transition:border-color .15s ease, box-shadow .15s ease;
+  animation:rise .3s ease both;
+}
+.gp:hover{border-color:rgba(62,79,168,.35)}
+.gp.open{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent), var(--shadow)}
+.gp-head{width:100%;display:flex;align-items:center;gap:10px;padding:15px 18px;text-align:left}
+.gp-head:hover{background:var(--accent-soft)}
+.gp.open .gp-head{background:var(--accent-soft)}
+.gp-head .pat{font-size:16.5px;font-weight:700;line-height:1.45}
+.gp-head .arti{flex:none;font-size:12px;font-weight:700;color:var(--accent);background:var(--accent-soft);border-radius:99px;padding:3px 11px;white-space:nowrap}
+.gp.open .gp-head .arti{background:var(--card)}
+.gp-head .chev{flex:none;margin-left:auto;color:var(--text2);transition:transform .18s ease, color .18s ease;font-size:11px}
+.gp.open .gp-head .chev{transform:rotate(90deg);color:var(--accent)}
+.gp-body{display:none;padding:4px 20px 18px;border-top:1px dashed var(--line)}
+.gp.open .gp-body{display:block}
+.gp-body .rumus{background:var(--accent-soft);border:1px dashed rgba(62,79,168,.45);padding:10px 13px;border-radius:10px;font-size:13.5px;line-height:1.7;margin:12px 0 4px}
+.gp-body .note{font-size:13.5px;color:var(--text2);background:var(--bg2);border-radius:10px;padding:10px 13px;margin:10px 0 4px}
+.gp-body .warn{font-size:13.5px;color:var(--orange);background:var(--orange-soft);border-radius:10px;padding:10px 13px;margin:10px 0 4px}
+.exs{list-style:none;margin-top:12px}
+.exs li{
+  font-size:15.5px;padding:8px 12px 8px 15px;border-left:3px solid var(--accent-soft);margin:7px 0;line-height:1.75;
+  border-radius:0 8px 8px 0;transition:border-color .15s ease, background .15s ease;
+}
+.exs li:hover{border-left-color:var(--accent);background:var(--accent-soft)}
+
+/* kotoba */
+.kt-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+.kt-head .theme{font-size:18px;font-weight:800;letter-spacing:-.01em}
+.kt-head .sub{font-size:13px;color:var(--text2)}
+.switch{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--text2);border:1px solid var(--line);background:var(--card);border-radius:99px;padding:6px 14px;margin-left:auto;box-shadow:var(--shadow);transition:border-color .14s ease, color .14s ease}
+.switch:hover{border-color:var(--accent);color:var(--accent)}
+.switch .dot{width:26px;height:15px;border-radius:99px;background:var(--switch-track-off);position:relative;transition:background .15s}
+.switch .dot::after{content:"";position:absolute;top:2px;left:2px;width:11px;height:11px;border-radius:50%;background:var(--switch-knob);box-shadow:0 1px 2px rgba(0,0,0,.22);transition:left .15s}
+.switch.on{color:var(--accent);border-color:var(--accent)}
+.switch.on .dot{background:var(--accent)}
+.switch.on .dot::after{left:13px}
+.hint{font-size:12.5px;color:var(--text2);margin:2px 0 10px}
+.words{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-top:8px}
+.word{
+  background:var(--card);border:1px solid var(--line);border-radius:13px;padding:14px 16px;box-shadow:var(--shadow);
+  transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+}
+.words>.word:nth-child(-n+12){animation:rise .3s ease both}
+.words>.word:nth-child(2){animation-delay:.03s}
+.words>.word:nth-child(3){animation-delay:.06s}
+.words>.word:nth-child(4){animation-delay:.09s}
+.words>.word:nth-child(5){animation-delay:.12s}
+.words>.word:nth-child(6){animation-delay:.15s}
+.word:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg);border-color:rgba(138,95,168,.4)}
+.word .w-line{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.word .w{font-size:18px;font-weight:800}
+.word .k{font-size:12.5px;color:var(--text2)}
+.word .m{font-size:14px;color:var(--green);font-weight:700;margin-top:2px}
+.word .ex{font-size:13px;color:var(--text2);margin-top:6px;border-top:1px dashed var(--line);padding-top:6px;line-height:1.7}
+.word.veiled{cursor:pointer}
+.word.veiled .m,.word.veiled .ex{filter:blur(6px);user-select:none;transition:filter .18s ease}
+.word.veiled.shown .m,.word.veiled.shown .ex{filter:none}
+.kt-none{background:var(--card);border:1px dashed var(--line);border-radius:14px;padding:36px 22px;text-align:center;color:var(--text2);font-size:14px}
+.kt-none b{display:block;font-size:15px;color:var(--text);margin-bottom:4px}
+
+/* ===== Kanji flashcard ===== */
+.kj-toprow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.kj-hint{font-size:12.5px;color:var(--text2);margin:2px 0 14px}
+.kj-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;margin-top:6px}
+.kj-card{position:relative;aspect-ratio:1/1;cursor:pointer;perspective:1200px;transition:transform .16s ease}
+/* 104 kartu: animasi masuk hanya untuk 12 kartu pertama */
+.kj-grid>.kj-card:nth-child(-n+12){animation:rise .3s ease both}
+.kj-grid>.kj-card:nth-child(2){animation-delay:.03s}
+.kj-grid>.kj-card:nth-child(3){animation-delay:.06s}
+.kj-grid>.kj-card:nth-child(4){animation-delay:.09s}
+.kj-grid>.kj-card:nth-child(5){animation-delay:.12s}
+.kj-grid>.kj-card:nth-child(6){animation-delay:.15s}
+.kj-grid>.kj-card:nth-child(7){animation-delay:.18s}
+.kj-grid>.kj-card:nth-child(8){animation-delay:.21s}
+.kj-card:hover{transform:translateY(-3px)}
+.kj-inner{position:relative;width:100%;height:100%;transition:transform .55s cubic-bezier(.4,.2,.2,1);transform-style:preserve-3d}
+.kj-card.flip .kj-inner{transform:rotateY(180deg)}
+.kj-face{
+  position:absolute;inset:0;border-radius:16px;border:1px solid var(--line);background:var(--card);
+  box-shadow:var(--shadow);backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  display:flex;flex-direction:column;padding:10px;overflow:hidden;
+}
+.kj-front{align-items:center;justify-content:center;gap:4px;text-align:center;background:var(--grad);border:none;color:#fff}
+.kj-front::before{
+  content:"";position:absolute;inset:0;pointer-events:none;border-radius:16px;
+  background:radial-gradient(circle at 82% 10%, rgba(255,255,255,.22), transparent 55%);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);
+}
+.kj-front .kj-no{position:absolute;top:8px;left:10px;font-size:10.5px;color:rgba(255,255,255,.65);font-weight:700}
+.kj-front .kj-ch{font-size:46px;font-weight:800;line-height:1;text-shadow:0 2px 8px rgba(15,10,40,.4)}
+.kj-front .kj-tap{font-size:10px;color:rgba(255,255,255,.68);margin-top:4px}
+.kj-back{transform:rotateY(180deg);overflow-y:auto;text-align:left;gap:5px}
+.kj-back .kj-ch2{font-size:19px;font-weight:800;display:flex;align-items:baseline;gap:7px;flex-wrap:wrap}
+.kj-back .kj-baca{font-size:11.5px;color:var(--accent);font-weight:700}
+.kj-back .kj-kata{list-style:none;font-size:11px;color:var(--text2);line-height:1.55}
+.kj-back .kj-kalimat{font-size:10.5px;color:var(--text2);border-top:1px dashed var(--line);margin-top:2px;padding-top:4px;line-height:1.5}
+.kj-back .kj-kalimat .jp{color:var(--text);display:block;margin-bottom:2px}
+.kj-back::-webkit-scrollbar{width:6px}
+.kj-back::-webkit-scrollbar-thumb{background:var(--line);border-radius:6px}
+
+/* ===== Pop up detail kanji ===== */
+.kj-modal{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:18px}
+.kj-backdrop{position:absolute;inset:0;background:rgba(18,16,30,.6)}
+.kj-dialog{
+  position:relative;width:100%;max-width:560px;max-height:min(88vh,720px);display:flex;flex-direction:column;
+  background:var(--card);border:1px solid var(--line);border-radius:20px;
+  box-shadow:0 18px 60px rgba(10,8,25,.35);overflow:hidden;animation:kjpop .18s ease;
+}
+@keyframes kjpop{from{transform:translateY(12px) scale(.97);opacity:0}to{transform:none;opacity:1}}
+.kj-close{position:absolute;top:12px;right:12px;z-index:2;width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px;cursor:pointer;color:var(--text2);background:var(--bg2);border:1px solid var(--line);transition:color .14s ease, border-color .14s ease}
+.kj-close:hover{color:var(--red);border-color:var(--red)}
+.kj-dialog-body{overflow-y:auto;padding:24px 24px 22px}
+.kjm-head{display:flex;align-items:center;gap:16px;margin-bottom:16px;padding-right:40px}
+.kjm-ch{font-size:52px;font-weight:800;line-height:1;background:var(--grad);color:#fff;border-radius:16px;padding:16px 20px;box-shadow:var(--shadow-lg);text-shadow:0 2px 8px rgba(15,10,40,.35)}
+.kjm-headinfo{display:flex;flex-direction:column;gap:3px}
+.kjm-no{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text2)}
+.kjm-baca{font-size:15px;font-weight:700;color:var(--accent)}
+.kjm-yomi{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:4px 0 6px}
+.kjm-yomibox{border:1px solid var(--line);border-radius:12px;padding:10px 13px;background:var(--bg2)}
+.kjm-yomibox .lbl{display:block;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px}
+.kjm-yomibox.on .lbl{color:var(--accent)}
+.kjm-yomibox.kun .lbl{color:var(--green)}
+.kjm-yomibox.on{background:var(--accent-soft);border-color:rgba(62,79,168,.3)}
+.kjm-yomibox.kun{background:var(--green-soft);border-color:rgba(76,128,85,.3)}
+.kjm-yomibox .val{font-size:15.5px;font-weight:700;line-height:1.5}
+.kjm-sec{display:flex;align-items:center;gap:10px;font-size:11.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text2);margin:18px 0 6px}
+.kjm-sec::after{content:"";flex:1;height:1px;background:var(--line)}
+.kjm-ju{list-style:none}
+.kjm-ju li{display:flex;flex-wrap:wrap;gap:2px 8px;padding:8px 0;border-bottom:1px dashed var(--line);font-size:14.5px;line-height:1.6}
+.kjm-ju li:last-child{border-bottom:none}
+.kjm-ju .wr{font-weight:700}
+.kjm-ju .m{color:var(--green)}
+.kjm-ex{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:14.5px;line-height:1.7}
+.kjm-ex .jp{display:block}
+.kjm-ex .id{display:block;color:var(--text2);font-size:13px}
+.kj-dialog-body::-webkit-scrollbar{width:8px}
+.kj-dialog-body::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px}
+
+.pager{display:flex;gap:12px;margin-top:28px}
+.pager .btn{flex:1;justify-content:center;padding:12px;border-radius:12px}
+.pager .btn small{color:var(--text2);font-weight:400}
+.footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--line);font-size:12.5px;color:var(--text2);text-align:center;line-height:1.8}
+.footer::before{content:"❀";display:block;font-size:15px;color:var(--sakura);margin-bottom:8px}
+
+@media (max-width:520px){
+  .wrap{padding:16px 14px 52px}
+  .hero{padding:26px 20px 24px;border-radius:18px}
+  .hero::after{font-size:118px;bottom:-32px;right:6px}
+  .stats{gap:8px}
+  .stat{padding:8px 12px}
+  .gp-head{flex-wrap:wrap}
+  .gp-head .arti{order:3}
+  .switch{margin-left:0}
+  .tabs{width:100%;display:flex}
+  .tab{flex:1;text-align:center;padding:9px 8px}
+  .kj-grid{grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:10px}
+  .kj-front .kj-ch{font-size:36px}
+  .kjm-yomi{grid-template-columns:1fr}
+  .kjm-ch{font-size:42px;padding:13px 16px}
+  .kj-dialog-body{padding:18px 16px 16px}
+}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    animation-duration:.01ms !important;
+    animation-delay:0ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.01ms !important;
+    transition-delay:0ms !important;
+  }
+}
+
+ruby{ruby-align:center}
+ruby rt{font-size:.58em;color:var(--rt);font-weight:600;line-height:1;letter-spacing:0;user-select:none}
+.k ruby rt,.w ruby rt{color:var(--rt)}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+const BUNPOU = [
+{hari:1,bab:1,title:"Perkenalan: 〜は 〜です",points:[
+{p:"〜は 〜です",rumus:"KB1 は + KB2 です",arti:"KB1 adalah KB2",note:"Partikel は dibaca WA. です membuat kalimat jadi sopan.",ex:["わたしは マイク・ミラーです。= Saya Mike Miller.","わたしは インドネシア人です。= Saya orang Indonesia."]},
+{p:"〜じゃ ありません",rumus:"KB + じゃ ありません",arti:"bukan KB (bentuk negatif です)",note:"では ありません = versi lebih formal (bahasa tulisan/pidato).",ex:["サントスさんは 学生じゃ ありません。= Sdr. Santos bukan pelajar."]},
+{p:"〜ですか",rumus:"Kalimat + か",arti:"kalimat tanya",note:"Urutan kata tidak berubah — cukup tambah か di akhir kalimat.",ex:["ミラーさんは 会社員ですか。…はい、会社員です。= Apakah Mr. Miller karyawan? …Ya, karyawan."]},
+{p:"〜も",rumus:"KB + も + です",arti:"KB juga",warn:"も MENGGANTIKAN は, bukan dipakai bersamaan.",ex:["カリナさんも 学生です。= Karina juga pelajar."]},
+{p:"KB の KB",rumus:"KB1 の KB2",arti:"KB2 milik / bagian dari KB1",ex:["IMCの 社員です。= Karyawan (perusahaan) IMC.","さくら大学の 学生です。= Mahasiswa Universitas Sakura."]}
+]},
+{hari:2,bab:2,title:"Benda: これ・それ・あれ",points:[
+{p:"これ / それ / あれ",rumus:"これ（dekat saya）・それ（dekat lawan bicara）・あれ（jauh dari keduanya）+ は 〜です",arti:"ini / itu / itu yang jauh",ex:["これは 辞書です。= Ini kamus.","あれは わたしの かばんです。= Itu (yang jauh) tas saya."]},
+{p:"この / その / あの + KB",rumus:"この・その・あの + KB",arti:"KB ini / KB itu",warn:"この・その・あの tidak bisa berdiri sendiri — harus diikuti kata benda.",ex:["この 本は わたしのです。= Buku ini punya saya.","あの 人は だれですか。= Orang itu siapa?"]},
+{p:"〜の (kepunyaan)",rumus:"Orang + の（kata bendanya boleh dihilangkan）",arti:"punya ...",ex:["それは わたしの 傘です。= Itu payung saya.","この かぎは わたしのです。= Kunci ini punya saya."]},
+{p:"A ですか、B ですか",rumus:"KB1 ですか、KB2 ですか",arti:"pertanyaan pilihan: A atau B?",ex:["これは「9」ですか、「7」ですか。…「9」です。= Ini 9 atau 7? …9."]},
+{p:"そうです / そうじゃありません",rumus:"はい、そうです｜いいえ、そうじゃありません",arti:"ya, benar / bukan begitu",ex:["それは テレホンカードですか。…はい、そうです。= Apakah itu kartu telepon? …Ya, benar."]}
+]},
+{hari:3,bab:3,title:"Tempat: ここ・そこ・あそこ",points:[
+{p:"ここ / そこ / あそこ",rumus:"ここ（sini）・そこ（situ）・あそこ（sana）+ は + KB です",arti:"menunjukkan tempat",ex:["ここは 食堂です。= Di sini kantin.","トイレは あそこです。= Toilet di sana."]},
+{p:"〜は どこですか",rumus:"KB + は + どこですか",arti:"... ada di mana?",ex:["エレベーターは どこですか。…あちらです。= Lift di mana? …Di sebelah sana."]},
+{p:"こちら / そちら / あちら",rumus:"こちら・そちら・あちら = versi sopan dari ここ・そこ・あそこ",arti:"sebelah sini / situ / sana (sopan)",ex:["お手洗いは こちらです。= Toilet di sebelah sini."]},
+{p:"〜は いくらですか",rumus:"KB + は + いくらですか",arti:"berapa harga ...?",ex:["この ワインは いくらですか。…2500円です。= Anggur ini berapa? …2.500 yen."]}
+]},
+{hari:4,bab:4,title:"Jam & Kata Kerja: 〜時に 起きます",points:[
+{p:"今 〜時〜分です",rumus:"今 + angka 時 + angka 分 です",arti:"sekarang jam ...",warn:"Bacaan khusus: 4時=よじ、7時=しちじ、9時=くじ",ex:["今 何時ですか。…7時10分です。= Sekarang jam berapa? …Jam 7.10."]},
+{p:"〜ます / 〜ません / 〜ました / 〜ませんでした",rumus:"ます（akan・kebiasaan）｜ません（tidak）｜ました（lampau）｜ませんでした（lampau negatif）",arti:"4 bentuk dasar kata kerja sopan",ex:["毎朝 6時に 起きます。= Setiap pagi bangun jam 6.","きのう 勉強しませんでした。= Kemarin tidak belajar."]},
+{p:"Waktu + に",rumus:"Jam / hari + に + KK",arti:"pada (waktu)",warn:"に hanya untuk waktu berangka: 6時に、日曜日に. Kata seperti きょう・あした・毎朝 TANPA に.",ex:["6時半に 起きます。= Bangun jam 6.30.","日曜日に 奈良へ 行きます。= Hari Minggu pergi ke Nara."]},
+{p:"〜から 〜まで",rumus:"Waktu1 + から + Waktu2 + まで",arti:"dari ... sampai ...",ex:["銀行は 9時から 3時までです。= Bank buka dari jam 9 sampai jam 3.","昼休みは 12時から 1時までです。= Istirahat siang dari jam 12 sampai jam 1."]}
+]},
+{hari:5,bab:5,title:"Pergi・Datang・Pulang (へ)",points:[
+{p:"Tempat へ 行きます / 来ます / 帰ります",rumus:"Tempat + へ + 行きます／来ます／帰ります",arti:"pergi / datang / pulang ke ...",note:"Partikel へ dibaca E.",ex:["京都へ 行きます。= Pergi ke Kyoto.","うちへ 帰ります。= Pulang ke rumah."]},
+{p:"どこ[へ]も 〜ません",rumus:"どこへも + KK bentuk negatif",arti:"tidak pergi ke mana-mana",ex:["どこも 行きません。= Tidak pergi ke mana pun."]},
+{p:"Kendaraan で",rumus:"Kendaraan + で + 行きます",arti:"pergi naik ...",note:"Jalan kaki = 歩いて（tanpa で）",ex:["電車で 大阪へ 行きます。= Ke Osaka naik kereta.","歩いて 帰ります。= Pulang jalan kaki."]},
+{p:"Orang と",rumus:"Orang + と + KK",arti:"bersama ...",note:"Sendirian = ひとりで",ex:["家族と 日本へ 来ました。= Datang ke Jepang bersama keluarga."]},
+{p:"いつ",rumus:"いつ + KK ますか（いつ tidak pakai partikel）",arti:"kapan?",ex:["いつ 日本へ 来ましたか。…3月20日に 来ました。= Kapan datang ke Jepang? …Tanggal 20 Maret."]}
+]},
+{hari:6,bab:6,title:"Partikel を & Ajakan",points:[
+{p:"KB を + Kata Kerja",rumus:"KB (objek) + を + KK",arti:"partikel penanda objek",ex:["ジュースを 飲みます。= Minum jus.","本を 読みます。= Membaca buku."]},
+{p:"何を しますか",rumus:"何を + KK ますか",arti:"melakukan apa?",ex:["日曜日、何を しますか。…テニスを します。= Hari Minggu ngapain? …Main tenis."]},
+{p:"一緒に 〜ませんか",rumus:"一緒に + KK ませんか",arti:"maukah ... bersama? (ajakan halus)",ex:["一緒に ごはんを 食べませんか。…ええ、いいですね。= Mau makan bersama? …Boleh, bagus tuh."]},
+{p:"〜ましょう",rumus:"KK ます（buang ます）+ ましょう",arti:"ayo ... (sudah disepakati)",ex:["ちょっと 休みましょう。= Ayo istirahat sebentar."]}
+]},
+{hari:7,bab:7,title:"Alat & Memberi-Menerima",points:[
+{p:"KB で (alat/cara)",rumus:"Alat/bahasa + で + KK",arti:"dengan / memakai ...",ex:["はしで 食べます。= Makan dengan sumpit.","日本語で レポートを 書きます。= Menulis laporan dalam bahasa Jepang."]},
+{p:"あげます",rumus:"Orang + に + KB を + あげます",arti:"memberi (saya → orang lain)",ex:["友だちに プレゼントを あげます。= Memberi hadiah kepada teman."]},
+{p:"もらいます",rumus:"Orang + に／から + KB を + もらいます",arti:"menerima (dari orang lain)",ex:["母に セーターを もらいました。= Menerima sweter dari ibu."]},
+{p:"もう 〜ました / まだです",rumus:"もう + KK ました（sudah）｜まだです（belum）",arti:"sudah ... / belum",warn:"Jawaban belum = まだです, JANGAN まだしませんでした",ex:["もう 昼ごはんを 食べましたか。…いいえ、まだです。= Sudah makan siang? …Belum."]}
+]},
+{hari:8,bab:8,title:"Kata Sifat い & な",points:[
+{p:"KS-い & KS-な (bentuk positif)",rumus:"KS-い: 〜いです（高いです）｜KS-な: 〜です（きれいです）",arti:"kalimat kata sifat",ex:["富士山は 高いです。= Gunung Fuji tinggi.","桜は きれいです。= Sakura indah."]},
+{p:"Bentuk negatif kata sifat",rumus:"KS-い: buang い + くないです（高くないです）｜KS-な: じゃありません（きれいじゃありません）",arti:"tidak ...",warn:"いい → よくないです（tidak beraturan!）",ex:["この 部屋は 広くないです。= Kamar ini tidak luas.","暇じゃありません。= Tidak senggang."]},
+{p:"KS + Kata Benda",rumus:"KS-い + KB（高い山）｜KS-な + な + KB（きれいな花）",arti:"KB yang ...",warn:"KS-な wajib pakai な sebelum KB!",ex:["きれいな 花ですね。= Bunga yang indah ya.","東京は にぎやかな 町です。= Tokyo kota yang ramai."]},
+{p:"とても / あまり",rumus:"とても + KS（positif）｜あまり + KS negatif",arti:"sangat / tidak begitu",ex:["とても おいしいです。= Sangat enak.","あまり 高くないです。= Tidak begitu mahal."]},
+{p:"〜は どうですか",rumus:"KB + は どうですか",arti:"bagaimana ...?",ex:["日本の 生活は どうですか。…楽しいです。= Bagaimana kehidupan di Jepang? …Menyenangkan."]}
+]},
+{hari:9,bab:9,title:"Suka-Benci & Alasan",points:[
+{p:"〜が 好き／嫌い／上手／下手",rumus:"KB + が + 好きです／嫌いです／上手です／下手です",arti:"suka / benci / pandai / tidak pandai",warn:"Pakai が, bukan を!",ex:["果物が 好きです。= Suka buah.","マリアさんは 歌が 上手です。= Maria pandai menyanyi."]},
+{p:"〜が 分かります／あります",rumus:"KB + が + 分かります／あります",arti:"mengerti ... / punya ...",ex:["日本語が 分かります。= Mengerti bahasa Jepang.","時間が ありません。= Tidak punya waktu."]},
+{p:"どんな + KB",rumus:"どんな + KB",arti:"KB yang seperti apa?",ex:["どんな 音楽が 好きですか。…ポップスが 好きです。= Suka musik apa? …Suka pop."]},
+{p:"〜から (alasan)",rumus:"Kalimat alasan + から、+ kalimat hasil",arti:"karena ..., maka ...",ex:["時間が ありませんから、新聞を 読みません。= Karena tidak ada waktu, tidak baca koran."]},
+{p:"どうして",rumus:"どうして + 〜か｜jawab: 〜から",arti:"kenapa? …karena ...",ex:["どうして きのう 休みましたか。…頭が 痛かったからです。= Kenapa kemarin libur? …Karena sakit kepala."]}
+]},
+{hari:10,bab:10,title:"Keberadaan: あります・います",points:[
+{p:"あります / います",rumus:"Benda／tumbuhan: あります｜Orang／hewan: います",arti:"ada ...",warn:"Jangan tertukar: 猫が います、机が あります",ex:["あそこに コンビニが あります。= Di sana ada minimarket.","公園に 子どもが います。= Di taman ada anak-anak."]},
+{p:"Tempat に 〜が あります／います",rumus:"Tempat + に + KB + が + あります／います",arti:"di ... ada ...",ex:["机の 上に 写真が あります。= Di atas meja ada foto."]},
+{p:"KB は Tempat に あります／います",rumus:"KB + は + tempat + に + あります／います",arti:"... ada di ... (yang ditanya bendanya)",ex:["ミラーさんは 会議室に います。= Mr. Miller ada di ruang rapat.","郵便局は 駅の 近くに あります。= Kantor pos ada di dekat stasiun."]},
+{p:"Kata posisi",rumus:"上（うえ）・下（した）・前（まえ）・後ろ（うしろ）・中（なか）・外（そと）・隣（となり）・近く（ちかく）・間（あいだ）",arti:"atas, bawah, depan, belakang, dalam, luar, sebelah, dekat, antara",ex:["銀行と 本屋の 間に 喫茶店が あります。= Antara bank dan toko buku ada kafe."]},
+{p:"〜や 〜（など）",rumus:"KB1 + や + KB2（+ など）",arti:"... dan ... dll. (contoh, tidak semua)",warn:"と = menyebut semua｜や = hanya contoh",ex:["箱の 中に 手紙や 写真などが あります。= Di dalam kotak ada surat, foto, dll."]}
+]},
+{hari:11,bab:11,title:"Kata Bantu Bilangan",points:[
+{p:"ひとつ・ふたつ… / 〜人・〜枚・〜台",rumus:"Benda umum: ひとつ・ふたつ・みっつ…｜Orang: 〜人｜Lembar: 〜枚｜Mesin/mobil: 〜台｜Benda panjang: 〜本｜Buku: 〜冊",arti:"kata bantu bilangan (satuan)",warn:"1 orang = ひとり、2 orang = ふたり、mulai 3 = さんにん…",ex:["りんごを 四つ 買いました。= Membeli 4 apel.","学生が 二人 います。= Ada 2 pelajar."]},
+{p:"Posisi angka dalam kalimat",rumus:"KB + を + angka + KK（angka TANPA partikel）",arti:"jumlah diletakkan sebelum kata kerja",ex:["切手を 五枚 ください。= Minta 5 lembar perangko."]},
+{p:"どのくらい",rumus:"どのくらい + KK ますか",arti:"berapa lama?",ex:["どのくらい 日本語を 勉強しましたか。…3年 勉強しました。= Berapa lama belajar bahasa Jepang? …3 tahun."]},
+{p:"Periode に 〜回",rumus:"Periode + に + 〜回 + KK",arti:"... kali per ...",ex:["一か月に 二回 映画を 見ます。= Nonton film 2 kali sebulan."]}
+]},
+{hari:12,bab:12,title:"Lampau & Perbandingan",points:[
+{p:"Bentuk lampau です & kata sifat",rumus:"KB・KS-な: 〜でした／〜じゃありませんでした｜KS-い: buang い + かったです／くなかったです",arti:"dulu / kemarin ...",warn:"いい → よかったです（tidak beraturan）",ex:["きのうは 暑かったです。= Kemarin panas.","旅行は 楽しかったです。= Perjalanannya menyenangkan."]},
+{p:"〜は 〜より",rumus:"A + は + B + より + KS です",arti:"A lebih KS daripada B",ex:["飛行機は 船より 速いです。= Pesawat lebih cepat daripada kapal."]},
+{p:"〜と 〜と どちらが",rumus:"A + と + B + と + どちらが + KS ですか",arti:"A atau B, mana yang lebih ...?",note:"Jawab: 〜のほうが + KS です",ex:["サッカーと 野球と どちらが おもしろいですか。…サッカーのほうが おもしろいです。= Sepak bola atau bisbol, mana lebih seru? …Sepak bola."]},
+{p:"〜で 〜が いちばん",rumus:"Kelompok + [の中]で + 何／どこ／だれ + が + いちばん + KS ですか",arti:"paling ... di antara ...",ex:["日本料理で 何が いちばん おいしいですか。…てんぷらが いちばん おいしいです。= Masakan Jepang apa yang paling enak? …Tempura."]}
+]},
+{hari:13,bab:13,title:"Keinginan: ほしい・たい",points:[
+{p:"〜が ほしいです",rumus:"KB + が + ほしいです",arti:"ingin punya ...",ex:["友だちが ほしいです。= Ingin punya teman.","もっと 大きい うちが ほしいです。= Ingin rumah yang lebih besar."]},
+{p:"〜たいです",rumus:"KK bentuk ます（buang ます）+ たいです",arti:"ingin melakukan ...",note:"Partikel を boleh diganti が: てんぷらが 食べたいです",ex:["沖縄へ 行きたいです。= Ingin pergi ke Okinawa.","何も 食べたくないです。= Tidak ingin makan apa pun."]},
+{p:"〜へ 〜に 行きます",rumus:"Tempat + へ + KK ます（buang ます）／KB + に + 行きます",arti:"pergi ke ... untuk ...",ex:["神戸へ インド料理を 食べに 行きます。= Pergi ke Kobe untuk makan masakan India.","大阪へ 買い物に 行きます。= Pergi ke Osaka untuk belanja."]},
+{p:"どこか / 何か",rumus:"どこか（suatu tempat）／何か（sesuatu）",arti:"suatu tempat / sesuatu",ex:["どこか 行きましたか。…いいえ、どこも 行きませんでした。= Pergi ke suatu tempat? …Tidak, tidak ke mana-mana."]}
+]},
+{hari:14,bab:14,title:"Bentuk て & 〜てください",points:[
+{p:"Cara membentuk bentuk て",rumus:"G1: き→いて・ぎ→いで・み,び,に→んで・い,ち,り→って・し→して｜G2: + て（たべて）｜G3: して・きて",arti:"bentuk て (dasar banyak pola!)",warn:"行きます → 行って（pengecualian!）",ex:["書きます→書いて／飲みます→飲んで／買います→買って／食べます→食べて"]},
+{p:"〜てください",rumus:"KK bentuk て + ください",arti:"tolong ...",ex:["ちょっと 待ってください。= Tolong tunggu sebentar.","ここに 名前を 書いてください。= Tolong tulis nama di sini."]},
+{p:"〜ています (sedang)",rumus:"KK bentuk て + います",arti:"sedang ...",ex:["今 雨が 降っています。= Sekarang sedang hujan.","ミラーさんは 電話を かけています。= Mr. Miller sedang menelepon."]},
+{p:"〜ましょうか",rumus:"KK ます（buang ます）+ ましょうか",arti:"maukah saya ...? (menawarkan bantuan)",ex:["荷物を 持ちましょうか。…すみません、お願いします。= Mau saya bawakan barangnya? …Maaf merepotkan, ya."]}
+]},
+{hari:15,bab:15,title:"Izin & Larangan: てもいい・てはいけない",points:[
+{p:"〜てもいいです",rumus:"KK bentuk て + もいいです",arti:"boleh ...",ex:["写真を 撮ってもいいですか。…ええ、いいですよ。= Boleh ambil foto? …Ya, silakan."]},
+{p:"〜てはいけません",rumus:"KK bentuk て + はいけません",arti:"tidak boleh / dilarang ...",ex:["ここで たばこを 吸ってはいけません。= Dilarang merokok di sini."]},
+{p:"〜ています (status)",rumus:"KK bentuk て + います（keadaan yang terus berlanjut）",arti:"keadaan: tinggal, menikah, punya, tahu",warn:"Tahu = 知っています, tapi TIDAK tahu = 知りません（bukan 知っていません）",ex:["大阪に 住んでいます。= Tinggal di Osaka.","結婚しています。= Sudah menikah."]}
+]},
+{hari:16,bab:16,title:"Menyambung Kalimat: 〜て、〜て",points:[
+{p:"〜て、〜て、それから",rumus:"KK1 bentuk て、+ KK2 bentuk て、（+ それから）+ KK3",arti:"melakukan A, lalu B, kemudian C (berurutan)",ex:["朝 ジョギングを して、シャワーを 浴びて、会社へ 行きます。= Pagi jogging, mandi, lalu berangkat kerja."]},
+{p:"Menyambung kata sifat: くて・で",rumus:"KS-い: buang い + くて（安くて）｜KS-な・KB: + で（きれいで、独身で）",arti:"... dan ... (menggabung sifat)",ex:["奈良は 静かで、きれいな 町です。= Nara kota yang tenang dan indah.","この 部屋は 広くて、明るいです。= Kamar ini luas dan terang."]},
+{p:"〜てから",rumus:"KK1 bentuk て + から、+ KK2",arti:"setelah A, baru B",ex:["仕事が 終わってから、泳ぎに 行きます。= Setelah kerja selesai, pergi berenang."]},
+{p:"どうやって",rumus:"どうやって + KK ますか",arti:"bagaimana caranya ...?",ex:["大学まで どうやって 行きますか。…16番の バスに 乗って、大学前で 降ります。= Ke universitas naik apa? …Naik bus no. 16, turun di depan kampus."]}
+]},
+{hari:17,bab:17,title:"Bentuk ない & Kewajiban",points:[
+{p:"Cara membentuk bentuk ない",rumus:"G1: bunyi -i → -a + ない（かきます→かかない）｜G2: + ない（たべない）｜G3: しない・こない",arti:"bentuk ない (bentuk negatif kasual)",warn:"KK berakhiran います → わない: 買います → 買わない（bukan 買あない）",ex:["行きます→行かない／飲みます→飲まない／食べます→食べない／します→しない"]},
+{p:"〜ないでください",rumus:"KK bentuk ない + でください",arti:"tolong jangan ...",ex:["ここで 写真を 撮らないでください。= Tolong jangan memotret di sini."]},
+{p:"〜なければなりません",rumus:"KK bentuk ない（buang い）+ ければなりません",arti:"harus ...",ex:["薬を 飲まなければなりません。= Harus minum obat."]},
+{p:"〜なくてもいいです",rumus:"KK bentuk ない（buang い）+ くてもいいです",arti:"tidak perlu ...",ex:["あした 来なくてもいいです。= Besok tidak perlu datang."]},
+{p:"〜までに",rumus:"Waktu + までに + KK",arti:"paling lambat / sebelum (batas waktu)",warn:"まで = sampai (terus berlangsung)｜までに = batas akhir (sekali kejadian)",ex:["土曜日までに 本を 返さなければなりません。= Harus mengembalikan buku paling lambat Sabtu."]}
+]},
+{hari:18,bab:18,title:"Bentuk Kamus & ことができます",points:[
+{p:"Cara membentuk bentuk kamus",rumus:"G1: bunyi -i → -u（かきます→かく）｜G2: + る（たべる）｜G3: する・くる",arti:"bentuk kamus (bentuk dasar kata kerja)",ex:["行きます→行く／飲みます→飲む／見ます→見る／します→する"]},
+{p:"〜ことができます",rumus:"KK bentuk kamus + ことができます｜KB + ができます",arti:"bisa / dapat ...",ex:["ミラーさんは 漢字を 読むことができます。= Mr. Miller bisa membaca kanji.","日本語ができます。= Bisa bahasa Jepang."]},
+{p:"趣味は 〜ことです",rumus:"趣味は + KK bentuk kamus + ことです",arti:"hobi saya adalah ...",ex:["趣味は 映画を 見ることです。= Hobi saya menonton film."]},
+{p:"〜まえに",rumus:"KK bentuk kamus／KB + の／Periode + まえに",arti:"sebelum ...",ex:["寝るまえに、本を 読みます。= Sebelum tidur, membaca buku.","食事のまえに、手を 洗います。= Sebelum makan, cuci tangan."]}
+]},
+{hari:19,bab:19,title:"Bentuk た & Pengalaman",points:[
+{p:"Cara membentuk bentuk た",rumus:"Sama seperti bentuk て、ganti て→た、で→だ（書いて→書いた、飲んで→飲んだ）",arti:"bentuk た (bentuk lampau kasual)",ex:["行きます→行った／食べます→食べた／します→した"]},
+{p:"〜たことがあります",rumus:"KK bentuk た + ことがあります",arti:"pernah ...",ex:["馬に 乗ったことがあります。= Pernah naik kuda.","北海道へ 行ったことがありません。= Belum pernah ke Hokkaido."]},
+{p:"〜たり、〜たりします",rumus:"KK1 bentuk た + り、KK2 bentuk た + り + します",arti:"kadang A, kadang B (contoh kegiatan, tidak berurutan)",ex:["日曜日は テニスを したり、映画を 見たりします。= Hari Minggu kadang main tenis, kadang nonton film."]},
+{p:"〜くなります / 〜になります",rumus:"KS-い: buang い + くなります｜KS-な・KB: + になります",arti:"menjadi ...",ex:["寒くなりました。= Menjadi dingin.","元気になりました。= Menjadi sehat.","医者になりたいです。= Ingin jadi dokter."]}
+]},
+{hari:20,bab:20,title:"Bentuk Biasa (Kasual)",points:[
+{p:"Bentuk sopan → bentuk biasa",rumus:"〜ます→bentuk kamus｜〜ません→bentuk ない｜〜ました→bentuk た｜〜ませんでした→〜なかった",arti:"bentuk biasa kata kerja",ex:["行きます→行く／行きません→行かない／行きました→行った／行きませんでした→行かなかった"]},
+{p:"Bentuk biasa KS & KB",rumus:"KS-い: tetap（大きい）｜KS-な・KB: です→だ、じゃありません→じゃない",arti:"bentuk biasa kata sifat & kata benda",ex:["きれいです→きれいだ／雨です→雨だ／雨じゃありません→雨じゃない"]},
+{p:"Percakapan kasual",rumus:"Dipakai ke teman dekat・keluarga｜partikel か・を sering dihilangkan",arti:"gaya bicara santai",note:"ごはん、食べる？…うん、食べる。（naik-turun intonasi menggantikan か）",ex:["あした 東京へ 行く？…うん、行く。= Besok ke Tokyo? …Iya, pergi."]}
+]},
+{hari:21,bab:21,title:"Pendapat: と思います・と言います",points:[
+{p:"〜と 思います",rumus:"Kalimat bentuk biasa + と 思います",arti:"saya pikir / menurut saya ...",note:"Untuk KB & KS-な jangan lupa だ: 雨だと 思います",ex:["あした 雨が 降ると 思います。= Saya pikir besok hujan.","日本は 物価が 高いと 思います。= Menurut saya harga barang di Jepang mahal."]},
+{p:"〜と 言います",rumus:"「…」と 言います（kutipan langsung）｜Kalimat biasa + と 言います（tidak langsung）",arti:"berkata bahwa ...",ex:["寝るまえに「おやすみなさい」と 言います。= Sebelum tidur bilang “oyasuminasai”.","ミラーさんは 来週 大阪へ 行くと 言いました。= Mr. Miller bilang minggu depan pergi ke Osaka."]},
+{p:"〜でしょう？",rumus:"Kalimat bentuk biasa + でしょう？（intonasi naik）",arti:"... kan? (minta persetujuan)",ex:["あした パーティーに 行くでしょう？…ええ、行きます。= Besok datang ke pesta kan? …Iya, datang."]}
+]},
+{hari:22,bab:22,title:"Klausa Penjelas Kata Benda",points:[
+{p:"Kalimat + KB (klausa relatif)",rumus:"Kalimat bentuk biasa + KB（ミラーさんが 住んでいる うち）",arti:"KB yang ... (kalimat jadi penjelas kata benda)",warn:"Subjek di dalam klausa pakai が, bukan は!",ex:["これは ミラーさんが 作った ケーキです。= Ini kue yang dibuat Mr. Miller.","あの 青い シャツを 着ている 人は だれですか。= Siapa orang yang memakai kemeja biru itu?"]},
+{p:"Klausa relatif di berbagai posisi",rumus:"Klausa + KB + は／を／が／に …",arti:"bisa jadi subjek, objek, dll.",ex:["王さんが 描いた 絵は どれですか。= Yang mana lukisan yang digambar Wang?","わたしは 富士山が 見える 部屋が ほしいです。= Saya ingin kamar yang bisa melihat Gunung Fuji."]},
+{p:"〜時間・約束・用事",rumus:"KK bentuk kamus + 時間／約束／用事",arti:"waktu/janji/urusan untuk ...",ex:["朝ごはんを 食べる 時間が ありません。= Tidak ada waktu untuk sarapan."]}
+]},
+{hari:23,bab:23,title:"〜とき & Kondisional と",points:[
+{p:"〜とき",rumus:"KK・KS-い bentuk biasa + とき｜KS-な + な + とき｜KB + の + とき",arti:"ketika / saat ...",ex:["図書館で 本を 借りるとき、カードが 要ります。= Saat meminjam buku di perpustakaan, perlu kartu.","暇なとき、うちへ 遊びに 来ませんか。= Kalau senggang, mau main ke rumah?"]},
+{p:"Bentuk kamus とき vs bentuk た とき",rumus:"KK kamus + とき = belum terjadi｜KK bentuk た + とき = sudah terjadi",arti:"sebelum sampai / setelah sampai",ex:["パリへ 行くとき、かばんを 買いました。= Waktu (mau) berangkat ke Paris, beli tas.","パリへ 行ったとき、かばんを 買いました。= Waktu (sudah sampai) di Paris, beli tas."]},
+{p:"〜と、〜",rumus:"KK bentuk kamus + と、+ hasil yang pasti",arti:"kalau ..., otomatis/pasti ...",note:"Untuk hal alami/mesin: tidak bisa untuk ajakan/perintah.",ex:["このボタンを 押すと、お釣りが 出ます。= Kalau tombol ini ditekan, kembalian keluar.","右へ 曲がると、郵便局が あります。= Kalau belok kanan, ada kantor pos."]}
+]},
+{hari:24,bab:24,title:"くれます & 〜てあげます・もらいます・くれます",points:[
+{p:"くれます",rumus:"Orang lain + は（わたしに）KB を + くれます",arti:"orang lain memberi (kepada saya)",warn:"あげます = saya→orang lain｜くれます = orang lain→saya",ex:["佐藤さんは わたしに クリスマスカードを くれました。= Sato memberi saya kartu Natal."]},
+{p:"〜てあげます",rumus:"KK bentuk て + あげます",arti:"melakukan ... untuk orang lain (kebaikan)",ex:["名前と 住所を 書いてあげます。= Menuliskan nama dan alamat (untuknya)."]},
+{p:"〜てもらいます",rumus:"Orang + に + KK bentuk て + もらいます",arti:"dibantu/menerima kebaikan dari orang",ex:["わたしは 山田さんに 図書館の 電話番号を 教えてもらいました。= Saya diberi tahu nomor telepon perpustakaan oleh Yamada."]},
+{p:"〜てくれます",rumus:"Orang + は（わたしに）+ KK bentuk て + くれます",arti:"orang lain berbaik hati melakukan ... untuk saya",ex:["母は わたしに セーターを 送ってくれました。= Ibu mengirimkan sweter untuk saya."]}
+]},
+{hari:25,bab:25,title:"Pengandaian: 〜たら・〜ても",points:[
+{p:"〜たら (pengandaian)",rumus:"KK・KS bentuk た + ら（行ったら、安かったら、暇だったら）",arti:"kalau / seandainya ...",ex:["お金が あったら、旅行します。= Kalau punya uang, akan berwisata.","安かったら、パソコンを 買いたいです。= Kalau murah, ingin beli komputer."]},
+{p:"〜たら (setelah)",rumus:"KK bentuk た + ら、〜（hal yang pasti terjadi）",arti:"setelah/begitu ... selesai",ex:["10時になったら、出かけましょう。= Kalau sudah jam 10, ayo berangkat.","うちへ 帰ったら、すぐ シャワーを 浴びます。= Setelah pulang, langsung mandi."]},
+{p:"〜ても",rumus:"KK bentuk て + も｜KS-い: buang い + くても｜KB・KS-な: + でも",arti:"meskipun ...",ex:["雨が 降っても、洗濯します。= Meskipun hujan, tetap mencuci.","安くても、買いません。= Meskipun murah, tidak beli.","日曜日でも、働きます。= Meskipun hari Minggu, bekerja."]}
+]}
+];
+
+const KOTOBA = [
+{hari:1,theme:"はじめまして。どうぞ よろしく お願いします。",sub:"Kosakata Bab 1 · Minna no Nihongo I",words:[
+ {w:"わたし",m:"saya"},
+ {w:"あなた",m:"Anda / kamu"},
+ {w:"あのひと / あのかた",k:"あの人・あの方",m:"orang itu, beliau (あの方 = bentuk sopan)",ex:"あの人は だれですか = orang itu siapa?"},
+ {w:"〜さん",m:"Sdr. / Bpk. / Ibu ... (akhiran sopan di belakang nama)"},
+ {w:"〜ちゃん",m:"akhiran nama untuk anak-anak (pengganti 〜さん)"},
+ {w:"〜じん",k:"〜人",m:"orang ... (warga negara)",ex:"インドネシア人 = orang Indonesia"},
+ {w:"せんせい",k:"先生",m:"guru / dosen (tidak dipakai untuk pekerjaan sendiri)"},
+ {w:"きょうし",k:"教師",m:"guru / pengajar (nama profesi)"},
+ {w:"がくせい",k:"学生",m:"pelajar / mahasiswa"},
+ {w:"かいしゃいん",k:"会社員",m:"karyawan perusahaan"},
+ {w:"しゃいん",k:"社員",m:"karyawan perusahaan ... (dipakai dengan nama perusahaan)",ex:"IMCの 社員 = karyawan IMC"},
+ {w:"ぎんこういん",k:"銀行員",m:"pegawai bank"},
+ {w:"いしゃ",k:"医者",m:"dokter"},
+ {w:"けんきゅうしゃ",k:"研究者",m:"peneliti"},
+ {w:"エンジニア",m:"insinyur / teknisi"},
+ {w:"だいがく",k:"大学",m:"universitas",ex:"さくら大学の 学生 = mahasiswa Univ. Sakura"},
+ {w:"びょういん",k:"病院",m:"rumah sakit"},
+ {w:"でんき",k:"電気",m:"listrik / lampu"},
+ {w:"だれ / どなた",m:"siapa (どなた = bentuk sopan)"},
+ {w:"〜さい",k:"〜歳",m:"... tahun (umur)"},
+ {w:"なんさい / おいくつ",k:"何歳",m:"umur berapa (おいくつ = bentuk sopan)"},
+ {w:"はい",m:"ya"},
+ {w:"いいえ",m:"tidak / bukan"},
+ {w:"しつれいですが",k:"失礼ですが",m:"maaf... (sebelum menanyakan hal pribadi)"},
+ {w:"おなまえは？",k:"お名前は",m:"siapa nama Anda?"},
+ {w:"はじめまして",m:"perkenalkan (salam saat pertama bertemu)"},
+ {w:"どうぞ よろしく [おねがいします]",k:"お願いします",m:"senang berkenalan, mohon bantuannya"},
+ {w:"こちらは 〜さんです",m:"ini Sdr. ... (memperkenalkan orang)"},
+ {w:"〜から きました",k:"来ました",m:"datang / berasal dari ...",ex:"インドネシアから 来ました"}
+]},
+{hari:2,theme:"これは 日本語の 辞書です。",sub:"Kosakata Bab 2 · Minna no Nihongo I",words:[
+ {w:"これ",m:"ini (benda dekat pembicara)"},
+ {w:"それ",m:"itu (benda dekat lawan bicara)"},
+ {w:"あれ",m:"itu (benda jauh dari keduanya)"},
+ {w:"この〜",m:"... ini (+ kata benda)"},
+ {w:"その〜",m:"... itu (+ kata benda)"},
+ {w:"あの〜",m:"... itu yang jauh (+ kata benda)"},
+ {w:"ほん",k:"本",m:"buku"},
+ {w:"じしょ",k:"辞書",m:"kamus"},
+ {w:"ざっし",k:"雑誌",m:"majalah"},
+ {w:"しんぶん",k:"新聞",m:"koran, surat kabar"},
+ {w:"ノート",m:"buku tulis, buku catatan"},
+ {w:"てちょう",k:"手帳",m:"buku agenda"},
+ {w:"めいし",k:"名刺",m:"kartu nama"},
+ {w:"カード",m:"kartu"},
+ {w:"えんぴつ",k:"鉛筆",m:"pensil"},
+ {w:"ボールペン",m:"bolpoin"},
+ {w:"シャープペンシル",m:"pensil mekanik"},
+ {w:"かぎ",m:"kunci"},
+ {w:"とけい",k:"時計",m:"jam / arloji"},
+ {w:"かさ",k:"傘",m:"payung"},
+ {w:"かばん",m:"tas"},
+ {w:"CD",m:"CD"},
+ {w:"テレビ",m:"televisi"},
+ {w:"ラジオ",m:"radio"},
+ {w:"カメラ",m:"kamera"},
+ {w:"コンピューター",m:"komputer"},
+ {w:"くるま",k:"車",m:"mobil"},
+ {w:"つくえ",k:"机",m:"meja, meja tulis"},
+ {w:"いす",m:"kursi"},
+ {w:"チョコレート",m:"cokelat"},
+ {w:"コーヒー",m:"kopi"},
+ {w:"[お]みやげ",k:"お土産",m:"oleh-oleh",ex:"これは お土産です = ini oleh-oleh"},
+ {w:"えいご",k:"英語",m:"bahasa Inggris"},
+ {w:"にほんご",k:"日本語",m:"bahasa Jepang"},
+ {w:"〜ご",k:"〜語",m:"bahasa ..."},
+ {w:"なん",k:"何",m:"apa"},
+ {w:"そう",m:"begitu",ex:"はい、そうです = ya, benar"},
+ {w:"あのう",m:"eee... (ungkapan ragu-ragu)"},
+ {w:"えっ",m:"eh? (mendengar hal di luar dugaan)"},
+ {w:"どうぞ",m:"silakan"},
+ {w:"どうも / ありがとう[ございます]",m:"terima kasih [banyak]"},
+ {w:"そうですか",m:"oh, begitu ya"},
+ {w:"ちがいます",k:"違います",m:"bukan / salah"},
+ {w:"これから おせわに なります",k:"お世話になります",m:"mohon bantuannya mulai sekarang"},
+ {w:"こちらこそ よろしく",m:"saya juga, senang berkenalan"}
+]},
+{hari:3,theme:"すみません、トイレは どこですか。",sub:"Kosakata Bab 3 · Minna no Nihongo I",words:[
+ {w:"ここ",m:"sini"},
+ {w:"そこ",m:"situ"},
+ {w:"あそこ",m:"sana"},
+ {w:"どこ",m:"(di) mana"},
+ {w:"こちら",m:"sebelah sini (sopan dari ここ)"},
+ {w:"そちら",m:"sebelah situ (sopan dari そこ)"},
+ {w:"あちら",m:"sebelah sana (sopan dari あそこ)"},
+ {w:"どちら",m:"sebelah mana (sopan dari どこ)"},
+ {w:"きょうしつ",k:"教室",m:"ruang kelas"},
+ {w:"しょくどう",k:"食堂",m:"ruang makan, kantin"},
+ {w:"じむしょ",k:"事務所",m:"kantor"},
+ {w:"かいぎしつ",k:"会議室",m:"ruang rapat"},
+ {w:"うけつけ",k:"受付",m:"resepsionis, meja informasi"},
+ {w:"ロビー",m:"ruang tunggu, lobi"},
+ {w:"へや",k:"部屋",m:"kamar / ruangan"},
+ {w:"トイレ / おてあらい",k:"お手洗い",m:"kamar kecil, toilet, W.C."},
+ {w:"かいだん",k:"階段",m:"tangga"},
+ {w:"エレベーター",m:"lift"},
+ {w:"エスカレーター",m:"tangga berjalan, eskalator"},
+ {w:"じどうはんばいき",k:"自動販売機",m:"mesin jual otomatis"},
+ {w:"でんわ",k:"電話",m:"telepon"},
+ {w:"くに",k:"国",m:"negara, negeri",ex:"お国は? = negara Anda?"},
+ {w:"かいしゃ",k:"会社",m:"perusahaan"},
+ {w:"うち",m:"rumah"},
+ {w:"くつ",k:"靴",m:"sepatu"},
+ {w:"ネクタイ",m:"dasi"},
+ {w:"ワイン",m:"anggur (minuman)"},
+ {w:"うりば",k:"売り場",m:"tempat penjualan (di toko)",ex:"靴売り場 = counter sepatu"},
+ {w:"ちか",k:"地下",m:"bawah tanah, basement"},
+ {w:"〜かい（〜がい）",k:"〜階",m:"lantai ..., tingkat ..."},
+ {w:"なんがい",k:"何階",m:"lantai berapa"},
+ {w:"〜えん",k:"〜円",m:"... yen"},
+ {w:"いくら",m:"berapa (harga)"},
+ {w:"ひゃく",k:"百",m:"seratus"},
+ {w:"せん",k:"千",m:"seribu"},
+ {w:"まん",k:"万",m:"sepuluh ribu"},
+ {w:"すみません",m:"maaf / permisi"},
+ {w:"いらっしゃいませ",m:"selamat datang (di toko)"},
+ {w:"〜を みせてください",k:"見せてください",m:"tolong perlihatkan ..."},
+ {w:"じゃ",m:"kalau begitu"},
+ {w:"〜を ください",m:"minta ... / beri saya ..."}
+]},
+{hari:4,theme:"毎朝 6時に 起きます。",sub:"Kosakata Bab 4 · Minna no Nihongo I",words:[
+ {w:"おきます",k:"起きます",m:"bangun"},
+ {w:"ねます",k:"寝ます",m:"tidur"},
+ {w:"はたらきます",k:"働きます",m:"bekerja"},
+ {w:"やすみます",k:"休みます",m:"istirahat / libur"},
+ {w:"べんきょうします",k:"勉強します",m:"belajar"},
+ {w:"おわります",k:"終わります",m:"selesai, berakhir"},
+ {w:"デパート",m:"toserba, department store"},
+ {w:"ぎんこう",k:"銀行",m:"bank"},
+ {w:"ゆうびんきょく",k:"郵便局",m:"kantor pos"},
+ {w:"としょかん",k:"図書館",m:"perpustakaan"},
+ {w:"びじゅつかん",k:"美術館",m:"museum seni, gedung kesenian"},
+ {w:"いま",k:"今",m:"sekarang"},
+ {w:"〜じ",k:"〜時",m:"jam ..., pukul ..."},
+ {w:"〜ふん（〜ぷん）",k:"〜分",m:"... menit"},
+ {w:"はん",k:"半",m:"setengah",ex:"6時半 = jam setengah tujuh (6.30)"},
+ {w:"なんじ",k:"何時",m:"jam berapa"},
+ {w:"なんぷん",k:"何分",m:"berapa menit"},
+ {w:"ごぜん",k:"午前",m:"a.m. (sebelum jam 12 siang)"},
+ {w:"ごご",k:"午後",m:"p.m. (setelah jam 12 siang)"},
+ {w:"あさ",k:"朝",m:"pagi"},
+ {w:"ひる",k:"昼",m:"siang"},
+ {w:"ばん / よる",k:"晩・夜",m:"malam"},
+ {w:"おととい",m:"kemarin lusa (dua hari lalu)"},
+ {w:"きのう",m:"kemarin"},
+ {w:"きょう",m:"hari ini"},
+ {w:"あした",m:"besok"},
+ {w:"あさって",m:"lusa"},
+ {w:"けさ",m:"pagi ini, tadi pagi"},
+ {w:"こんばん",k:"今晩",m:"malam ini, nanti malam"},
+ {w:"やすみ",k:"休み",m:"istirahat, cuti, libur"},
+ {w:"ひるやすみ",k:"昼休み",m:"istirahat siang"},
+ {w:"まいあさ",k:"毎朝",m:"setiap pagi"},
+ {w:"まいばん",k:"毎晩",m:"setiap malam"},
+ {w:"まいにち",k:"毎日",m:"setiap hari"},
+ {w:"げつようび〜にちようび",k:"月曜日〜日曜日",m:"hari Senin ... hari Minggu"},
+ {w:"なんようび",k:"何曜日",m:"hari apa"},
+ {w:"ばんごう",k:"番号",m:"nomor"},
+ {w:"なんばん",k:"何番",m:"nomor berapa"},
+ {w:"たいへんですね",k:"大変ですね",m:"repot ya / berat ya (simpati)"}
+]},
+{hari:5,theme:"日曜日 京都へ 行きます。",sub:"Kosakata Bab 5 · Minna no Nihongo I",words:[
+ {w:"いきます",k:"行きます",m:"pergi"},
+ {w:"きます",k:"来ます",m:"datang"},
+ {w:"かえります",k:"帰ります",m:"pulang"},
+ {w:"がっこう",k:"学校",m:"sekolah"},
+ {w:"スーパー",m:"pasar swalayan, supermarket"},
+ {w:"えき",k:"駅",m:"stasiun"},
+ {w:"ひこうき",k:"飛行機",m:"pesawat terbang"},
+ {w:"ふね",k:"船",m:"kapal laut"},
+ {w:"でんしゃ",k:"電車",m:"kereta rel listrik"},
+ {w:"ちかてつ",k:"地下鉄",m:"kereta bawah tanah"},
+ {w:"しんかんせん",k:"新幹線",m:"Shinkansen (kereta cepat)"},
+ {w:"バス",m:"bus"},
+ {w:"タクシー",m:"taksi"},
+ {w:"じてんしゃ",k:"自転車",m:"sepeda"},
+ {w:"あるいて",k:"歩いて",m:"dengan berjalan kaki",ex:"歩いて 帰ります = pulang jalan kaki"},
+ {w:"ひと",k:"人",m:"orang"},
+ {w:"ともだち",k:"友だち",m:"teman"},
+ {w:"かれ",k:"彼",m:"dia (laki-laki)"},
+ {w:"かのじょ",k:"彼女",m:"dia (perempuan)"},
+ {w:"かぞく",k:"家族",m:"keluarga"},
+ {w:"ひとりで",k:"一人で",m:"sendirian"},
+ {w:"せんしゅう",k:"先週",m:"minggu lalu"},
+ {w:"こんしゅう",k:"今週",m:"minggu ini"},
+ {w:"らいしゅう",k:"来週",m:"minggu depan"},
+ {w:"せんげつ",k:"先月",m:"bulan lalu"},
+ {w:"こんげつ",k:"今月",m:"bulan ini"},
+ {w:"らいげつ",k:"来月",m:"bulan depan"},
+ {w:"きょねん",k:"去年",m:"tahun lalu"},
+ {w:"ことし",m:"tahun ini"},
+ {w:"らいねん",k:"来年",m:"tahun depan"},
+ {w:"〜がつ",k:"〜月",m:"bulan ...",ex:"3月 = Maret"},
+ {w:"なんがつ",k:"何月",m:"bulan apa"},
+ {w:"ついたち・ふつか・みっか…とおか",k:"一日〜十日",m:"tanggal 1, 2, 3 ... 10 (bacaan khusus)"},
+ {w:"〜にち",k:"〜日",m:"tanggal ... (11 ke atas)"},
+ {w:"なんにち",k:"何日",m:"tanggal berapa"},
+ {w:"いつ",m:"kapan"},
+ {w:"たんじょうび",k:"誕生日",m:"ulang tahun"},
+ {w:"ふつう",k:"普通",m:"kereta biasa (berhenti di semua stasiun)"},
+ {w:"きゅうこう",k:"急行",m:"kereta ekspres"},
+ {w:"とっきゅう",k:"特急",m:"kereta ekspres khusus / super ekspres"},
+ {w:"そうですね",m:"benar juga ya (sambil berpikir)"}
+]},
+{hari:6,theme:"一緒に 昼ごはんを 食べませんか。",sub:"Kosakata Bab 6 · Minna no Nihongo I",words:[
+ {w:"たべます",k:"食べます",m:"makan"},
+ {w:"のみます",k:"飲みます",m:"minum"},
+ {w:"すいます",k:"吸います（たばこを）",m:"mengisap (rokok), merokok"},
+ {w:"みます",k:"見ます",m:"melihat, menonton"},
+ {w:"ききます",k:"聞きます",m:"mendengar"},
+ {w:"よみます",k:"読みます",m:"membaca"},
+ {w:"かきます",k:"書きます",m:"menulis, menggambar"},
+ {w:"かいます",k:"買います",m:"membeli"},
+ {w:"とります",k:"撮ります（写真を）",m:"mengambil (foto), memotret"},
+ {w:"します",m:"mengerjakan, melakukan, berbuat"},
+ {w:"あいます",k:"会います（友だちに）",m:"bertemu (dengan teman)"},
+ {w:"ごはん",m:"nasi; makanan"},
+ {w:"あさごはん",k:"朝ごはん",m:"sarapan, makan pagi"},
+ {w:"ひるごはん",k:"昼ごはん",m:"makan siang"},
+ {w:"ばんごはん",k:"晩ごはん",m:"makan malam"},
+ {w:"パン",m:"roti"},
+ {w:"たまご",k:"卵",m:"telur"},
+ {w:"にく",k:"肉",m:"daging"},
+ {w:"さかな",k:"魚",m:"ikan"},
+ {w:"やさい",k:"野菜",m:"sayur, sayuran"},
+ {w:"くだもの",k:"果物",m:"buah-buahan"},
+ {w:"みず",k:"水",m:"air"},
+ {w:"おちゃ",k:"お茶",m:"teh (hijau), teh Jepang"},
+ {w:"こうちゃ",k:"紅茶",m:"teh (hitam)"},
+ {w:"ぎゅうにゅう / ミルク",k:"牛乳",m:"susu"},
+ {w:"ジュース",m:"jus, sari buah"},
+ {w:"ビール",m:"bir"},
+ {w:"[お]さけ",k:"お酒",m:"minuman keras; sake"},
+ {w:"たばこ",m:"rokok"},
+ {w:"てがみ",k:"手紙",m:"surat"},
+ {w:"レポート",m:"laporan"},
+ {w:"しゃしん",k:"写真",m:"foto"},
+ {w:"ビデオ",m:"video"},
+ {w:"みせ",k:"店",m:"toko, kedai"},
+ {w:"にわ",k:"庭",m:"halaman, kebun"},
+ {w:"しゅくだい",k:"宿題",m:"pekerjaan rumah, PR",ex:"宿題を します = mengerjakan PR"},
+ {w:"テニス",m:"tenis",ex:"テニスを します = bermain tenis"},
+ {w:"サッカー",m:"sepak bola"},
+ {w:"[お]はなみ",k:"お花見",m:"menikmati bunga sakura"},
+ {w:"それから",m:"setelah itu, kemudian"},
+ {w:"ちょっと",m:"sebentar; sedikit"},
+ {w:"いっしょに",k:"一緒に",m:"bersama-sama"},
+ {w:"いいですね",m:"boleh juga ya / bagus ya (setuju)"},
+ {w:"わかりました",k:"分かりました",m:"baik, mengerti"},
+ {w:"なんですか",k:"何ですか",m:"apa? / ada apa?"},
+ {w:"じゃ、また",m:"sampai jumpa lagi"}
+]},
+{hari:7,theme:"ごめんください。どうぞ お上がりください。",sub:"Kosakata Bab 7 · Minna no Nihongo I",words:[
+ {w:"きります",k:"切ります",m:"memotong, menggunting"},
+ {w:"おくります",k:"送ります",m:"mengirim"},
+ {w:"あげます",m:"memberi"},
+ {w:"もらいます",m:"menerima, mendapat"},
+ {w:"かします",k:"貸します",m:"meminjamkan, menyewakan"},
+ {w:"かります",k:"借ります",m:"meminjam, menyewa"},
+ {w:"おしえます",k:"教えます",m:"mengajar; memberi tahu"},
+ {w:"ならいます",k:"習います",m:"belajar (dari seseorang)"},
+ {w:"でんわを かけます",k:"電話をかけます",m:"menelepon"},
+ {w:"て",k:"手",m:"tangan"},
+ {w:"はし",m:"sumpit"},
+ {w:"スプーン",m:"sendok"},
+ {w:"ナイフ",m:"pisau"},
+ {w:"フォーク",m:"garpu"},
+ {w:"はさみ",m:"gunting"},
+ {w:"パソコン",m:"komputer, PC"},
+ {w:"けいたいでんわ",k:"携帯電話",m:"HP, telepon genggam"},
+ {w:"メール",m:"e-mail"},
+ {w:"ねんがじょう",k:"年賀状",m:"kartu ucapan tahun baru"},
+ {w:"パンチ",m:"pelubang kertas"},
+ {w:"ホッチキス",m:"stapler"},
+ {w:"セロテープ",m:"selotip"},
+ {w:"けしゴム",k:"消しゴム",m:"penghapus karet"},
+ {w:"かみ",k:"紙",m:"kertas"},
+ {w:"はな",k:"花",m:"bunga"},
+ {w:"シャツ",m:"kemeja"},
+ {w:"プレゼント",m:"kado, hadiah"},
+ {w:"にもつ",k:"荷物",m:"barang bawaan"},
+ {w:"おかね",k:"お金",m:"uang"},
+ {w:"きっぷ",k:"切符",m:"karcis, tiket"},
+ {w:"クリスマス",m:"Natal"},
+ {w:"ちち",k:"父",m:"ayah (sendiri)"},
+ {w:"はは",k:"母",m:"ibu (sendiri)"},
+ {w:"おとうさん",k:"お父さん",m:"ayah (orang lain; panggilan)"},
+ {w:"おかあさん",k:"お母さん",m:"ibu (orang lain; panggilan)"},
+ {w:"もう",m:"sudah",ex:"もう 食べました = sudah makan"},
+ {w:"まだ",m:"belum; masih"},
+ {w:"これから",m:"mulai sekarang"},
+ {w:"すてきですね",m:"bagus ya / indah ya"},
+ {w:"ごめんください",m:"permisi (di depan pintu rumah orang)"},
+ {w:"いらっしゃい",m:"selamat datang (di rumah)"},
+ {w:"しつれいします",k:"失礼します",m:"permisi (masuk/pulang)"},
+ {w:"〜は いかがですか",m:"bagaimana kalau ... ? (menawarkan)"},
+ {w:"いただきます",m:"selamat makan (sebelum makan)"}
+]},
+{hari:8,theme:"桜は とても きれいです。",sub:"Kosakata Bab 8 · Minna no Nihongo I",words:[
+ {w:"ハンサム[な]",m:"tampan, ganteng"},
+ {w:"きれい[な]",m:"cantik; bersih"},
+ {w:"しずか[な]",k:"静か",m:"sunyi, tenang"},
+ {w:"にぎやか[な]",m:"ramai"},
+ {w:"ゆうめい[な]",k:"有名",m:"terkenal"},
+ {w:"しんせつ[な]",k:"親切",m:"baik hati, ramah"},
+ {w:"げんき[な]",k:"元気",m:"sehat, semangat"},
+ {w:"ひま[な]",k:"暇",m:"senggang, luang"},
+ {w:"べんり[な]",k:"便利",m:"praktis"},
+ {w:"すてき[な]",m:"bagus, indah"},
+ {w:"おおきい",k:"大きい",m:"besar"},
+ {w:"ちいさい",k:"小さい",m:"kecil"},
+ {w:"あたらしい",k:"新しい",m:"baru"},
+ {w:"ふるい",k:"古い",m:"lama, tua (barang)"},
+ {w:"いい（よい）",m:"baik, bagus"},
+ {w:"わるい",k:"悪い",m:"buruk, jelek"},
+ {w:"あつい",k:"暑い・熱い",m:"panas"},
+ {w:"さむい",k:"寒い",m:"dingin (udara)"},
+ {w:"つめたい",k:"冷たい",m:"dingin (benda)"},
+ {w:"むずかしい",k:"難しい",m:"sulit, susah"},
+ {w:"やさしい",k:"易しい",m:"mudah, gampang"},
+ {w:"たかい",k:"高い",m:"mahal; tinggi"},
+ {w:"やすい",k:"安い",m:"murah"},
+ {w:"ひくい",k:"低い",m:"rendah"},
+ {w:"おもしろい",k:"面白い",m:"menarik, lucu"},
+ {w:"おいしい",m:"enak, lezat"},
+ {w:"いそがしい",k:"忙しい",m:"sibuk"},
+ {w:"たのしい",k:"楽しい",m:"menyenangkan"},
+ {w:"しろい",k:"白い",m:"putih"},
+ {w:"くろい",k:"黒い",m:"hitam"},
+ {w:"あかい",k:"赤い",m:"merah"},
+ {w:"あおい",k:"青い",m:"biru"},
+ {w:"さくら",k:"桜",m:"bunga sakura"},
+ {w:"やま",k:"山",m:"gunung"},
+ {w:"まち",k:"町",m:"kota"},
+ {w:"たべもの",k:"食べ物",m:"makanan"},
+ {w:"ところ",k:"所",m:"tempat"},
+ {w:"りょう",k:"寮",m:"asrama"},
+ {w:"レストラン",m:"restoran"},
+ {w:"せいかつ",k:"生活",m:"kehidupan"},
+ {w:"[お]しごと",k:"仕事",m:"pekerjaan",ex:"仕事は どうですか = bagaimana pekerjaannya?"},
+ {w:"どう",m:"bagaimana"},
+ {w:"どんな〜",m:"... yang bagaimana"},
+ {w:"どれ",m:"yang mana"},
+ {w:"とても",m:"sangat"},
+ {w:"あまり",m:"tidak begitu (+ bentuk negatif)"},
+ {w:"そして",m:"lalu, dan (menyambung kalimat)"},
+ {w:"〜が、〜",m:"..., tetapi ..."}
+]},
+{hari:9,theme:"音楽が 好きですか。",sub:"Kosakata Bab 9 · Minna no Nihongo I",words:[
+ {w:"わかります",k:"分かります",m:"mengerti, paham"},
+ {w:"あります",m:"ada, mempunyai",ex:"時間が あります = punya waktu"},
+ {w:"すき[な]",k:"好き",m:"suka, gemar"},
+ {w:"きらい[な]",k:"嫌い",m:"tidak suka, benci"},
+ {w:"じょうず[な]",k:"上手",m:"pandai, pintar"},
+ {w:"へた[な]",k:"下手",m:"tidak pandai"},
+ {w:"りょうり",k:"料理",m:"masakan",ex:"料理を します = memasak"},
+ {w:"のみもの",k:"飲み物",m:"minuman"},
+ {w:"スポーツ",m:"olahraga"},
+ {w:"やきゅう",k:"野球",m:"bisbol"},
+ {w:"ダンス",m:"dansa"},
+ {w:"りょこう",k:"旅行",m:"tamasya, wisata, perjalanan"},
+ {w:"おんがく",k:"音楽",m:"musik"},
+ {w:"うた",k:"歌",m:"lagu, nyanyian"},
+ {w:"クラシック",m:"musik klasik"},
+ {w:"ジャズ",m:"jazz"},
+ {w:"コンサート",m:"konser"},
+ {w:"カラオケ",m:"karaoke"},
+ {w:"かぶき",k:"歌舞伎",m:"Kabuki (drama tradisional Jepang)"},
+ {w:"え",k:"絵",m:"gambar, lukisan"},
+ {w:"じ",k:"字",m:"huruf"},
+ {w:"かんじ",k:"漢字",m:"kanji"},
+ {w:"ひらがな",m:"hiragana"},
+ {w:"かたかな",m:"katakana"},
+ {w:"ローマじ",k:"ローマ字",m:"huruf latin"},
+ {w:"こまかいおかね",k:"細かいお金",m:"uang kecil, receh"},
+ {w:"チケット",m:"tiket, karcis"},
+ {w:"じかん",k:"時間",m:"waktu, jam"},
+ {w:"ようじ",k:"用事",m:"urusan, keperluan"},
+ {w:"やくそく",k:"約束",m:"janji"},
+ {w:"アルバイト",m:"kerja paruh waktu"},
+ {w:"ごしゅじん",k:"ご主人",m:"suami (orang lain)"},
+ {w:"おっと / しゅじん",k:"夫・主人",m:"suami (sendiri)"},
+ {w:"おくさん",k:"奥さん",m:"istri (orang lain)"},
+ {w:"つま / かない",k:"妻・家内",m:"istri (sendiri)"},
+ {w:"こども",k:"子ども",m:"anak"},
+ {w:"よく",m:"sering; dengan baik"},
+ {w:"だいたい",m:"kira-kira, sebagian besar"},
+ {w:"たくさん",m:"banyak"},
+ {w:"すこし",k:"少し",m:"sedikit"},
+ {w:"ぜんぜん",k:"全然",m:"sama sekali tidak (+ negatif)"},
+ {w:"はやく",k:"早く・速く",m:"cepat-cepat; lebih awal"},
+ {w:"〜から",m:"karena ..."},
+ {w:"どうして",m:"mengapa, kenapa"},
+ {w:"ざんねんですね",k:"残念ですね",m:"sayang sekali ya"}
+]},
+{hari:10,theme:"あそこに コンビニが あります。",sub:"Kosakata Bab 10 · Minna no Nihongo I",words:[
+ {w:"います",m:"ada (makhluk hidup)"},
+ {w:"あります",m:"ada (benda mati)"},
+ {w:"いろいろ[な]",m:"bermacam-macam, berbagai"},
+ {w:"おとこのひと",k:"男の人",m:"orang laki-laki"},
+ {w:"おんなのひと",k:"女の人",m:"orang perempuan"},
+ {w:"おとこのこ",k:"男の子",m:"anak laki-laki"},
+ {w:"おんなのこ",k:"女の子",m:"anak perempuan"},
+ {w:"いぬ",k:"犬",m:"anjing"},
+ {w:"ねこ",k:"猫",m:"kucing"},
+ {w:"パンダ",m:"panda"},
+ {w:"ぞう",k:"象",m:"gajah"},
+ {w:"き",k:"木",m:"pohon"},
+ {w:"もの",k:"物",m:"barang, benda"},
+ {w:"でんち",k:"電池",m:"baterai"},
+ {w:"はこ",k:"箱",m:"kotak"},
+ {w:"スイッチ",m:"sakelar, tombol"},
+ {w:"れいぞうこ",k:"冷蔵庫",m:"kulkas, lemari es"},
+ {w:"テーブル",m:"meja makan"},
+ {w:"ベッド",m:"tempat tidur"},
+ {w:"たな",k:"棚",m:"rak, lemari"},
+ {w:"ドア",m:"pintu"},
+ {w:"まど",k:"窓",m:"jendela"},
+ {w:"ポスト",m:"kotak surat, bis surat"},
+ {w:"ビル",m:"gedung"},
+ {w:"ATM",m:"ATM, anjungan tunai mandiri"},
+ {w:"コンビニ",m:"minimarket, toko 24 jam"},
+ {w:"こうえん",k:"公園",m:"taman"},
+ {w:"きっさてん",k:"喫茶店",m:"kedai kopi, coffee shop"},
+ {w:"〜や",k:"〜屋",m:"toko ...",ex:"本屋 = toko buku"},
+ {w:"のりば",k:"乗り場",m:"tempat naik (kendaraan)"},
+ {w:"けん",k:"県",m:"prefektur"},
+ {w:"うえ",k:"上",m:"atas"},
+ {w:"した",k:"下",m:"bawah"},
+ {w:"まえ",k:"前",m:"depan"},
+ {w:"うしろ",k:"後ろ",m:"belakang"},
+ {w:"みぎ",k:"右",m:"kanan"},
+ {w:"ひだり",k:"左",m:"kiri"},
+ {w:"なか",k:"中",m:"dalam"},
+ {w:"そと",k:"外",m:"luar"},
+ {w:"となり",k:"隣",m:"sebelah"},
+ {w:"ちかく",k:"近く",m:"dekat"},
+ {w:"あいだ",k:"間",m:"antara"},
+ {w:"〜や 〜[など]",m:"... dan ... (dan lain-lain)"},
+ {w:"どうも すみません",m:"terima kasih (atas kerepotannya)"}
+]},
+{hari:11,theme:"この 荷物を お願いします。",sub:"Kosakata Bab 11 · Minna no Nihongo I",words:[
+ {w:"[こどもが] います",m:"mempunyai (anak)"},
+ {w:"[にほんに] います",m:"ada, tinggal (di Jepang)"},
+ {w:"かかります",m:"makan (waktu), perlu (biaya)",ex:"30分 かかります = makan waktu 30 menit"},
+ {w:"やすみます",k:"休みます（会社を）",m:"tidak masuk (kerja), libur"},
+ {w:"ひとつ〜とお",k:"一つ〜十",m:"satu ... sepuluh (menghitung benda)"},
+ {w:"いくつ",m:"berapa (buah)"},
+ {w:"ひとり",k:"一人",m:"satu orang"},
+ {w:"ふたり",k:"二人",m:"dua orang"},
+ {w:"〜にん",k:"〜人",m:"... orang"},
+ {w:"〜だい",k:"〜台",m:"... unit (mesin, mobil)"},
+ {w:"〜まい",k:"〜枚",m:"... lembar, helai"},
+ {w:"〜かい",k:"〜回",m:"... kali"},
+ {w:"〜ほん",k:"〜本",m:"... batang (benda panjang)"},
+ {w:"〜さつ",k:"〜冊",m:"... jilid, eksemplar (buku)"},
+ {w:"りんご",m:"apel"},
+ {w:"みかん",m:"jeruk"},
+ {w:"サンドイッチ",m:"sandwich, roti lapis"},
+ {w:"カレー[ライス]",m:"nasi kari"},
+ {w:"アイスクリーム",m:"es krim"},
+ {w:"きって",k:"切手",m:"perangko"},
+ {w:"はがき",m:"kartu pos"},
+ {w:"ふうとう",k:"封筒",m:"amplop"},
+ {w:"そくたつ",k:"速達",m:"surat kilat"},
+ {w:"かきとめ",k:"書留",m:"surat tercatat"},
+ {w:"こうくうびん / エアメール",k:"航空便",m:"pos udara"},
+ {w:"ふなびん",k:"船便",m:"pos laut"},
+ {w:"りょうしん",k:"両親",m:"orang tua"},
+ {w:"きょうだい",k:"兄弟",m:"saudara kandung"},
+ {w:"あに",k:"兄",m:"kakak laki-laki (sendiri)"},
+ {w:"おにいさん",k:"お兄さん",m:"kakak laki-laki (orang lain)"},
+ {w:"あね",k:"姉",m:"kakak perempuan (sendiri)"},
+ {w:"おねえさん",k:"お姉さん",m:"kakak perempuan (orang lain)"},
+ {w:"おとうと",k:"弟",m:"adik laki-laki"},
+ {w:"いもうと",k:"妹",m:"adik perempuan"},
+ {w:"がいこく",k:"外国",m:"luar negeri"},
+ {w:"りゅうがくせい",k:"留学生",m:"mahasiswa asing"},
+ {w:"〜じかん",k:"〜時間",m:"... jam (durasi)"},
+ {w:"〜しゅうかん",k:"〜週間",m:"... minggu (durasi)"},
+ {w:"〜かげつ",k:"〜か月",m:"... bulan (durasi)"},
+ {w:"〜ねん",k:"〜年",m:"... tahun (durasi)"},
+ {w:"〜ぐらい",m:"kira-kira ..."},
+ {w:"どのくらい",m:"berapa lama"},
+ {w:"ぜんぶで",k:"全部で",m:"seluruhnya, totalnya"},
+ {w:"みんな",m:"semua, semuanya"},
+ {w:"〜だけ",m:"hanya ..."},
+ {w:"いい [お]てんきですね",k:"いいお天気ですね",m:"cuacanya bagus ya"}
+]},
+{hari:12,theme:"夏は 春より 暑いです。",sub:"Kosakata Bab 12 · Minna no Nihongo I",words:[
+ {w:"かんたん[な]",k:"簡単",m:"mudah, gampang, sederhana"},
+ {w:"ちかい",k:"近い",m:"dekat"},
+ {w:"とおい",k:"遠い",m:"jauh"},
+ {w:"はやい",k:"速い・早い",m:"cepat"},
+ {w:"おそい",k:"遅い",m:"lambat; terlambat"},
+ {w:"おおい",k:"多い（人が）",m:"banyak (orang)"},
+ {w:"すくない",k:"少ない（人が）",m:"sedikit (orang)"},
+ {w:"あたたかい",k:"暖かい",m:"hangat"},
+ {w:"すずしい",k:"涼しい",m:"sejuk"},
+ {w:"あまい",k:"甘い",m:"manis"},
+ {w:"からい",k:"辛い",m:"pedas"},
+ {w:"おもい",k:"重い",m:"berat"},
+ {w:"かるい",k:"軽い",m:"ringan"},
+ {w:"いい",m:"lebih baik, pilih",ex:"コーヒーが いいです = saya pilih kopi"},
+ {w:"きせつ",k:"季節",m:"musim"},
+ {w:"はる",k:"春",m:"musim semi"},
+ {w:"なつ",k:"夏",m:"musim panas"},
+ {w:"あき",k:"秋",m:"musim gugur"},
+ {w:"ふゆ",k:"冬",m:"musim dingin"},
+ {w:"てんき",k:"天気",m:"cuaca"},
+ {w:"あめ",k:"雨",m:"hujan"},
+ {w:"ゆき",k:"雪",m:"salju"},
+ {w:"くもり",k:"曇り",m:"mendung"},
+ {w:"ホテル",m:"hotel"},
+ {w:"くうこう",k:"空港",m:"bandara"},
+ {w:"うみ",k:"海",m:"laut"},
+ {w:"せかい",k:"世界",m:"dunia"},
+ {w:"パーティー",m:"pesta",ex:"パーティーを します = berpesta"},
+ {w:"[お]まつり",k:"お祭り",m:"festival, perayaan"},
+ {w:"しけん",k:"試験",m:"ujian"},
+ {w:"すきやき",m:"sukiyaki"},
+ {w:"さしみ",k:"刺身",m:"sashimi (irisan ikan mentah)"},
+ {w:"[お]すし",m:"sushi"},
+ {w:"てんぷら",m:"tempura"},
+ {w:"ぶたにく",k:"豚肉",m:"daging babi"},
+ {w:"とりにく",k:"鶏肉",m:"daging ayam"},
+ {w:"ぎゅうにく",k:"牛肉",m:"daging sapi"},
+ {w:"レモン",m:"lemon"},
+ {w:"いけばな",k:"生け花",m:"ikebana (seni merangkai bunga)"},
+ {w:"もみじ",k:"紅葉",m:"daun momiji (daun merah musim gugur)"},
+ {w:"どちら",m:"yang mana (dari dua)"},
+ {w:"どちらも",m:"dua-duanya, sama saja"},
+ {w:"いちばん",k:"一番",m:"paling, nomor satu"},
+ {w:"ずっと",m:"jauh lebih ...; terus"},
+ {w:"はじめて",k:"初めて",m:"pertama kali"}
+]},
+{hari:13,theme:"新しい くつが 欲しいです。",sub:"Kosakata Bab 13 · Minna no Nihongo I",words:[
+ {w:"あそびます",k:"遊びます",m:"bermain"},
+ {w:"およぎます",k:"泳ぎます",m:"berenang"},
+ {w:"むかえます",k:"迎えます",m:"menjemput"},
+ {w:"つかれます",k:"疲れます",m:"lelah, capek"},
+ {w:"だします",k:"出します（手紙を）",m:"mengirim, memasukkan (surat)"},
+ {w:"はいります",k:"入ります（喫茶店に）",m:"masuk (ke kedai kopi)"},
+ {w:"でます",k:"出ます（喫茶店を）",m:"keluar (dari kedai kopi)"},
+ {w:"けっこんします",k:"結婚します",m:"menikah"},
+ {w:"かいものします",k:"買い物します",m:"berbelanja"},
+ {w:"しょくじします",k:"食事します",m:"makan (formal)"},
+ {w:"さんぽします",k:"散歩します（公園を）",m:"berjalan-jalan (di taman)"},
+ {w:"たいへん[な]",k:"大変",m:"berat, susah, repot"},
+ {w:"ほしい",k:"欲しい",m:"ingin punya, mau"},
+ {w:"さびしい",k:"寂しい",m:"kesepian"},
+ {w:"ひろい",k:"広い",m:"luas"},
+ {w:"せまい",k:"狭い",m:"sempit"},
+ {w:"プール",m:"kolam renang"},
+ {w:"かわ",k:"川",m:"sungai"},
+ {w:"びじゅつ",k:"美術",m:"seni rupa"},
+ {w:"つり",k:"釣り",m:"memancing",ex:"釣りを します = memancing"},
+ {w:"スキー",m:"ski",ex:"スキーを します = bermain ski"},
+ {w:"しゅうまつ",k:"週末",m:"akhir pekan"},
+ {w:"[お]しょうがつ",k:"お正月",m:"tahun baru"},
+ {w:"〜ごろ",m:"sekitar ..., kira-kira (waktu)"},
+ {w:"なにか",k:"何か",m:"sesuatu"},
+ {w:"どこか",m:"suatu tempat"},
+ {w:"おなかが すきました",m:"lapar"},
+ {w:"のどが かわきました",m:"haus"},
+ {w:"そうしましょう",m:"ya, mari (menyetujui ajakan)"},
+ {w:"ごちゅうもんは",k:"ご注文は",m:"mau pesan apa?"},
+ {w:"べつべつに",k:"別々に",m:"terpisah, masing-masing (bon)"}
+]},
+{hari:14,theme:"ちょっと 待ってください。",sub:"Kosakata Bab 14 · Minna no Nihongo I",words:[
+ {w:"つけます",m:"menyalakan, menghidupkan"},
+ {w:"けします",k:"消します",m:"mematikan, memadamkan"},
+ {w:"あけます",k:"開けます",m:"membuka"},
+ {w:"しめます",k:"閉めます",m:"menutup"},
+ {w:"いそぎます",k:"急ぎます",m:"buru-buru, bergegas"},
+ {w:"まちます",k:"待ちます",m:"menunggu"},
+ {w:"もちます",k:"持ちます",m:"membawa, memegang"},
+ {w:"とります",k:"取ります",m:"mengambil"},
+ {w:"てつだいます",k:"手伝います",m:"membantu"},
+ {w:"よびます",k:"呼びます",m:"memanggil"},
+ {w:"はなします",k:"話します",m:"berbicara"},
+ {w:"つかいます",k:"使います",m:"memakai, menggunakan"},
+ {w:"とめます",k:"止めます",m:"menghentikan, memarkir"},
+ {w:"みせます",k:"見せます",m:"memperlihatkan"},
+ {w:"おしえます",k:"教えます（住所を）",m:"memberitahukan (alamat)"},
+ {w:"すわります",k:"座ります",m:"duduk"},
+ {w:"たちます",k:"立ちます",m:"berdiri"},
+ {w:"ふります",k:"降ります（雨が）",m:"turun (hujan)"},
+ {w:"コピーします",m:"memfotokopi"},
+ {w:"でんき",k:"電気",m:"listrik; lampu"},
+ {w:"エアコン",m:"AC, pendingin ruangan"},
+ {w:"パスポート",m:"paspor"},
+ {w:"なまえ",k:"名前",m:"nama"},
+ {w:"じゅうしょ",k:"住所",m:"alamat"},
+ {w:"ちず",k:"地図",m:"peta"},
+ {w:"しお",k:"塩",m:"garam"},
+ {w:"さとう",k:"砂糖",m:"gula"},
+ {w:"よみかた",k:"読み方",m:"cara baca"},
+ {w:"〜かた",k:"〜方",m:"cara ...",ex:"使い方 = cara pakai"},
+ {w:"まっすぐ",m:"lurus, langsung"},
+ {w:"ゆっくり",m:"pelan-pelan, santai"},
+ {w:"すぐ",m:"segera"},
+ {w:"また",m:"lagi"},
+ {w:"あとで",k:"後で",m:"nanti"},
+ {w:"もうすこし",k:"もう少し",m:"sedikit lagi"},
+ {w:"もう〜",m:"... lagi",ex:"もう一つ = satu lagi"},
+ {w:"さあ",m:"nah, ayo"}
+]},
+{hari:15,theme:"大阪に 住んでいます。",sub:"Kosakata Bab 15 · Minna no Nihongo I",words:[
+ {w:"おきます",k:"置きます",m:"meletakkan, menaruh"},
+ {w:"つくります",k:"作ります",m:"membuat, memproduksi"},
+ {w:"うります",k:"売ります",m:"menjual"},
+ {w:"しります",k:"知ります",m:"mengetahui, mengenal",ex:"知っています = tahu · 知りません = tidak tahu"},
+ {w:"すみます",k:"住みます",m:"tinggal, bertempat tinggal",ex:"大阪に 住んでいます"},
+ {w:"けんきゅうします",k:"研究します",m:"meneliti"},
+ {w:"しりょう",k:"資料",m:"data, bahan"},
+ {w:"カタログ",m:"katalog"},
+ {w:"じこくひょう",k:"時刻表",m:"jadwal (kereta dll.)"},
+ {w:"ふく",k:"服",m:"baju, pakaian"},
+ {w:"せいひん",k:"製品",m:"produk, hasil produksi"},
+ {w:"ソフト",m:"perangkat lunak"},
+ {w:"でんしじしょ",k:"電子辞書",m:"kamus elektronik"},
+ {w:"けいざい",k:"経済",m:"ekonomi"},
+ {w:"しやくしょ",k:"市役所",m:"kantor wali kota, balai kota"},
+ {w:"こうこう",k:"高校",m:"SMA"},
+ {w:"はいしゃ",k:"歯医者",m:"dokter gigi"},
+ {w:"どくしん",k:"独身",m:"bujangan, belum menikah"},
+ {w:"みなさん",k:"皆さん",m:"bapak-bapak/ibu-ibu sekalian, Anda semua"},
+ {w:"すみません",m:"maaf"}
+]},
+{hari:16,theme:"電車に 乗って、大学で 降ります。",sub:"Kosakata Bab 16 · Minna no Nihongo I",words:[
+ {w:"のります",k:"乗ります（電車に）",m:"naik (kereta)"},
+ {w:"おります",k:"降ります（電車を）",m:"turun (dari kereta)"},
+ {w:"のりかえます",k:"乗り換えます",m:"ganti (kendaraan), transit"},
+ {w:"あびます",k:"浴びます（シャワーを）",m:"mandi (dengan shower)"},
+ {w:"いれます",k:"入れます",m:"memasukkan"},
+ {w:"だします",k:"出します",m:"mengeluarkan, menyerahkan"},
+ {w:"おろします",k:"下ろします（お金を）",m:"mengambil/menarik (uang)"},
+ {w:"はいります",k:"入ります（大学に）",m:"masuk (universitas)"},
+ {w:"でます",k:"出ます（大学を）",m:"tamat, lulus (dari universitas)"},
+ {w:"おします",k:"押します",m:"menekan",ex:"ボタンを 押します = menekan tombol"},
+ {w:"のみます",k:"飲みます（お酒を）",m:"minum (minuman keras)"},
+ {w:"はじめます",k:"始めます",m:"memulai"},
+ {w:"けんぶつします",k:"見物します",m:"melihat-lihat, berwisata"},
+ {w:"でんわします",k:"電話します",m:"menelepon"},
+ {w:"わかい",k:"若い",m:"muda"},
+ {w:"ながい",k:"長い",m:"panjang"},
+ {w:"みじかい",k:"短い",m:"pendek"},
+ {w:"あかるい",k:"明るい",m:"terang; ceria"},
+ {w:"くらい",k:"暗い",m:"gelap"},
+ {w:"せが たかい",k:"背が高い",m:"tinggi (badan)"},
+ {w:"からだ",k:"体",m:"badan, tubuh"},
+ {w:"あたま",k:"頭",m:"kepala"},
+ {w:"かみ",k:"髪",m:"rambut"},
+ {w:"かお",k:"顔",m:"muka, wajah"},
+ {w:"め",k:"目",m:"mata"},
+ {w:"みみ",k:"耳",m:"telinga"},
+ {w:"はな",k:"鼻",m:"hidung"},
+ {w:"くち",k:"口",m:"mulut"},
+ {w:"は",k:"歯",m:"gigi"},
+ {w:"おなか",m:"perut"},
+ {w:"あし",k:"足",m:"kaki"},
+ {w:"サービス",m:"pelayanan, servis"},
+ {w:"ジョギング",m:"joging",ex:"ジョギングを します = berjoging"},
+ {w:"シャワー",m:"shower, pancuran"},
+ {w:"みどり",k:"緑",m:"hijau; penghijauan"},
+ {w:"[お]てら",k:"お寺",m:"kuil Buddha"},
+ {w:"じんじゃ",k:"神社",m:"kuil Shinto"},
+ {w:"〜ばん",k:"〜番",m:"nomor ..."},
+ {w:"どうやって",m:"bagaimana caranya"},
+ {w:"どの〜",m:"... yang mana (dari 3 lebih)"}
+]},
+{hari:17,theme:"薬を 飲まなければ なりません。",sub:"Kosakata Bab 17 · Minna no Nihongo I",words:[
+ {w:"おぼえます",k:"覚えます",m:"mengingat, menghafal"},
+ {w:"わすれます",k:"忘れます",m:"lupa"},
+ {w:"なくします",m:"kehilangan"},
+ {w:"はらいます",k:"払います",m:"membayar"},
+ {w:"かえします",k:"返します",m:"mengembalikan"},
+ {w:"でかけます",k:"出かけます",m:"pergi, keluar (rumah)"},
+ {w:"ぬぎます",k:"脱ぎます",m:"melepas (baju, sepatu)"},
+ {w:"もっていきます",k:"持って行きます",m:"membawa pergi"},
+ {w:"もってきます",k:"持って来ます",m:"membawa datang"},
+ {w:"しんぱいします",k:"心配します",m:"mengkhawatirkan"},
+ {w:"ざんぎょうします",k:"残業します",m:"lembur, kerja lembur"},
+ {w:"しゅっちょうします",k:"出張します",m:"dinas ke luar kota"},
+ {w:"のみます",k:"飲みます（薬を）",m:"minum (obat)"},
+ {w:"はいります",k:"入ります（お風呂に）",m:"mandi (berendam)"},
+ {w:"たいせつ[な]",k:"大切",m:"penting, berharga"},
+ {w:"だいじょうぶ[な]",k:"大丈夫",m:"tidak apa-apa, tidak masalah"},
+ {w:"あぶない",k:"危ない",m:"berbahaya"},
+ {w:"きんえん",k:"禁煙",m:"dilarang merokok"},
+ {w:"[けんこう]ほけんしょう",k:"健康保険証",m:"kartu asuransi kesehatan"},
+ {w:"ねつ",k:"熱",m:"demam, panas badan",ex:"熱が あります = demam"},
+ {w:"びょうき",k:"病気",m:"sakit, penyakit"},
+ {w:"くすり",k:"薬",m:"obat"},
+ {w:"[お]ふろ",k:"お風呂",m:"bak mandi (berendam)"},
+ {w:"うわぎ",k:"上着",m:"baju luar, jaket"},
+ {w:"したぎ",k:"下着",m:"pakaian dalam"},
+ {w:"かぜ",k:"風邪",m:"masuk angin, flu"},
+ {w:"2・3にち",k:"2・3日",m:"dua-tiga hari"},
+ {w:"〜までに",m:"paling lambat ..., sebelum ..."},
+ {w:"ですから",m:"maka dari itu, oleh karena itu"}
+]},
+{hari:18,theme:"ピアノを 弾くことが できます。",sub:"Kosakata Bab 18 · Minna no Nihongo I",words:[
+ {w:"できます",m:"dapat, bisa, mampu"},
+ {w:"あらいます",k:"洗います",m:"mencuci"},
+ {w:"ひきます",k:"弾きます",m:"bermain (piano, gitar)"},
+ {w:"うたいます",k:"歌います",m:"bernyanyi, menyanyi"},
+ {w:"あつめます",k:"集めます",m:"mengumpulkan"},
+ {w:"すてます",k:"捨てます",m:"membuang"},
+ {w:"かえます",k:"換えます",m:"menukar, mengganti"},
+ {w:"うんてんします",k:"運転します",m:"menyetir, mengemudi"},
+ {w:"よやくします",k:"予約します",m:"memesan, reservasi"},
+ {w:"ピアノ",m:"piano"},
+ {w:"〜メートル",m:"... meter"},
+ {w:"げんきん",k:"現金",m:"uang tunai"},
+ {w:"しゅみ",k:"趣味",m:"hobi, kegemaran"},
+ {w:"にっき",k:"日記",m:"buku harian"},
+ {w:"[お]いのり",k:"お祈り",m:"doa",ex:"お祈りを します = berdoa"},
+ {w:"かちょう",k:"課長",m:"kepala seksi"},
+ {w:"ぶちょう",k:"部長",m:"kepala bagian"},
+ {w:"しゃちょう",k:"社長",m:"direktur utama"},
+ {w:"どうぶつ",k:"動物",m:"hewan, binatang"},
+ {w:"うま",k:"馬",m:"kuda"},
+ {w:"インターネット",m:"internet"},
+ {w:"とくに",k:"特に",m:"khususnya, terutama"},
+ {w:"ぜひ",m:"tentu saja, pasti (harapan kuat)"},
+ {w:"ほんとうですか",m:"benarkah? / sungguh?"},
+ {w:"それは おもしろいですね",m:"wah, itu menarik ya"}
+]},
+{hari:19,theme:"ダイエットを したことが あります。",sub:"Kosakata Bab 19 · Minna no Nihongo I",words:[
+ {w:"のぼります",k:"登ります（山に）",m:"mendaki, naik (gunung)"},
+ {w:"とまります",k:"泊まります（ホテルに）",m:"menginap (di hotel)"},
+ {w:"そうじします",k:"掃除します",m:"membersihkan, menyapu"},
+ {w:"せんたくします",k:"洗濯します",m:"mencuci pakaian"},
+ {w:"なります",m:"menjadi",ex:"先生に なります = menjadi guru"},
+ {w:"ねむい",k:"眠い",m:"mengantuk"},
+ {w:"つよい",k:"強い",m:"kuat"},
+ {w:"よわい",k:"弱い",m:"lemah"},
+ {w:"れんしゅう",k:"練習",m:"latihan",ex:"練習を します = berlatih"},
+ {w:"ゴルフ",m:"golf"},
+ {w:"すもう",k:"相撲",m:"sumo"},
+ {w:"[お]ちゃ",k:"お茶",m:"upacara minum teh"},
+ {w:"ひ",k:"日",m:"hari; tanggal"},
+ {w:"ちょうし",k:"調子",m:"kondisi, keadaan"},
+ {w:"いちど",k:"一度",m:"satu kali, sekali"},
+ {w:"いちども",k:"一度も",m:"sekali pun tidak (+ negatif)"},
+ {w:"だんだん",m:"berangsur-angsur, lama-kelamaan"},
+ {w:"もうすぐ",m:"sebentar lagi, tidak lama lagi"},
+ {w:"おかげさまで",m:"syukurlah, berkat Anda"},
+ {w:"ダイエット",m:"diet",ex:"ダイエットを します = berdiet"},
+ {w:"かんぱい",k:"乾杯",m:"bersulang"}
+]},
+{hari:20,theme:"夏休みは どうする？",sub:"Kosakata Bab 20 · Minna no Nihongo I",words:[
+ {w:"いります",k:"要ります（ビザが）",m:"memerlukan, butuh (visa)"},
+ {w:"しらべます",k:"調べます",m:"memeriksa, mengecek, meneliti"},
+ {w:"しゅうりします",k:"修理します",m:"memperbaiki, mereparasi"},
+ {w:"ぼく",k:"僕",m:"aku (laki-laki, informal)"},
+ {w:"きみ",k:"君",m:"kamu (informal, untuk orang setara/di bawah)"},
+ {w:"〜くん",k:"〜君",m:"Sdr. ... (informal, sering untuk anak laki-laki)"},
+ {w:"うん",m:"ya (informal dari はい)"},
+ {w:"ううん",m:"tidak (informal dari いいえ)"},
+ {w:"ことば",k:"言葉",m:"kata, bahasa"},
+ {w:"きもの",k:"着物",m:"kimono (pakaian tradisional Jepang)"},
+ {w:"ビザ",m:"visa"},
+ {w:"はじめ",k:"初め",m:"awal, mula-mula"},
+ {w:"おわり",k:"終わり",m:"akhir"},
+ {w:"こっち",m:"sini (informal dari こちら)"},
+ {w:"そっち",m:"situ (informal dari そちら)"},
+ {w:"あっち",m:"sana (informal dari あちら)"},
+ {w:"どっち",m:"mana (informal dari どちら)"},
+ {w:"みんなで",m:"bersama-sama, beramai-ramai"},
+ {w:"〜けど",m:"..., tetapi (informal dari が)"},
+ {w:"おなかが いっぱいです",m:"kenyang"},
+ {w:"よかったら",m:"kalau mau, kalau berkenan"},
+ {w:"いろいろ",m:"macam-macam; terima kasih atas segalanya"}
+]},
+{hari:21,theme:"あした 雨が 降ると 思います。",sub:"Kosakata Bab 21 · Minna no Nihongo I",words:[
+ {w:"おもいます",k:"思います",m:"mengira, berpikir"},
+ {w:"いいます",k:"言います",m:"mengatakan, berkata"},
+ {w:"かちます",k:"勝ちます",m:"menang"},
+ {w:"まけます",k:"負けます",m:"kalah"},
+ {w:"あります",k:"（お祭りが）あります",m:"ada, diadakan (festival)"},
+ {w:"やくにたちます",k:"役に立ちます",m:"berguna, bermanfaat"},
+ {w:"うごきます",k:"動きます",m:"bergerak; berjalan (mesin)"},
+ {w:"やめます",k:"辞めます（会社を）",m:"berhenti (kerja)"},
+ {w:"きをつけます",k:"気を付けます",m:"berhati-hati, waspada"},
+ {w:"りゅうがくします",k:"留学します",m:"belajar di luar negeri"},
+ {w:"むだ[な]",m:"sia-sia, tidak berguna"},
+ {w:"ふべん[な]",k:"不便",m:"tidak praktis"},
+ {w:"すごい",m:"hebat, luar biasa"},
+ {w:"ほんとう",m:"betul, benar"},
+ {w:"うそ",m:"bohong"},
+ {w:"じどうしゃ",k:"自動車",m:"mobil"},
+ {w:"こうつう",k:"交通",m:"lalu lintas"},
+ {w:"ぶっか",k:"物価",m:"harga barang"},
+ {w:"ほうそう",k:"放送",m:"siaran"},
+ {w:"ニュース",m:"warta berita"},
+ {w:"アニメ",m:"anime"},
+ {w:"マンガ",m:"manga, komik"},
+ {w:"デザイン",m:"desain, model"},
+ {w:"ゆめ",k:"夢",m:"mimpi, impian"},
+ {w:"てんさい",k:"天才",m:"genius, jenius"},
+ {w:"しあい",k:"試合",m:"pertandingan"},
+ {w:"いけん",k:"意見",m:"pendapat"},
+ {w:"[お]はなし",k:"お話",m:"cerita, pembicaraan; ceramah"},
+ {w:"しゅしょう",k:"首相",m:"perdana menteri"},
+ {w:"たぶん",k:"多分",m:"mungkin, barangkali"},
+ {w:"きっと",m:"pasti"},
+ {w:"ほんとうに",m:"sungguh, benar-benar"},
+ {w:"そんなに",m:"tidak begitu (+ negatif)"},
+ {w:"〜について",m:"tentang ..., mengenai ..."}
+]},
+{hari:22,theme:"どんな アパートが いいですか。",sub:"Kosakata Bab 22 · Minna no Nihongo I",words:[
+ {w:"きます",k:"着ます（シャツを）",m:"memakai (kemeja, baju atasan)"},
+ {w:"はきます",k:"（靴を）はきます",m:"memakai (sepatu, celana, rok)"},
+ {w:"かぶります",k:"（帽子を）かぶります",m:"memakai (topi)"},
+ {w:"かけます",k:"（眼鏡を）かけます",m:"memakai (kacamata)"},
+ {w:"します",k:"（ネクタイを）します",m:"memakai (dasi)"},
+ {w:"うまれます",k:"生まれます",m:"lahir"},
+ {w:"わたしたち",m:"kami, kita"},
+ {w:"コート",m:"mantel"},
+ {w:"セーター",m:"sweter, baju hangat"},
+ {w:"スーツ",m:"setelan jas"},
+ {w:"ぼうし",k:"帽子",m:"topi"},
+ {w:"めがね",k:"眼鏡",m:"kacamata"},
+ {w:"ケーキ",m:"kue tart"},
+ {w:"[お]べんとう",k:"お弁当",m:"bekal"},
+ {w:"ロボット",m:"robot"},
+ {w:"ユーモア",m:"humor"},
+ {w:"つごう",k:"都合",m:"kondisi, keadaan (jadwal)",ex:"都合が 悪いです = tidak bisa (ada halangan)"},
+ {w:"よく",m:"sering kali"},
+ {w:"おめでとうございます",m:"selamat (ulang tahun, pernikahan, dll.)"}
+]},
+{hari:23,theme:"このボタンを 押すと、お釣りが 出ます。",sub:"Kosakata Bab 23 · Minna no Nihongo I",words:[
+ {w:"ききます",k:"聞きます（先生に）",m:"bertanya (kepada guru)"},
+ {w:"まわします",k:"回します",m:"memutar"},
+ {w:"ひきます",k:"引きます",m:"menarik"},
+ {w:"かえます",k:"変えます",m:"mengubah"},
+ {w:"さわります",k:"触ります（ドアに）",m:"menyentuh (pintu)"},
+ {w:"でます",k:"出ます（お釣りが）",m:"keluar (uang kembalian)"},
+ {w:"あるきます",k:"歩きます（道を）",m:"berjalan kaki (di jalan)"},
+ {w:"わたります",k:"渡ります（橋を）",m:"menyeberang (jembatan)"},
+ {w:"まがります",k:"曲がります（右へ）",m:"belok (ke kanan)"},
+ {w:"[お]ゆ",k:"お湯",m:"air panas"},
+ {w:"おと",k:"音",m:"bunyi, suara"},
+ {w:"サイズ",m:"ukuran"},
+ {w:"こしょう",k:"故障",m:"kerusakan, mogok",ex:"故障します = rusak"},
+ {w:"みち",k:"道",m:"jalan"},
+ {w:"こうさてん",k:"交差点",m:"perempatan, persimpangan"},
+ {w:"しんごう",k:"信号",m:"lampu lalu lintas"},
+ {w:"かど",k:"角",m:"sudut, pojok, tikungan"},
+ {w:"はし",k:"橋",m:"jembatan"},
+ {w:"ちゅうしゃじょう",k:"駐車場",m:"tempat parkir"},
+ {w:"たてもの",k:"建物",m:"gedung, bangunan"},
+ {w:"ボタン",m:"tombol"},
+ {w:"[お]つり",k:"お釣り",m:"uang kembalian"},
+ {w:"なんかいも",k:"何回も",m:"berkali-kali"},
+ {w:"〜め",k:"〜目",m:"yang ke-... (urutan)",ex:"一つ目 = yang pertama"}
+]},
+{hari:24,theme:"手伝って くれますか。",sub:"Kosakata Bab 24 · Minna no Nihongo I",words:[
+ {w:"くれます",m:"memberi (kepada saya)"},
+ {w:"なおします",k:"直します",m:"memperbaiki, mengoreksi"},
+ {w:"つれていきます",k:"連れて行きます",m:"membawa/mengajak pergi (orang)"},
+ {w:"つれてきます",k:"連れて来ます",m:"membawa/mengajak datang (orang)"},
+ {w:"おくります",k:"送ります（人を）",m:"mengantar (orang)"},
+ {w:"しょうかいします",k:"紹介します",m:"memperkenalkan"},
+ {w:"あんないします",k:"案内します",m:"mengantar berkeliling, memandu"},
+ {w:"せつめいします",k:"説明します",m:"menjelaskan, menerangkan"},
+ {w:"おじいさん / そふ",k:"祖父",m:"kakek"},
+ {w:"おばあさん / そぼ",k:"祖母",m:"nenek"},
+ {w:"じゅんび",k:"準備",m:"persiapan",ex:"準備を します = mempersiapkan"},
+ {w:"ひっこし",k:"引っ越し",m:"pindah rumah",ex:"引っ越しを します = pindah rumah"},
+ {w:"[お]かし",k:"お菓子",m:"kue, camilan"},
+ {w:"ホームステイ",m:"homestay"},
+ {w:"ぜんぶ",k:"全部",m:"semua, seluruhnya"},
+ {w:"じぶんで",k:"自分で",m:"sendiri, dengan sendiri"},
+ {w:"ほかに",m:"selain itu, yang lain"},
+ {w:"ははのひ",k:"母の日",m:"hari Ibu"}
+]},
+{hari:25,theme:"雨が 降ったら、行きません。",sub:"Kosakata Bab 25 · Minna no Nihongo I",words:[
+ {w:"かんがえます",k:"考えます",m:"berpikir, memikirkan"},
+ {w:"つきます",k:"着きます",m:"tiba, sampai"},
+ {w:"としを とります",k:"年を取ります",m:"bertambah umur, menua"},
+ {w:"たります",k:"足ります",m:"cukup"},
+ {w:"いなか",k:"田舎",m:"desa, kampung halaman"},
+ {w:"チャンス",m:"kesempatan"},
+ {w:"おく",k:"億",m:"ratus juta",ex:"1億円 = seratus juta yen"},
+ {w:"もし",m:"seandainya, kalau"},
+ {w:"いみ",k:"意味",m:"arti, makna"},
+ {w:"もしもし",m:"halo (di telepon)"},
+ {w:"てんきん",k:"転勤",m:"pindah tugas/kantor",ex:"転勤します = pindah kantor"},
+ {w:"こと",m:"hal",ex:"旅行のこと = hal perjalanan"},
+ {w:"ひま",k:"暇",m:"waktu luang"},
+ {w:"いっしょうけんめい",k:"一生懸命",m:"sekuat tenaga, dengan sungguh-sungguh"},
+ {w:"たとえば",k:"例えば",m:"misalnya, contohnya"},
+ {w:"いろいろ おせわに なりました",k:"いろいろ お世話に なりました",m:"terima kasih atas segala bantuannya"},
+ {w:"がんばります",k:"頑張ります",m:"berusaha, bekerja keras"},
+ {w:"おげんきで",k:"お元気で",m:"semoga selalu sehat (saat berpisah lama)"}
+]}
+];
+
+</script>
+<script>
+const KANJI = [
+{"no":1,"kanji":"一","baca":"ひと-つ / いち","kata":["一つ (ひとつ) = satu (benda)","一月 (いちがつ) = Januari"],"jp":"りんごを 一つ 食べました。","id":"Saya makan satu apel."},
+{"no":2,"kanji":"二","baca":"ふた-つ / に","kata":["二つ (ふたつ) = dua (benda)","二人 (ふたり) = dua orang"],"jp":"子どもが 二人 います。","id":"Ada dua orang anak."},
+{"no":3,"kanji":"三","baca":"みっ-つ / さん","kata":["三つ (みっつ) = tiga (benda)","三月 (さんがつ) = Maret"],"jp":"三時に 会いましょう。","id":"Ayo bertemu jam 3."},
+{"no":4,"kanji":"四","baca":"よっ-つ, よん / し","kata":["四つ (よっつ) = empat (benda)","四月 (しがつ) = April"],"jp":"四時から 勉強します。","id":"Belajar mulai jam 4."},
+{"no":5,"kanji":"五","baca":"いつ-つ / ご","kata":["五つ (いつつ) = lima (benda)","五分 (ごふん) = 5 menit"],"jp":"五時に うちへ 帰ります。","id":"Pulang ke rumah jam 5."},
+{"no":6,"kanji":"六","baca":"むっ-つ / ろく","kata":["六つ (むっつ) = enam (benda)","六時 (ろくじ) = jam 6"],"jp":"毎朝 六時に 起きます。","id":"Setiap pagi bangun jam 6."},
+{"no":7,"kanji":"七","baca":"なな-つ / しち","kata":["七つ (ななつ) = tujuh (benda)","七時 (しちじ) = jam 7"],"jp":"七時に 晩ごはんを 食べます。","id":"Makan malam jam 7."},
+{"no":8,"kanji":"八","baca":"やっ-つ / はち","kata":["八つ (やっつ) = delapan (benda)","八百屋 (やおや) = toko sayur"],"jp":"八時に 学校へ 行きます。","id":"Pergi ke sekolah jam 8."},
+{"no":9,"kanji":"九","baca":"ここの-つ / きゅう, く","kata":["九つ (ここのつ) = sembilan (benda)","九時 (くじ) = jam 9"],"jp":"九時から 仕事です。","id":"Kerja mulai jam 9."},
+{"no":10,"kanji":"十","baca":"とお / じゅう","kata":["十 (とお) = sepuluh (benda)","十月 (じゅうがつ) = Oktober"],"jp":"十分 待ってください。","id":"Tolong tunggu 10 menit."},
+{"no":11,"kanji":"百","baca":"ひゃく","kata":["百円 (ひゃくえん) = 100 yen","三百 (さんびゃく) = 300"],"jp":"これは 百円です。","id":"Ini 100 yen."},
+{"no":12,"kanji":"千","baca":"せん","kata":["千円 (せんえん) = 1.000 yen","三千 (さんぜん) = 3.000"],"jp":"この 本は 千円でした。","id":"Buku ini (harganya) 1.000 yen."},
+{"no":13,"kanji":"万","baca":"まん","kata":["一万円 (いちまんえん) = 10.000 yen","十万 (じゅうまん) = 100.000"],"jp":"かばんを 一万円で 買いました。","id":"Membeli tas seharga 10.000 yen."},
+{"no":14,"kanji":"円","baca":"まる-い / えん","kata":["百円 (ひゃくえん) = 100 yen","円い (まるい) = bulat"],"jp":"全部で 五百円です。","id":"Semuanya 500 yen."},
+{"no":15,"kanji":"日","baca":"ひ / にち, じつ","kata":["日本 (にほん) = Jepang","毎日 (まいにち) = setiap hari","日曜日 (にちようび) = hari Minggu"],"jp":"毎日 日本語を 勉強します。","id":"Setiap hari belajar bahasa Jepang."},
+{"no":16,"kanji":"月","baca":"つき / げつ, がつ","kata":["月曜日 (げつようび) = Senin","一月 (いちがつ) = Januari","来月 (らいげつ) = bulan depan"],"jp":"来月 国へ 帰ります。","id":"Bulan depan pulang ke negara saya."},
+{"no":17,"kanji":"火","baca":"ひ / か","kata":["火曜日 (かようび) = Selasa","花火 (はなび) = kembang api"],"jp":"火曜日に テストが あります。","id":"Hari Selasa ada tes."},
+{"no":18,"kanji":"水","baca":"みず / すい","kata":["水 (みず) = air","水曜日 (すいようび) = Rabu"],"jp":"水を 飲みたいです。","id":"Ingin minum air."},
+{"no":19,"kanji":"木","baca":"き / もく","kata":["木 (き) = pohon","木曜日 (もくようび) = Kamis"],"jp":"公園に 木が たくさん あります。","id":"Di taman ada banyak pohon."},
+{"no":20,"kanji":"金","baca":"かね / きん","kata":["お金 (おかね) = uang","金曜日 (きんようび) = Jumat"],"jp":"お金が あまり ありません。","id":"Tidak punya banyak uang."},
+{"no":21,"kanji":"土","baca":"つち / ど","kata":["土曜日 (どようび) = Sabtu","お土産 (おみやげ) = oleh-oleh"],"jp":"土曜日に 友だちと 遊びます。","id":"Hari Sabtu bermain dengan teman."},
+{"no":22,"kanji":"曜","baca":"よう","kata":["曜日 (ようび) = hari","何曜日 (なんようび) = hari apa"],"jp":"きょうは 何曜日ですか。","id":"Hari ini hari apa?"},
+{"no":23,"kanji":"年","baca":"とし / ねん","kata":["今年 (ことし) = tahun ini","来年 (らいねん) = tahun depan","〜年 (ねん) = tahun ..."],"jp":"来年 日本へ 行きたいです。","id":"Tahun depan ingin ke Jepang."},
+{"no":24,"kanji":"時","baca":"とき / じ","kata":["〜時 (じ) = jam ...","時間 (じかん) = waktu","時計 (とけい) = jam/arloji"],"jp":"今 何時ですか。…９時です。","id":"Sekarang jam berapa? …Jam 9."},
+{"no":25,"kanji":"分","baca":"わ-かる / ふん, ぷん","kata":["〜分 (ふん) = menit","分かります (わかります) = mengerti"],"jp":"あと ５分で 授業が 始まります。","id":"5 menit lagi pelajaran dimulai."},
+{"no":26,"kanji":"半","baca":"はん","kata":["〜時半 (はん) = jam setengah","半分 (はんぶん) = setengah"],"jp":"７時半に 起きます。","id":"Bangun jam 7.30."},
+{"no":27,"kanji":"週","baca":"しゅう","kata":["今週 (こんしゅう) = minggu ini","毎週 (まいしゅう) = setiap minggu","一週間 (いっしゅうかん) = seminggu"],"jp":"毎週 テニスを します。","id":"Setiap minggu bermain tenis."},
+{"no":28,"kanji":"間","baca":"あいだ / かん","kata":["時間 (じかん) = waktu/jam","間 (あいだ) = antara"],"jp":"銀行と 郵便局の 間に 本屋が あります。","id":"Di antara bank dan kantor pos ada toko buku."},
+{"no":29,"kanji":"今","baca":"いま / こん","kata":["今 (いま) = sekarang","今日 (きょう) = hari ini","今晩 (こんばん) = malam ini"],"jp":"今 忙しいですか。","id":"Apakah sekarang sibuk?"},
+{"no":30,"kanji":"先","baca":"さき / せん","kata":["先生 (せんせい) = guru","先週 (せんしゅう) = minggu lalu","先月 (せんげつ) = bulan lalu"],"jp":"先週 京都へ 行きました。","id":"Minggu lalu pergi ke Kyoto."},
+{"no":31,"kanji":"前","baca":"まえ / ぜん","kata":["前 (まえ) = depan","午前 (ごぜん) = AM","名前 (なまえ) = nama"],"jp":"駅の 前で 会いましょう。","id":"Ayo bertemu di depan stasiun."},
+{"no":32,"kanji":"後","baca":"うし-ろ, あと / ご","kata":["後ろ (うしろ) = belakang","午後 (ごご) = PM","〜の後 (あと) = setelah ..."],"jp":"授業の 後で、図書館へ 行きます。","id":"Setelah pelajaran, pergi ke perpustakaan."},
+{"no":33,"kanji":"午","baca":"ご","kata":["午前 (ごぜん) = pagi (AM)","午後 (ごご) = siang/sore (PM)"],"jp":"午前９時から 午後５時まで 働きます。","id":"Bekerja dari jam 9 pagi sampai jam 5 sore."},
+{"no":34,"kanji":"毎","baca":"まい","kata":["毎日 (まいにち) = setiap hari","毎朝 (まいあさ) = setiap pagi","毎晩 (まいばん) = setiap malam"],"jp":"毎朝 ６時に 起きます。","id":"Setiap pagi bangun jam 6."},
+{"no":35,"kanji":"何","baca":"なに, なん / か","kata":["何 (なに) = apa","何時 (なんじ) = jam berapa","何曜日 (なんようび) = hari apa"],"jp":"それは 何ですか。","id":"Itu apa?"},
+{"no":36,"kanji":"人","baca":"ひと / じん, にん","kata":["人 (ひと) = orang","日本人 (にほんじん) = orang Jepang","〜人 (にん) = ... orang"],"jp":"あの 人は だれですか。","id":"Orang itu siapa?"},
+{"no":37,"kanji":"男","baca":"おとこ / だん","kata":["男の人 (おとこのひと) = laki-laki","男の子 (おとこのこ) = anak laki-laki"],"jp":"あの 男の人は 先生です。","id":"Laki-laki itu guru."},
+{"no":38,"kanji":"女","baca":"おんな / じょ","kata":["女の人 (おんなのひと) = perempuan","女の子 (おんなのこ) = anak perempuan"],"jp":"女の子が 公園で 遊んでいます。","id":"Anak perempuan sedang bermain di taman."},
+{"no":39,"kanji":"子","baca":"こ / し","kata":["子ども (こども) = anak","お子さん (おこさん) = anak (orang lain)"],"jp":"子どもは 二人 います。","id":"Punya dua anak."},
+{"no":40,"kanji":"母","baca":"はは / ぼ","kata":["母 (はは) = ibu (sendiri)","お母さん (おかあさん) = ibu (orang lain)"],"jp":"母は 料理が 上手です。","id":"Ibu saya pandai memasak."},
+{"no":41,"kanji":"父","baca":"ちち / ふ","kata":["父 (ちち) = ayah (sendiri)","お父さん (おとうさん) = ayah (orang lain)"],"jp":"父は 会社員です。","id":"Ayah saya karyawan perusahaan."},
+{"no":42,"kanji":"友","baca":"とも / ゆう","kata":["友だち (ともだち) = teman"],"jp":"友だちと 映画を 見ます。","id":"Nonton film bersama teman."},
+{"no":43,"kanji":"名","baca":"な / めい","kata":["名前 (なまえ) = nama","有名 (ゆうめい) = terkenal"],"jp":"お名前は 何ですか。","id":"Siapa nama Anda?"},
+{"no":44,"kanji":"生","baca":"う-まれる / せい","kata":["学生 (がくせい) = pelajar","生まれます (うまれます) = lahir"],"jp":"わたしは 学生です。","id":"Saya pelajar."},
+{"no":45,"kanji":"学","baca":"まな-ぶ / がく","kata":["学校 (がっこう) = sekolah","大学 (だいがく) = universitas"],"jp":"弟は 大学で 勉強しています。","id":"Adik saya kuliah di universitas."},
+{"no":46,"kanji":"校","baca":"こう","kata":["学校 (がっこう) = sekolah","高校 (こうこう) = SMA"],"jp":"学校へ バスで 行きます。","id":"Pergi ke sekolah naik bus."},
+{"no":47,"kanji":"本","baca":"もと / ほん","kata":["本 (ほん) = buku","日本 (にほん) = Jepang"],"jp":"図書館で 本を 借ります。","id":"Meminjam buku di perpustakaan."},
+{"no":48,"kanji":"大","baca":"おお-きい / だい","kata":["大きい (おおきい) = besar","大学 (だいがく) = universitas","大好き (だいすき) = sangat suka"],"jp":"この かばんは 大きいですね。","id":"Tas ini besar ya."},
+{"no":49,"kanji":"中","baca":"なか / ちゅう","kata":["中 (なか) = dalam","中国 (ちゅうごく) = Tiongkok"],"jp":"かばんの 中に 辞書が あります。","id":"Di dalam tas ada kamus."},
+{"no":50,"kanji":"小","baca":"ちい-さい / しょう","kata":["小さい (ちいさい) = kecil","小学校 (しょうがっこう) = SD"],"jp":"小さい 車が ほしいです。","id":"Ingin punya mobil kecil."},
+{"no":51,"kanji":"上","baca":"うえ / じょう","kata":["上 (うえ) = atas","上手 (じょうず) = pandai"],"jp":"机の 上に 写真が あります。","id":"Di atas meja ada foto."},
+{"no":52,"kanji":"下","baca":"した / か, げ","kata":["下 (した) = bawah","下手 (へた) = tidak pandai","地下鉄 (ちかてつ) = kereta bawah tanah"],"jp":"いすの 下に 猫が います。","id":"Di bawah kursi ada kucing."},
+{"no":53,"kanji":"左","baca":"ひだり / さ","kata":["左 (ひだり) = kiri","左手 (ひだりて) = tangan kiri"],"jp":"銀行は 左に あります。","id":"Bank ada di sebelah kiri."},
+{"no":54,"kanji":"右","baca":"みぎ / う","kata":["右 (みぎ) = kanan","右手 (みぎて) = tangan kanan"],"jp":"次の 交差点を 右へ 曲がってください。","id":"Beloklah ke kanan di perempatan berikutnya."},
+{"no":55,"kanji":"外","baca":"そと / がい","kata":["外 (そと) = luar","外国 (がいこく) = luar negeri"],"jp":"外は 雨が 降っています。","id":"Di luar sedang hujan."},
+{"no":56,"kanji":"山","baca":"やま / さん","kata":["山 (やま) = gunung","富士山 (ふじさん) = Gunung Fuji"],"jp":"日曜日 山に 登ります。","id":"Hari Minggu mendaki gunung."},
+{"no":57,"kanji":"川","baca":"かわ / せん","kata":["川 (かわ) = sungai"],"jp":"川で 泳いだことが あります。","id":"Pernah berenang di sungai."},
+{"no":58,"kanji":"天","baca":"てん","kata":["天気 (てんき) = cuaca","天ぷら (てんぷら) = tempura"],"jp":"きょうは 天気が いいですね。","id":"Hari ini cuacanya bagus ya."},
+{"no":59,"kanji":"気","baca":"き, け","kata":["元気 (げんき) = sehat","天気 (てんき) = cuaca"],"jp":"お元気ですか。…はい、元気です。","id":"Apa kabar? …Baik."},
+{"no":60,"kanji":"雨","baca":"あめ / う","kata":["雨 (あめ) = hujan"],"jp":"あしたは 雨でしょう。","id":"Besok mungkin hujan."},
+{"no":61,"kanji":"空","baca":"そら / くう","kata":["空 (そら) = langit","空港 (くうこう) = bandara"],"jp":"空が とても きれいです。","id":"Langitnya sangat indah."},
+{"no":62,"kanji":"花","baca":"はな / か","kata":["花 (はな) = bunga","花見 (はなみ) = melihat bunga sakura"],"jp":"母に 花を あげました。","id":"Memberi bunga kepada ibu."},
+{"no":63,"kanji":"魚","baca":"さかな / ぎょ","kata":["魚 (さかな) = ikan"],"jp":"スーパーで 魚を 買いました。","id":"Membeli ikan di supermarket."},
+{"no":64,"kanji":"口","baca":"くち / こう","kata":["口 (くち) = mulut","入口 (いりぐち) = pintu masuk","出口 (でぐち) = pintu keluar"],"jp":"出口は あちらです。","id":"Pintu keluar di sebelah sana."},
+{"no":65,"kanji":"目","baca":"め / もく","kata":["目 (め) = mata","〜番目 (ばんめ) = urutan ke-..."],"jp":"目が 痛いです。","id":"Mata saya sakit."},
+{"no":66,"kanji":"耳","baca":"みみ / じ","kata":["耳 (みみ) = telinga"],"jp":"うさぎは 耳が 長いです。","id":"Kelinci telinganya panjang."},
+{"no":67,"kanji":"手","baca":"て / しゅ","kata":["手 (て) = tangan","手紙 (てがみ) = surat","上手 (じょうず) = pandai"],"jp":"食事のまえに 手を 洗います。","id":"Sebelum makan mencuci tangan."},
+{"no":68,"kanji":"足","baca":"あし / そく","kata":["足 (あし) = kaki"],"jp":"たくさん 歩きましたから、足が 痛いです。","id":"Karena banyak jalan, kaki saya sakit."},
+{"no":69,"kanji":"白","baca":"しろ-い / はく","kata":["白い (しろい) = putih","面白い (おもしろい) = menarik"],"jp":"白い シャツを 買いました。","id":"Membeli kemeja putih."},
+{"no":70,"kanji":"高","baca":"たか-い / こう","kata":["高い (たかい) = mahal/tinggi","高校 (こうこう) = SMA"],"jp":"この カメラは 高いですね。","id":"Kamera ini mahal ya."},
+{"no":71,"kanji":"安","baca":"やす-い / あん","kata":["安い (やすい) = murah","安心 (あんしん) = tenang/lega"],"jp":"あの 店は 安くて、おいしいです。","id":"Toko itu murah dan enak."},
+{"no":72,"kanji":"新","baca":"あたら-しい / しん","kata":["新しい (あたらしい) = baru","新聞 (しんぶん) = koran"],"jp":"新しい 靴を 買いたいです。","id":"Ingin membeli sepatu baru."},
+{"no":73,"kanji":"古","baca":"ふる-い / こ","kata":["古い (ふるい) = lama/tua (benda)","古本 (ふるほん) = buku bekas"],"jp":"この お寺は とても 古いです。","id":"Kuil ini sangat tua."},
+{"no":74,"kanji":"長","baca":"なが-い / ちょう","kata":["長い (ながい) = panjang","社長 (しゃちょう) = direktur"],"jp":"この 川は 長いです。","id":"Sungai ini panjang."},
+{"no":75,"kanji":"多","baca":"おお-い / た","kata":["多い (おおい) = banyak","多分 (たぶん) = mungkin"],"jp":"東京は 人が 多いです。","id":"Di Tokyo orangnya banyak."},
+{"no":76,"kanji":"少","baca":"すく-ない, すこ-し / しょう","kata":["少ない (すくない) = sedikit","少し (すこし) = sedikit"],"jp":"日本語が 少し わかります。","id":"Mengerti bahasa Jepang sedikit."},
+{"no":77,"kanji":"行","baca":"い-く / こう, ぎょう","kata":["行きます (いきます) = pergi","銀行 (ぎんこう) = bank","旅行 (りょこう) = wisata"],"jp":"らいげつ 日本へ 行きます。","id":"Bulan depan pergi ke Jepang."},
+{"no":78,"kanji":"来","baca":"き-ます, く-る / らい","kata":["来ます (きます) = datang","来週 (らいしゅう) = minggu depan","来年 (らいねん) = tahun depan"],"jp":"友だちが うちに 来ます。","id":"Teman datang ke rumah."},
+{"no":79,"kanji":"見","baca":"み-る / けん","kata":["見ます (みます) = melihat","花見 (はなみ) = melihat sakura"],"jp":"うちで テレビを 見ます。","id":"Menonton TV di rumah."},
+{"no":80,"kanji":"聞","baca":"き-く / ぶん","kata":["聞きます (ききます) = mendengar","新聞 (しんぶん) = koran"],"jp":"毎晩 音楽を 聞きます。","id":"Setiap malam mendengarkan musik."},
+{"no":81,"kanji":"言","baca":"い-う / げん","kata":["言います (いいます) = berkata","言葉 (ことば) = kata/bahasa"],"jp":"もう一度 言ってください。","id":"Tolong katakan sekali lagi."},
+{"no":82,"kanji":"話","baca":"はな-す, はなし / わ","kata":["話します (はなします) = berbicara","電話 (でんわ) = telepon"],"jp":"日本語で 話してください。","id":"Bicaralah dalam bahasa Jepang."},
+{"no":83,"kanji":"読","baca":"よ-む / どく","kata":["読みます (よみます) = membaca","読書 (どくしょ) = membaca buku"],"jp":"毎朝 新聞を 読みます。","id":"Setiap pagi membaca koran."},
+{"no":84,"kanji":"書","baca":"か-く / しょ","kata":["書きます (かきます) = menulis","辞書 (じしょ) = kamus","図書館 (としょかん) = perpustakaan"],"jp":"レポートを 書かなければなりません。","id":"Harus menulis laporan."},
+{"no":85,"kanji":"食","baca":"た-べる / しょく","kata":["食べます (たべます) = makan","食事 (しょくじ) = makan (kegiatan)","食堂 (しょくどう) = kantin"],"jp":"朝ごはんを 食べましたか。","id":"Sudah sarapan?"},
+{"no":86,"kanji":"飲","baca":"の-む / いん","kata":["飲みます (のみます) = minum","飲み物 (のみもの) = minuman"],"jp":"毎日 コーヒーを 飲みます。","id":"Setiap hari minum kopi."},
+{"no":87,"kanji":"買","baca":"か-う / ばい","kata":["買います (かいます) = membeli","買い物 (かいもの) = belanja"],"jp":"スーパーで 果物を 買います。","id":"Membeli buah di supermarket."},
+{"no":88,"kanji":"立","baca":"た-つ / りつ","kata":["立ちます (たちます) = berdiri"],"jp":"あの 人は 駅の 前に 立っています。","id":"Orang itu berdiri di depan stasiun."},
+{"no":89,"kanji":"休","baca":"やす-む / きゅう","kata":["休みます (やすみます) = libur/istirahat","休み (やすみ) = hari libur"],"jp":"あしたは 休みです。","id":"Besok libur."},
+{"no":90,"kanji":"入","baca":"はい-る, い-れる / にゅう","kata":["入ります (はいります) = masuk","入口 (いりぐち) = pintu masuk"],"jp":"喫茶店に 入りましょう。","id":"Ayo masuk kafe."},
+{"no":91,"kanji":"出","baca":"で-る, だ-す / しゅつ","kata":["出ます (でます) = keluar","出口 (でぐち) = pintu keluar","出かけます (でかけます) = pergi keluar"],"jp":"毎朝 8時に うちを 出ます。","id":"Setiap pagi keluar rumah jam 8."},
+{"no":92,"kanji":"会","baca":"あ-う / かい","kata":["会います (あいます) = bertemu","会社 (かいしゃ) = perusahaan"],"jp":"駅で 友だちに 会いました。","id":"Bertemu teman di stasiun."},
+{"no":93,"kanji":"国","baca":"くに / こく","kata":["国 (くに) = negara","外国 (がいこく) = luar negeri","中国 (ちゅうごく) = Tiongkok"],"jp":"お国は どちらですか。","id":"Anda berasal dari negara mana?"},
+{"no":94,"kanji":"東","baca":"ひがし / とう","kata":["東 (ひがし) = timur","東京 (とうきょう) = Tokyo"],"jp":"東京へ 行ったことがありますか。","id":"Pernah ke Tokyo?"},
+{"no":95,"kanji":"西","baca":"にし / せい","kata":["西 (にし) = barat","関西 (かんさい) = Kansai"],"jp":"西の 空が 赤いです。","id":"Langit barat berwarna merah."},
+{"no":96,"kanji":"南","baca":"みなみ / なん","kata":["南 (みなみ) = selatan","東南アジア (とうなんアジア) = Asia Tenggara"],"jp":"南の 島へ 旅行したいです。","id":"Ingin berwisata ke pulau selatan."},
+{"no":97,"kanji":"北","baca":"きた / ほく","kata":["北 (きた) = utara","北海道 (ほっかいどう) = Hokkaido"],"jp":"北海道は 冬 とても 寒いです。","id":"Hokkaido sangat dingin saat musim dingin."},
+{"no":98,"kanji":"車","baca":"くるま / しゃ","kata":["車 (くるま) = mobil","電車 (でんしゃ) = kereta listrik","自転車 (じてんしゃ) = sepeda"],"jp":"車で 会社へ 行きます。","id":"Pergi ke kantor naik mobil."},
+{"no":99,"kanji":"電","baca":"でん","kata":["電話 (でんわ) = telepon","電気 (でんき) = listrik/lampu","電車 (でんしゃ) = kereta"],"jp":"寝るまえに 電気を 消してください。","id":"Sebelum tidur matikan lampu."},
+{"no":100,"kanji":"駅","baca":"えき","kata":["駅 (えき) = stasiun","駅前 (えきまえ) = depan stasiun"],"jp":"駅まで 迎えに 行きます。","id":"Pergi menjemput ke stasiun."},
+{"no":101,"kanji":"道","baca":"みち / どう","kata":["道 (みち) = jalan","水道 (すいどう) = air ledeng","北海道 (ほっかいどう) = Hokkaido"],"jp":"この 道を まっすぐ 行ってください。","id":"Lurus saja di jalan ini."},
+{"no":102,"kanji":"社","baca":"しゃ","kata":["会社 (かいしゃ) = perusahaan","社長 (しゃちょう) = direktur","神社 (じんじゃ) = kuil Shinto"],"jp":"父の 会社は 大阪に あります。","id":"Perusahaan ayah ada di Osaka."},
+{"no":103,"kanji":"店","baca":"みせ / てん","kata":["店 (みせ) = toko","喫茶店 (きっさてん) = kafe"],"jp":"あの 店の ラーメンは おいしいです。","id":"Ramen di toko itu enak."},
+{"no":104,"kanji":"語","baca":"ご","kata":["日本語 (にほんご) = bahasa Jepang","英語 (えいご) = bahasa Inggris","インドネシア語 = bahasa Indonesia"],"jp":"日本語の 勉強は 楽しいです。","id":"Belajar bahasa Jepang itu menyenangkan."}
+];
+
+</script>
+<script>
+const KJEX = {
+"一":{on:"イチ",kun:"ひと-つ",ju:["一つ（ひとつ）= satu","一月（いちがつ）= Januari","一番（いちばん）= nomor satu / paling"]},
+"二":{on:"ニ",kun:"ふた-つ",ju:["二つ（ふたつ）= dua","二人（ふたり）= dua orang","二月（にがつ）= Februari"]},
+"三":{on:"サン",kun:"みっ-つ",ju:["三つ（みっつ）= tiga","三月（さんがつ）= Maret","三人（さんにん）= tiga orang"]},
+"四":{on:"シ",kun:"よっ-つ、よん",ju:["四つ（よっつ）= empat","四月（しがつ）= April","四時（よじ）= jam 4"]},
+"五":{on:"ゴ",kun:"いつ-つ",ju:["五つ（いつつ）= lima","五月（ごがつ）= Mei","五分（ごふん）= 5 menit"]},
+"六":{on:"ロク",kun:"むっ-つ",ju:["六つ（むっつ）= enam","六月（ろくがつ）= Juni","六百（ろっぴゃく）= 600"]},
+"七":{on:"シチ",kun:"なな-つ",ju:["七つ（ななつ）= tujuh","七月（しちがつ）= Juli","七時（しちじ）= jam 7"]},
+"八":{on:"ハチ",kun:"やっ-つ",ju:["八つ（やっつ）= delapan","八月（はちがつ）= Agustus","八百屋（やおや）= toko sayur"]},
+"九":{on:"キュウ、ク",kun:"ここの-つ",ju:["九つ（ここのつ）= sembilan","九月（くがつ）= September","九時（くじ）= jam 9"]},
+"十":{on:"ジュウ",kun:"とお",ju:["十（とお）= sepuluh","十月（じゅうがつ）= Oktober","十分（じゅっぷん）= 10 menit"]},
+"百":{on:"ヒャク",kun:"",ju:["百円（ひゃくえん）= 100 yen","三百（さんびゃく）= 300","八百（はっぴゃく）= 800"]},
+"千":{on:"セン",kun:"ち",ju:["千円（せんえん）= 1.000 yen","三千（さんぜん）= 3.000","八千（はっせん）= 8.000"]},
+"万":{on:"マン",kun:"",ju:["一万（いちまん）= 10.000","十万（じゅうまん）= 100.000","百万（ひゃくまん）= 1.000.000"]},
+"円":{on:"エン",kun:"まる-い",ju:["百円（ひゃくえん）= 100 yen","円高（えんだか）= yen menguat","円い（まるい）= bulat"]},
+"日":{on:"ニチ、ジツ",kun:"ひ、-か",ju:["日本（にほん）= Jepang","毎日（まいにち）= setiap hari","誕生日（たんじょうび）= ulang tahun"]},
+"月":{on:"ゲツ、ガツ",kun:"つき",ju:["月曜日（げつようび）= Senin","一か月（いっかげつ）= satu bulan","今月（こんげつ）= bulan ini"]},
+"火":{on:"カ",kun:"ひ",ju:["火曜日（かようび）= Selasa","花火（はなび）= kembang api","火事（かじ）= kebakaran"]},
+"水":{on:"スイ",kun:"みず",ju:["水曜日（すいようび）= Rabu","水道（すいどう）= air ledeng","お水（おみず）= air minum"]},
+"木":{on:"モク、ボク",kun:"き",ju:["木曜日（もくようび）= Kamis","木（き）= pohon","木村さん（きむらさん）= Kimura (nama)"]},
+"金":{on:"キン",kun:"かね",ju:["金曜日（きんようび）= Jumat","お金（おかね）= uang","料金（りょうきん）= tarif"]},
+"土":{on:"ド、ト",kun:"つち",ju:["土曜日（どようび）= Sabtu","土産（みやげ）= oleh-oleh","土（つち）= tanah"]},
+"曜":{on:"ヨウ",kun:"",ju:["曜日（ようび）= hari (dalam minggu)","何曜日（なんようび）= hari apa","日曜日（にちようび）= Minggu"]},
+"年":{on:"ネン",kun:"とし",ju:["今年（ことし）= tahun ini","来年（らいねん）= tahun depan","去年（きょねん）= tahun lalu"]},
+"時":{on:"ジ",kun:"とき",ju:["時間（じかん）= waktu","時計（とけい）= jam/arloji","時々（ときどき）= kadang-kadang"]},
+"分":{on:"フン、ブン",kun:"わ-かる",ju:["五分（ごふん）= 5 menit","半分（はんぶん）= setengah","自分（じぶん）= diri sendiri"]},
+"半":{on:"ハン",kun:"なか-ば",ju:["半分（はんぶん）= setengah","三時半（さんじはん）= jam 3.30","半年（はんとし）= setengah tahun"]},
+"週":{on:"シュウ",kun:"",ju:["今週（こんしゅう）= minggu ini","毎週（まいしゅう）= setiap minggu","週末（しゅうまつ）= akhir pekan"]},
+"間":{on:"カン",kun:"あいだ、ま",ju:["時間（じかん）= waktu/jam","一週間（いっしゅうかん）= seminggu","人間（にんげん）= manusia"]},
+"今":{on:"コン",kun:"いま",ju:["今日（きょう）= hari ini","今晩（こんばん）= malam ini","今度（こんど）= lain kali"]},
+"先":{on:"セン",kun:"さき",ju:["先生（せんせい）= guru","先週（せんしゅう）= minggu lalu","先月（せんげつ）= bulan lalu"]},
+"前":{on:"ゼン",kun:"まえ",ju:["名前（なまえ）= nama","午前（ごぜん）= AM","駅前（えきまえ）= depan stasiun"]},
+"後":{on:"ゴ、コウ",kun:"うし-ろ、あと",ju:["午後（ごご）= PM","後ろ（うしろ）= belakang","最後（さいご）= terakhir"]},
+"午":{on:"ゴ",kun:"",ju:["午前（ごぜん）= AM","午後（ごご）= PM","正午（しょうご）= tengah hari"]},
+"毎":{on:"マイ",kun:"",ju:["毎日（まいにち）= setiap hari","毎朝（まいあさ）= setiap pagi","毎晩（まいばん）= setiap malam"]},
+"何":{on:"カ",kun:"なに、なん",ju:["何（なに）= apa","何時（なんじ）= jam berapa","何曜日（なんようび）= hari apa"]},
+"人":{on:"ジン、ニン",kun:"ひと",ju:["日本人（にほんじん）= orang Jepang","三人（さんにん）= tiga orang","人（ひと）= orang"]},
+"男":{on:"ダン",kun:"おとこ",ju:["男の人（おとこのひと）= laki-laki","男の子（おとこのこ）= anak laki-laki"]},
+"女":{on:"ジョ",kun:"おんな",ju:["女の人（おんなのひと）= perempuan","女の子（おんなのこ）= anak perempuan"]},
+"子":{on:"シ",kun:"こ",ju:["子ども（こども）= anak","女の子（おんなのこ）= anak perempuan","お子さん（おこさん）= anak Anda"]},
+"母":{on:"ボ",kun:"はは",ju:["母（はは）= ibu (sendiri)","お母さん（おかあさん）= ibu","母親（ははおや）= ibu/orang tua perempuan"]},
+"父":{on:"フ",kun:"ちち",ju:["父（ちち）= ayah (sendiri)","お父さん（おとうさん）= ayah","父親（ちちおや）= ayah/orang tua laki-laki"]},
+"友":{on:"ユウ",kun:"とも",ju:["友だち（ともだち）= teman","親友（しんゆう）= sahabat"]},
+"名":{on:"メイ",kun:"な",ju:["名前（なまえ）= nama","有名（ゆうめい）= terkenal","名刺（めいし）= kartu nama"]},
+"生":{on:"セイ",kun:"う-まれる、い-きる",ju:["学生（がくせい）= pelajar","先生（せんせい）= guru","生活（せいかつ）= kehidupan"]},
+"学":{on:"ガク",kun:"まな-ぶ",ju:["学校（がっこう）= sekolah","大学（だいがく）= universitas","留学生（りゅうがくせい）= pelajar asing"]},
+"校":{on:"コウ",kun:"",ju:["学校（がっこう）= sekolah","高校（こうこう）= SMA","小学校（しょうがっこう）= SD"]},
+"本":{on:"ホン",kun:"もと",ju:["本（ほん）= buku","日本（にほん）= Jepang","一本（いっぽん）= satu batang"]},
+"大":{on:"ダイ、タイ",kun:"おお-きい",ju:["大学（だいがく）= universitas","大好き（だいすき）= sangat suka","大丈夫（だいじょうぶ）= tidak apa-apa"]},
+"中":{on:"チュウ",kun:"なか",ju:["中（なか）= dalam","中国（ちゅうごく）= Tiongkok","一日中（いちにちじゅう）= sepanjang hari"]},
+"小":{on:"ショウ",kun:"ちい-さい",ju:["小さい（ちいさい）= kecil","小学校（しょうがっこう）= SD","小さな声（ちいさなこえ）= suara kecil"]},
+"上":{on:"ジョウ",kun:"うえ、のぼ-る",ju:["上（うえ）= atas","上手（じょうず）= pandai","屋上（おくじょう）= atap gedung"]},
+"下":{on:"カ、ゲ",kun:"した、くだ-さい",ju:["下（した）= bawah","下手（へた）= tidak pandai","地下鉄（ちかてつ）= kereta bawah tanah"]},
+"左":{on:"サ",kun:"ひだり",ju:["左（ひだり）= kiri","左手（ひだりて）= tangan kiri","左側（ひだりがわ）= sisi kiri"]},
+"右":{on:"ウ、ユウ",kun:"みぎ",ju:["右（みぎ）= kanan","右手（みぎて）= tangan kanan","右側（みぎがわ）= sisi kanan"]},
+"外":{on:"ガイ",kun:"そと",ju:["外（そと）= luar","外国（がいこく）= luar negeri","外国人（がいこくじん）= orang asing"]},
+"山":{on:"サン",kun:"やま",ju:["山（やま）= gunung","富士山（ふじさん）= Gunung Fuji","山田さん（やまださん）= Yamada (nama)"]},
+"川":{on:"セン",kun:"かわ",ju:["川（かわ）= sungai","小川さん（おがわさん）= Ogawa (nama)"]},
+"天":{on:"テン",kun:"あま",ju:["天気（てんき）= cuaca","天ぷら（てんぷら）= tempura","天国（てんごく）= surga"]},
+"気":{on:"キ、ケ",kun:"",ju:["元気（げんき）= sehat/semangat","天気（てんき）= cuaca","電気（でんき）= listrik/lampu"]},
+"雨":{on:"ウ",kun:"あめ",ju:["雨（あめ）= hujan","大雨（おおあめ）= hujan deras"]},
+"空":{on:"クウ",kun:"そら、から",ju:["空（そら）= langit","空港（くうこう）= bandara","空き（あき）= kosong"]},
+"花":{on:"カ",kun:"はな",ju:["花（はな）= bunga","花見（はなみ）= piknik sakura","花火（はなび）= kembang api"]},
+"魚":{on:"ギョ",kun:"さかな",ju:["魚（さかな）= ikan","魚屋（さかなや）= toko ikan"]},
+"口":{on:"コウ",kun:"くち、-ぐち",ju:["入口（いりぐち）= pintu masuk","出口（でぐち）= pintu keluar","口（くち）= mulut"]},
+"目":{on:"モク",kun:"め",ju:["目（め）= mata","一番目（いちばんめ）= yang pertama","目薬（めぐすり）= obat tetes mata"]},
+"耳":{on:"ジ",kun:"みみ",ju:["耳（みみ）= telinga","耳鼻科（じびか）= THT"]},
+"手":{on:"シュ",kun:"て",ju:["手（て）= tangan","手紙（てがみ）= surat","上手（じょうず）= pandai","下手（へた）= tidak pandai"]},
+"足":{on:"ソク",kun:"あし、た-りる",ju:["足（あし）= kaki","一足（いっそく）= sepasang (sepatu)"]},
+"白":{on:"ハク",kun:"しろ-い",ju:["白い（しろい）= putih","面白い（おもしろい）= menarik/lucu","白ワイン（しろワイン）= wine putih"]},
+"高":{on:"コウ",kun:"たか-い",ju:["高い（たかい）= mahal/tinggi","高校（こうこう）= SMA","背が高い（せがたかい）= tinggi badan"]},
+"安":{on:"アン",kun:"やす-い",ju:["安い（やすい）= murah","安全（あんぜん）= aman","安心（あんしん）= lega"]},
+"新":{on:"シン",kun:"あたら-しい",ju:["新しい（あたらしい）= baru","新聞（しんぶん）= koran","新幹線（しんかんせん）= shinkansen"]},
+"古":{on:"コ",kun:"ふる-い",ju:["古い（ふるい）= lama/tua","古本（ふるほん）= buku bekas","中古（ちゅうこ）= barang bekas"]},
+"長":{on:"チョウ",kun:"なが-い",ju:["長い（ながい）= panjang","社長（しゃちょう）= direktur","部長（ぶちょう）= kepala bagian"]},
+"多":{on:"タ",kun:"おお-い",ju:["多い（おおい）= banyak","多分（たぶん）= mungkin","多く（おおく）= kebanyakan"]},
+"少":{on:"ショウ",kun:"すく-ない、すこ-し",ju:["少ない（すくない）= sedikit","少し（すこし）= sedikit","少々（しょうしょう）= sebentar"]},
+"行":{on:"コウ、ギョウ",kun:"い-く",ju:["行きます（いきます）= pergi","銀行（ぎんこう）= bank","旅行（りょこう）= wisata"]},
+"来":{on:"ライ",kun:"く-る、き-ます",ju:["来ます（きます）= datang","来週（らいしゅう）= minggu depan","来月（らいげつ）= bulan depan"]},
+"見":{on:"ケン",kun:"み-る",ju:["見ます（みます）= melihat","見学（けんがく）= kunjungan studi","花見（はなみ）= piknik sakura"]},
+"聞":{on:"ブン",kun:"き-く",ju:["聞きます（ききます）= mendengar","新聞（しんぶん）= koran"]},
+"言":{on:"ゲン、ゴン",kun:"い-う",ju:["言います（いいます）= berkata","言葉（ことば）= kata/bahasa"]},
+"話":{on:"ワ",kun:"はな-す、はなし",ju:["話します（はなします）= berbicara","電話（でんわ）= telepon","会話（かいわ）= percakapan"]},
+"読":{on:"ドク",kun:"よ-む",ju:["読みます（よみます）= membaca","読書（どくしょ）= membaca buku"]},
+"書":{on:"ショ",kun:"か-く",ju:["書きます（かきます）= menulis","辞書（じしょ）= kamus","図書館（としょかん）= perpustakaan"]},
+"食":{on:"ショク",kun:"た-べる",ju:["食べます（たべます）= makan","食事（しょくじ）= makan","食堂（しょくどう）= kantin"]},
+"飲":{on:"イン",kun:"の-む",ju:["飲みます（のみます）= minum","飲み物（のみもの）= minuman"]},
+"買":{on:"バイ",kun:"か-う",ju:["買います（かいます）= membeli","買い物（かいもの）= belanja"]},
+"立":{on:"リツ",kun:"た-つ",ju:["立ちます（たちます）= berdiri","立派（りっぱ）= hebat/megah"]},
+"休":{on:"キュウ",kun:"やす-む",ju:["休み（やすみ）= libur","休みます（やすみます）= istirahat/libur","昼休み（ひるやすみ）= istirahat siang"]},
+"入":{on:"ニュウ",kun:"はい-る、い-れる",ju:["入口（いりぐち）= pintu masuk","入ります（はいります）= masuk","入学（にゅうがく）= masuk sekolah"]},
+"出":{on:"シュツ",kun:"で-る、だ-す",ju:["出口（でぐち）= pintu keluar","出ます（でます）= keluar","出かけます（でかけます）= pergi keluar"]},
+"会":{on:"カイ",kun:"あ-う",ju:["会社（かいしゃ）= perusahaan","会います（あいます）= bertemu","会議（かいぎ）= rapat"]},
+"国":{on:"コク",kun:"くに",ju:["国（くに）= negara","外国人（がいこくじん）= orang asing","中国（ちゅうごく）= Tiongkok"]},
+"東":{on:"トウ",kun:"ひがし",ju:["東（ひがし）= timur","東京（とうきょう）= Tokyo","東口（ひがしぐち）= pintu timur"]},
+"西":{on:"セイ、サイ",kun:"にし",ju:["西（にし）= barat","関西（かんさい）= Kansai","西口（にしぐち）= pintu barat"]},
+"南":{on:"ナン",kun:"みなみ",ju:["南（みなみ）= selatan","南口（みなみぐち）= pintu selatan"]},
+"北":{on:"ホク",kun:"きた",ju:["北（きた）= utara","北海道（ほっかいどう）= Hokkaido","北口（きたぐち）= pintu utara"]},
+"車":{on:"シャ",kun:"くるま",ju:["車（くるま）= mobil","電車（でんしゃ）= kereta","自転車（じてんしゃ）= sepeda"]},
+"電":{on:"デン",kun:"",ju:["電話（でんわ）= telepon","電気（でんき）= listrik","電車（でんしゃ）= kereta listrik"]},
+"駅":{on:"エキ",kun:"",ju:["駅（えき）= stasiun","駅前（えきまえ）= depan stasiun","駅員（えきいん）= petugas stasiun"]},
+"道":{on:"ドウ",kun:"みち",ju:["道（みち）= jalan","水道（すいどう）= air ledeng","柔道（じゅうどう）= judo"]},
+"社":{on:"シャ",kun:"",ju:["会社（かいしゃ）= perusahaan","社長（しゃちょう）= direktur","社員（しゃいん）= karyawan"]},
+"店":{on:"テン",kun:"みせ",ju:["店（みせ）= toko","喫茶店（きっさてん）= kafe","店員（てんいん）= pelayan toko"]},
+"語":{on:"ゴ",kun:"かた-る",ju:["日本語（にほんご）= bahasa Jepang","英語（えいご）= bahasa Inggris","単語（たんご）= kosakata"]}
+};
+</script>
+<script>
+const $app = document.getElementById('app');
+const DONE_KEY = 'n5-done';
+const HAF_KEY = 'n5-hafalan';
+let state = { view: 'home', hari: 1, tab: 'bunpou', q: '', kjQ: '' };
+
+/* ===== Akses localStorage aman (tahan JSON rusak / SecurityError / penyimpanan nonaktif) ===== */
+function lsGet(key) {
+  try { return localStorage.getItem(key); } catch (e) { return null; }
+}
+function lsSet(key, val) {
+  try { localStorage.setItem(key, val); return true; } catch (e) { return false; }
+}
+function lsDel(key) {
+  try { localStorage.removeItem(key); } catch (e) { /* abaikan */ }
+}
+function loadDone() {
+  const raw = lsGet(DONE_KEY);
+  if (raw == null) return new Set();
+  try {
+    const arr = JSON.parse(raw);
+    if (!Array.isArray(arr)) throw new Error('format bukan array');
+    return new Set(arr.filter(x => Number.isInteger(x)));
+  } catch (e) {
+    lsDel(DONE_KEY); // data rusak: hapus supaya tidak mengganggu berikutnya
+    return new Set();
+  }
+}
+let done = loadDone();
+let hafalan = lsGet(HAF_KEY) === '1';
+let openSet = new Set();
+let kjFlip = new Set();
+
+const bunpouOf = h => BUNPOU.find(b => b.hari === h);
+const kotobaOf = h => KOTOBA.find(k => k.hari === h);
+const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const saveDone = () => { lsSet(DONE_KEY, JSON.stringify([...done])); };
+
+const TOTAL_POINTS = BUNPOU.reduce((a, b) => a + b.points.length, 0);
+/* ===== Furigana engine (otomatis, hanya kanji di atas level N5) ===== */
+const N5SET = new Set(KANJI.map(k => k.kanji));
+const FURI = {
+"日本料理":"にほんりょうり","電話番号":"でんわばんごう",
+"会社員":"かいしゃいん","富士山":"ふじさん","会議室":"かいぎしつ","郵便局":"ゆうびんきょく","喫茶店":"きっさてん","飛行機":"ひこうき","北海道":"ほっかいどう","図書館":"としょかん","交差点":"こうさてん",
+"社員":"しゃいん","辞書":"じしょ","食堂":"しょくどう","手洗":"てあら","毎朝":"まいあさ","勉強":"べんきょう","奈良":"なら","銀行":"ぎんこう","昼休":"ひるやす","京都":"きょうと","大阪":"おおさか","家族":"かぞく","一緒":"いっしょ","部屋":"へや","東京":"とうきょう","生活":"せいかつ","果物":"くだもの","音楽":"おんがく","公園":"こうえん","写真":"しゃしん","本屋":"ほんや","手紙":"てがみ","切手":"きって","五枚":"ごまい","二回":"にかい","映画":"えいが","旅行":"りょこう","野球":"やきゅう","沖縄":"おきなわ","神戸":"こうべ","料理":"りょうり","荷物":"にもつ","結婚":"けっこん","独身":"どくしん","仕事":"しごと","漢字":"かんじ","趣味":"しゅみ","食事":"しょくじ","元気":"げんき","医者":"いしゃ","物価":"ぶっか","約束":"やくそく","用事":"ようじ","佐藤":"さとう","住所":"じゅうしょ","山田":"やまだ","洗濯":"せんたく","夏休":"なつやす","手伝":"てつだ","土産":"みやげ","靴売":"くつう","宿題":"しゅくだい","練習":"れんしゅう","都合":"つごう","故障":"こしょう","準備":"じゅんび","億円":"おくえん","転勤":"てんきん","全部":"ぜんぶ","授業":"じゅぎょう","毎晚":"まいばん","一度":"いちど","教室":"きょうしつ","神社":"じんじゃ",
+"傘":"かさ","起":"お","帰":"かえ","歩":"ある","昼":"ひる","桜":"さくら","広":"ひろ","暇":"ひま","町":"まち","楽":"たの","好":"す","嫌":"きら","歌":"うた","頭":"あたま","痛":"いた","猫":"ねこ","机":"つくえ","近":"ちか","隣":"となり","箱":"はこ","枚":"まい","台":"だい","冊":"さつ","回":"かい","暑":"あつ","船":"ふね","速":"はや","物":"もの","待":"ま","降":"ふ","持":"も","願":"ねが","撮":"と","吸":"す","知":"し","住":"す","朝":"あさ","浴":"あ","静":"しず","明":"あか","終":"お","泳":"およ","番":"ばん","乗":"の","薬":"くすり","返":"かえ","寝":"ね","洗":"あら","馬":"うま","寒":"さむ","思":"おも","作":"つく","青":"あお","着":"き","王":"おう","描":"か","絵":"え","借":"か","要":"い","遊":"あそ","押":"お","釣":"つ","曲":"ま","教":"おし","送":"おく","働":"はたら","夏":"なつ","春":"はる","欲":"ほ","弾":"ひ","場":"ば","使":"つか","方":"かた","熱":"ねつ","祈":"いの","悪":"わる","引":"ひ","越":"こ","晚":"ばん","始":"はじ","忙":"いそが","弟":"おとうと","次":"つぎ","登":"のぼ","靴":"くつ","寺":"てら","赤":"あか","島":"しま","冬":"ふゆ","消":"け","迎":"むか","秋":"あき","緑":"みどり","切":"き"
+};
+const FURI_KEYS = Object.keys(FURI).sort((a,b)=>b.length-a.length);
+const FURI_MAX = FURI_KEYS.reduce((m,k)=>Math.max(m,k.length),1);
+function rb(s){
+  s = String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return s.replace(/[\u4e00-\u9fff\u3005]+/g, function(run){
+    if (![...run].some(c => !N5SET.has(c))) return run; // semua kanji N5 -> tanpa furigana
+    let out = '', i = 0;
+    while (i < run.length) {
+      let matched = false;
+      for (let L = Math.min(FURI_MAX, run.length - i); L >= 1; L--) {
+        const sub = run.substr(i, L);
+        if (FURI[sub]) { out += '<ruby>' + sub + '<rt>' + FURI[sub] + '</rt></ruby>'; i += L; matched = true; break; }
+      }
+      if (!matched) { out += run[i]; i++; }
+    }
+    return out;
+  });
+}
+const TOTAL_WORDS = KOTOBA.reduce((a, k) => a + k.words.length, 0);
+
+function render() {
+  if (state.view === 'home') renderHome();
+  else if (state.view === 'kanji') renderKanji();
+  else renderBab();
+  window.scrollTo(0, 0);
+}
+
+/* ============ HOME ============ */
+function cardHTML(b) {
+  const kt = kotobaOf(b.hari);
+  return '<button class="card" data-hari="' + b.hari + '">'
+    + (done.has(b.hari) ? '<span class="done-badge">✓ selesai</span>' : '')
+    + '<span class="hari">Hari ' + b.hari + ' · Bab ' + b.bab + '</span>'
+    + '<h3>' + esc(b.title) + '</h3>'
+    + '<span class="kt b"><span class="tag">Bunpou</span>' + b.points.length + ' pola kalimat</span>'
+    + (kt ? '<span class="kt"><span class="tag">Kotoba</span>' + rb(kt.theme) + ' · ' + kt.words.length + ' kata</span>'
+          : '<span class="kt"><span class="tag">Kotoba</span>—</span>')
+    + '</button>';
+}
+function matches(b, q) {
+  q = (q || '').trim();
+  if (!q) return true;
+  const kt = kotobaOf(b.hari);
+  let hay = 'hari ' + b.hari + ' ' + b.title + ' ' + b.points.map(p => p.p + ' ' + p.arti).join(' ');
+  if (kt) hay += ' ' + kt.theme + ' ' + (kt.sub || '') + ' ' + kt.words.map(w => w.w + ' ' + (w.k || '') + ' ' + w.m).join(' ');
+  return hay.toLowerCase().includes(q.toLowerCase());
+}
+function gridHTML() {
+  const list = BUNPOU.filter(b => matches(b, state.q));
+  if (!list.length) return '<div class="empty">Tidak ada bab yang cocok dengan “' + esc(state.q) + '”.</div>';
+  return '<div class="grid">' + list.map(cardHTML).join('') + '</div>';
+}
+function renderHome() {
+  $app.innerHTML =
+    '<div class="hero">'
+    + '<div class="kicker">JLPT N5 · みんなの日本語 I · Bab 1–25</div>'
+    + '<h1>Bunpou & Kotoba N5</h1>'
+    + '<p class="sub">Pilih hari (bab) di bawah, lalu pelajari <b>Bunpou</b> (pola kalimat) dan <b>Kotoba</b> (kosakata) lengkap dengan arti bahasa Indonesia dan contoh kalimat.</p>'
+    + '<div class="stats">'
+    + '<div class="stat"><b>' + BUNPOU.length + '</b><span>hari bunpou</span></div>'
+    + '<div class="stat"><b>' + TOTAL_POINTS + '</b><span>pola kalimat</span></div>'
+    + '<div class="stat"><b>' + KOTOBA.length + '</b><span>hari kotoba</span></div>'
+    + '<div class="stat"><b>' + TOTAL_WORDS + '</b><span>kosakata</span></div>'
+    + '<div class="stat"><b>' + done.size + '/' + BUNPOU.length + '</b><span>bab selesai</span></div>'
+    + '<div class="stat"><b>' + KANJI.length + '</b><span>kanji N5</span></div>'
+    + '</div>'
+    + '<button class="btn" id="gotokanji" style="margin-top:14px">🈂️ Buka Flashcard Kanji &middot; ' + KANJI.length + ' kartu</button>'
+    + '</div>'
+    + '<div class="searchbar">'
+    + '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>'
+    + '<input id="q" type="text" placeholder="Cari bab, pola kalimat, atau kosakata… (misal: 〜てください, makan, pergi)" value="' + esc(state.q) + '" aria-label="Cari bab, pola kalimat, atau kosakata">'
+    + '</div>'
+    + '<div id="gridwrap">' + gridHTML() + '</div>'
+    + footerHTML();
+  const q = document.getElementById('q');
+  q.addEventListener('input', () => {
+    state.q = q.value;
+    document.getElementById('gridwrap').innerHTML = gridHTML();
+    bindCards();
+  });
+  bindCards();
+  document.getElementById('gotokanji').onclick = () => { state.view = 'kanji'; render(); };
+}
+function bindCards() {
+  $app.querySelectorAll('.card').forEach(c => c.addEventListener('click', () => {
+    state.hari = +c.dataset.hari;
+    state.view = 'bab';
+    state.tab = 'bunpou';
+    openSet = new Set([0]);
+    render();
+  }));
+}
+
+/* ============ BAB ============ */
+function footerHTML() {
+  return '<div class="footer">Sumber materi: みんなの日本語 初級 I (Minna no Nihongo I) · Bab 1–25 — Bunpou & Kotoba JLPT N5<br>Dibuat sebagai media belajar interaktif · progres tersimpan otomatis di perangkat ini</div>';
+}
+function gpHTML(pt, i) {
+  const isOpen = openSet.has(i);
+  const open = isOpen ? ' open' : '';
+  const pid = 'gp-panel-h' + state.hari + '-' + i;
+  const bid = 'gp-btn-h' + state.hari + '-' + i;
+  return '<div class="gp' + open + '" data-i="' + i + '">'
+    + '<button class="gp-head" id="' + bid + '" aria-expanded="' + isOpen + '" aria-controls="' + pid + '"><span class="pat">' + rb(pt.p) + '</span>'
+    + '<span class="arti">' + esc(pt.arti) + '</span><span class="chev">▶</span></button>'
+    + '<div class="gp-body" id="' + pid + '" role="region" aria-labelledby="' + bid + '">'
+    + (pt.rumus ? '<div class="rumus">🧩 <b>Rumus:</b> ' + rb(pt.rumus) + '</div>' : '')
+    + (pt.note ? '<div class="note">💡 ' + rb(pt.note) + '</div>' : '')
+    + (pt.warn ? '<div class="warn">⚠️ ' + rb(pt.warn) + '</div>' : '')
+    + (pt.ex && pt.ex.length ? '<ul class="exs">' + pt.ex.map(e => '<li>' + rb(e) + '</li>').join('') + '</ul>' : '')
+    + '</div></div>';
+}
+function wordHTML(w) {
+  const veil = hafalan ? ' veiled' : '';
+  return '<div class="word' + veil + '">'
+    + '<div class="w-line"><span class="w">' + esc(w.w) + '</span>'
+    + (w.k ? '<span class="k">' + esc(w.k) + '</span>' : '') + '</div>'
+    + '<div class="m">' + esc(w.m) + '</div>'
+    + (w.ex ? '<div class="ex">' + rb(w.ex) + '</div>' : '')
+    + '</div>';
+}
+function bunpouTabHTML(b) {
+  return '<div class="toolrow">'
+    + '<button class="mini" id="openall">Buka semua</button>'
+    + '<button class="mini" id="closeall">Tutup semua</button>'
+    + '</div>'
+    + b.points.map(gpHTML).join('');
+}
+function kotobaTabHTML(h) {
+  const kt = kotobaOf(h);
+  if (!kt) {
+    return '<div class="kt-none"><b>Tidak ada kosakata untuk Hari ' + h + '</b>'
+      + 'Materi kotoba untuk hari ini belum tersedia — gunakan tab Bunpou di atas.</div>';
+  }
+  return '<div class="kt-head"><span class="theme">' + rb(kt.theme) + '</span>'
+    + '<span class="sub">' + esc(kt.sub || '') + '</span>'
+    + '<button class="switch' + (hafalan ? ' on' : '') + '" id="haf" aria-pressed="' + hafalan + '"><span>Mode hafalan</span><span class="dot" aria-hidden="true"></span></button>'
+    + '</div>'
+    + (hafalan ? '<div class="hint">Arti disembunyikan — ketuk kartu untuk melihat jawabannya.</div>' : '')
+    + '<div class="words">' + kt.words.map(wordHTML).join('') + '</div>';
+}
+function renderBab() {
+  const b = bunpouOf(state.hari);
+  const isDone = done.has(state.hari);
+  const prev = bunpouOf(state.hari - 1);
+  const next = bunpouOf(state.hari + 1);
+  $app.innerHTML =
+    '<div class="topbar">'
+    + '<button class="btn" id="back">← Menu utama</button>'
+    + '<span class="spacer"></span>'
+    + '<button class="btn' + (isDone ? ' done-on' : '') + '" id="toggledone">' + (isDone ? '✓ Selesai dipelajari' : '○ Tandai selesai') + '</button>'
+    + '</div>'
+    + '<div class="bab-head"><div class="hari">Hari ' + b.hari + ' / ' + BUNPOU.length + ' · Bab ' + b.bab + '</div><h2>' + esc(b.title) + '</h2></div>'
+    + '<div class="tabs" role="tablist" aria-label="Materi hari ' + b.hari + '">'
+    + '<button class="tab' + (state.tab === 'bunpou' ? ' on' : '') + '" data-tab="bunpou" role="tab" id="tab-bunpou" aria-selected="' + (state.tab === 'bunpou') + '" aria-controls="tabbody"' + (state.tab === 'bunpou' ? '' : ' tabindex="-1"') + '>文法 Bunpou</button>'
+    + '<button class="tab' + (state.tab === 'kotoba' ? ' on' : '') + '" data-tab="kotoba" role="tab" id="tab-kotoba" aria-selected="' + (state.tab === 'kotoba') + '" aria-controls="tabbody"' + (state.tab === 'kotoba' ? '' : ' tabindex="-1"') + '>言葉 Kotoba</button>'
+    + '</div>'
+    + '<div id="tabbody" role="tabpanel" aria-labelledby="tab-' + state.tab + '">' + (state.tab === 'bunpou' ? bunpouTabHTML(b) : kotobaTabHTML(b.hari)) + '</div>'
+    + '<div class="pager">'
+    + (prev ? '<button class="btn" id="prev">← Hari ' + prev.hari + ' <small>· sebelumnya</small></button>' : '')
+    + (next ? '<button class="btn" id="next">Hari ' + next.hari + ' <small>· berikutnya</small> →</button>' : '')
+    + '</div>'
+    + footerHTML();
+  document.getElementById('back').onclick = () => { state.view = 'home'; render(); };
+  document.getElementById('toggledone').onclick = () => {
+    if (done.has(state.hari)) done.delete(state.hari); else done.add(state.hari);
+    saveDone(); renderBab();
+  };
+  const tabs = Array.from($app.querySelectorAll('.tab'));
+  tabs.forEach((t, idx) => {
+    t.onclick = () => {
+      state.tab = t.dataset.tab;
+      if (state.tab === 'bunpou') openSet = new Set([0]);
+      renderBab();
+      const cur = $app.querySelector('.tab.on');
+      if (cur) cur.focus();
+    };
+    t.onkeydown = e => {
+      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+      e.preventDefault();
+      const dir = e.key === 'ArrowRight' ? 1 : -1;
+      const next = tabs[(idx + dir + tabs.length) % tabs.length];
+      if (next) next.click();
+    };
+  });
+  if (document.getElementById('prev')) document.getElementById('prev').onclick = () => { state.hari--; state.tab = 'bunpou'; openSet = new Set([0]); render(); };
+  if (document.getElementById('next')) document.getElementById('next').onclick = () => { state.hari++; state.tab = 'bunpou'; openSet = new Set([0]); render(); };
+  bindTabBody();
+}
+function bindTabBody() {
+  $app.querySelectorAll('.gp-head').forEach(hd => hd.onclick = () => {
+    const gp = hd.parentElement;
+    const i = +gp.dataset.i;
+    const nowOpen = !openSet.has(i);
+    if (nowOpen) openSet.add(i); else openSet.delete(i);
+    gp.classList.toggle('open', nowOpen);
+    hd.setAttribute('aria-expanded', String(nowOpen));
+  });
+  const oa = document.getElementById('openall');
+  if (oa) oa.onclick = () => {
+    openSet = new Set(bunpouOf(state.hari).points.map((_, i) => i));
+    $app.querySelectorAll('.gp').forEach(g => {
+      g.classList.add('open');
+      const hd = g.querySelector('.gp-head');
+      if (hd) hd.setAttribute('aria-expanded', 'true');
+    });
+  };
+  const ca = document.getElementById('closeall');
+  if (ca) ca.onclick = () => {
+    openSet = new Set();
+    $app.querySelectorAll('.gp').forEach(g => {
+      g.classList.remove('open');
+      const hd = g.querySelector('.gp-head');
+      if (hd) hd.setAttribute('aria-expanded', 'false');
+    });
+  };
+  const haf = document.getElementById('haf');
+  if (haf) haf.onclick = () => {
+    hafalan = !hafalan;
+    lsSet(HAF_KEY, hafalan ? '1' : '0');
+    renderBab();
+  };
+  $app.querySelectorAll('.word.veiled').forEach(w => w.onclick = () => w.classList.toggle('shown'));
+}
+
+/* ============ KANJI FLASHCARD ============ */
+function kjMatches(k, q) {
+  q = (q || '').trim();
+  if (!q) return true;
+  const hay = k.no + ' ' + k.kanji + ' ' + k.baca + ' ' + k.kata.join(' ') + ' ' + (k.jp || '') + ' ' + (k.id || '');
+  return hay.toLowerCase().includes(q.toLowerCase());
+}
+function kjCardHTML(k) {
+  const flip = kjFlip.has(k.no) ? ' flip' : '';
+  return '<div class="kj-card' + flip + '" data-no="' + k.no + '" role="button" tabindex="0" aria-label="Detail kanji ' + esc(k.kanji) + ' (kartu nomor ' + k.no + ')">'
+    + '<div class="kj-inner">'
+    + '<div class="kj-face kj-front"><span class="kj-no">#' + k.no + '</span><span class="kj-ch">' + esc(k.kanji) + '</span><span class="kj-tap">ketuk untuk detail</span></div>'
+    + '<div class="kj-face kj-back">'
+    + '<div class="kj-ch2">' + esc(k.kanji) + '<span class="kj-baca">' + esc(k.baca) + '</span></div>'
+    + '<ul class="kj-kata">' + k.kata.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>'
+    + (k.jp ? '<div class="kj-kalimat"><span class="jp">' + rb(k.jp) + '</span>' + esc(k.id) + '</div>' : '')
+    + '</div></div></div>';
+}
+function kjGridHTML() {
+  const list = KANJI.filter(k => kjMatches(k, state.kjQ));
+  if (!list.length) return '<div class="empty">Tidak ada kanji yang cocok dengan “' + esc(state.kjQ) + '”.</div>';
+  return '<div class="kj-grid">' + list.map(kjCardHTML).join('') + '</div>';
+}
+function bindKjCards() {
+  $app.querySelectorAll('.kj-card').forEach(c => {
+    c.onclick = () => openKjModal(+c.dataset.no, c);
+    c.onkeydown = e => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      openKjModal(+c.dataset.no, c);
+    };
+  });
+}
+
+/* ---- pop up detail kanji ---- */
+function kjJuList(k) {
+  const ex = KJEX[k.kanji] || {};
+  const ju = (ex.ju || []).slice();
+  const have = new Set(ju.map(s => s.split('（')[0].trim()));
+  (k.kata || []).forEach(s => {
+    const w = s.split('（')[0].split(' (')[0].trim();
+    if (!have.has(w)) { have.add(w); ju.push(s); }
+  });
+  return ju;
+}
+function kjJuItemHTML(s) {
+  const i = s.indexOf('=');
+  const head = i >= 0 ? s.slice(0, i).trim() : s;
+  const m = i >= 0 ? s.slice(i + 1).trim() : '';
+  return '<li><span class="wr">' + esc(head) + '</span>' + (m ? '<span class="m">= ' + esc(m) + '</span>' : '') + '</li>';
+}
+let kjTrigger = null;
+function kjFocusables(wrap) {
+  return Array.from(wrap.querySelectorAll('button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])'))
+    .filter(el => !el.disabled && el.getClientRects().length > 0);
+}
+function closeKjModal(silent) {
+  const el = document.getElementById('kjmodal');
+  if (!el) return;
+  el.remove();
+  document.body.style.overflow = '';
+  $app.removeAttribute('inert');
+  if (!silent && kjTrigger && document.contains(kjTrigger)) kjTrigger.focus();
+  kjTrigger = null;
+}
+function openKjModal(no, trigger) {
+  closeKjModal(true);
+  const k = KANJI.find(x => x.no === no);
+  if (!k) return;
+  kjTrigger = trigger || (document.activeElement && document.activeElement !== document.body ? document.activeElement : null);
+  const ex = KJEX[k.kanji] || {};
+  const wrap = document.createElement('div');
+  wrap.className = 'kj-modal';
+  wrap.id = 'kjmodal';
+  wrap.innerHTML = '<div class="kj-backdrop"></div>'
+    + '<div class="kj-dialog" role="dialog" aria-modal="true" aria-labelledby="kjm-kanji kjm-title">'
+    + '<button class="kj-close" aria-label="Tutup">✕</button>'
+    + '<div class="kj-dialog-body">'
+    + '<div class="kjm-head"><span class="kjm-ch" id="kjm-kanji">' + esc(k.kanji) + '</span>'
+    + '<div class="kjm-headinfo"><span class="kjm-no" id="kjm-title">#' + k.no + ' · Kanji N5</span>'
+    + '<span class="kjm-baca">' + esc(k.baca) + '</span></div></div>'
+    + '<div class="kjm-yomi">'
+    + '<div class="kjm-yomibox on"><span class="lbl">音読み · Onyomi</span><span class="val">' + esc(ex.on || '—') + '</span></div>'
+    + '<div class="kjm-yomibox kun"><span class="lbl">訓読み · Kunyomi</span><span class="val">' + esc(ex.kun || '—') + '</span></div>'
+    + '</div>'
+    + '<div class="kjm-sec">熟語 · Jukugo penting yang sering keluar</div>'
+    + '<ul class="kjm-ju">' + kjJuList(k).map(kjJuItemHTML).join('') + '</ul>'
+    + (k.jp ? '<div class="kjm-sec">例文 · Contoh kalimat</div><div class="kjm-ex"><span class="jp">' + rb(k.jp) + '</span><span class="id">' + esc(k.id) + '</span></div>' : '')
+    + '</div></div>';
+  document.body.appendChild(wrap);
+  document.body.style.overflow = 'hidden';
+  $app.setAttribute('inert', '');
+  wrap.querySelector('.kj-backdrop').onclick = () => closeKjModal();
+  const kjCloseBtn = wrap.querySelector('.kj-close');
+  kjCloseBtn.onclick = () => closeKjModal();
+  wrap.addEventListener('keydown', e => {
+    if (e.key !== 'Tab') return;
+    const f = kjFocusables(wrap);
+    if (!f.length) return;
+    const first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  });
+  kjCloseBtn.focus();
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeKjModal(); });
+function renderKanji() {
+  $app.innerHTML =
+    '<div class="topbar">'
+    + '<button class="btn" id="back">← Menu utama</button>'
+    + '<span class="spacer"></span>'
+    + '<button class="mini" id="kjopenall">Buka semua</button>'
+    + '<button class="mini" id="kjcloseall">Tutup semua</button>'
+    + '</div>'
+    + '<div class="bab-head"><div class="hari">Kanji N5</div><h2>🈂️ Flashcard Kanji (' + KANJI.length + ')</h2></div>'
+    + '<div class="kj-hint">Diambil dari PDF Kanji Flashcard N5 &middot; ketuk kartu untuk membuka pop up detail: onyomi, kunyomi, jukugo penting, dan contoh kalimat.</div>'
+    + '<div class="searchbar">'
+    + '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>'
+    + '<input id="kjq" type="text" placeholder="Cari kanji, cara baca, atau arti…" value="' + esc(state.kjQ) + '" aria-label="Cari kanji, cara baca, atau arti">'
+    + '</div>'
+    + '<div id="kjgridwrap">' + kjGridHTML() + '</div>'
+    + footerHTML();
+  document.getElementById('back').onclick = () => { state.view = 'home'; render(); };
+  const kq = document.getElementById('kjq');
+  kq.addEventListener('input', () => {
+    state.kjQ = kq.value;
+    document.getElementById('kjgridwrap').innerHTML = kjGridHTML();
+    bindKjCards();
+  });
+  document.getElementById('kjopenall').onclick = () => {
+    KANJI.filter(k => kjMatches(k, state.kjQ)).forEach(k => kjFlip.add(k.no));
+    document.getElementById('kjgridwrap').innerHTML = kjGridHTML();
+    bindKjCards();
+  };
+  document.getElementById('kjcloseall').onclick = () => {
+    kjFlip.clear();
+    document.getElementById('kjgridwrap').innerHTML = kjGridHTML();
+    bindKjCards();
+  };
+  bindKjCards();
+}
+render();
+</script>
+</body>
+</html>

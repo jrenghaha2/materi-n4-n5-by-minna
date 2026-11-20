@@ -1,0 +1,125 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Root user profile document for an authenticated Minna Bunpou learner.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth UID matching the document ID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Optional learner display name shown in the header and account menu.",
+          "maxLength": 60
+        },
+        "avatarUrl": {
+          "type": "string",
+          "description": "Optional avatar URL (HTTPS or compressed JPEG/PNG/WebP data URI).",
+          "maxLength": 20000
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the user profile document was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of the latest profile update."
+        }
+      },
+      "required": ["uid", "createdAt", "updatedAt"]
+    },
+    "BunpouBookProgress": {
+      "title": "BunpouBookProgress",
+      "description": "Per-book mastered and hard Minna Bunpou pattern IDs synced for a learner.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth UID of the owner.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "bookId": {
+          "type": "string",
+          "enum": ["n5", "n4"],
+          "description": "Minna Bunpou book identifier matching the document ID (n5 or n4)."
+        },
+        "mastered": {
+          "type": "array",
+          "description": "Unique list of mastered Bunpou pattern IDs belonging to bookId (disjoint from hard)."
+        },
+        "hard": {
+          "type": "array",
+          "description": "Unique list of hard/review Bunpou pattern IDs belonging to bookId (disjoint from mastered)."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when this book progress record was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of the latest progress sync."
+        }
+      },
+      "required": ["uid", "bookId", "mastered", "hard", "createdAt", "updatedAt"]
+    },
+    "BunpouQuizHistory": {
+      "title": "BunpouQuizHistory",
+      "description": "Per-book compact quiz performance history (up to 15 latest sessions) stored as pure ASCII reference tokens.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth UID of the owner.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "bookId": {
+          "type": "string",
+          "enum": ["n5", "n4"],
+          "description": "Minna Bunpou book identifier matching the document ID (n5 or n4)."
+        },
+        "sessions": {
+          "type": "array",
+          "description": "Up to 15 compact pure-ASCII quiz session reference tokens."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when this quiz history bucket was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of the latest quiz history sync."
+        }
+      },
+      "required": ["uid", "bookId", "sessions", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Root profile document for each authenticated learner (Master Gate parent for all subcollections)."
+    },
+    "/users/{userId}/bunpouProgress/{bookId}": {
+      "schema": { "$ref": "#/entities/BunpouBookProgress" },
+      "description": "Per-book mastered and hard Bunpou pattern progress (n5, n4)."
+    },
+    "/users/{userId}/quizHistory/{bookId}": {
+      "schema": { "$ref": "#/entities/BunpouQuizHistory" },
+      "description": "Per-book compact quiz session history tokens (n5, n4)."
+    }
+  }
+}

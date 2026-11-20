@@ -1,0 +1,6 @@
+{
+  "name": "Minna Bunpou — Pembelajaran Tata Bahasa Jepang JLPT N5 & N4",
+  "description": "Aplikasi web interaktif berbahasa Indonesia untuk belajar tata bahasa Jepang (Bunpou) JLPT N5 (Minna no Nihongo I · Bab 1–25) dan JLPT N4 (Minna no Nihongo II · Bab 26–50) dengan pelacak progres hafalan harian, 728 contoh kalimat variatif ber-Furigana, Flashcard 3D, Daftar Bunpou & Pencarian Instan, Kuis Latihan JLPT dengan Statistik & Riwayat, Tema Terang/Gelap, Backup/Restore JSON, serta Sinkronisasi Cloud Firebase.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

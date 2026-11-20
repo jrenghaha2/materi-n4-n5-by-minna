@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#4338ca" />
+    <meta name="application-name" content="Materi N4 N5 by Minna" />
+    <meta name="apple-mobile-web-app-title" content="Materi N4 N5 by Minna" />
+    <link rel="icon" type="image/x-icon" href="./favicon.ico" sizes="16x16 32x32 48x48" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" sizes="any" />
+    <link rel="icon" type="image/png" sizes="48x48" href="./favicon-48x48.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16x16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+    <link rel="manifest" href="./site.webmanifest" />
+    <title>Materi N4 N5 by Minna</title>
+    <meta
+      name="description"
+      content="Aplikasi web interaktif berbahasa Indonesia untuk belajar tata bahasa Jepang (Bunpou) dan kosakata (Flashcard Kotoba) JLPT N5 (Minna no Nihongo I · Bab 1–25) dan JLPT N4 (Minna no Nihongo II · Bab 26–50) dengan pelacak progres hafalan harian, 740 reibun ber-Furigana, 1.281 kartu Kotoba, Kuis Latihan JLPT, Tema Terang/Gelap, Backup/Restore JSON, serta Sinkronisasi Cloud Firebase."
+    />
+    <meta property="og:title" content="Materi N4 N5 by Minna" />
+    <meta
+      property="og:description"
+      content="Aplikasi web interaktif berbahasa Indonesia untuk belajar tata bahasa Jepang (Bunpou) dan kosakata (Flashcard Kotoba) JLPT N5 (Minna no Nihongo I · Bab 1–25) dan JLPT N4 (Minna no Nihongo II · Bab 26–50) dengan pelacak progres hafalan harian, 740 reibun ber-Furigana, 1.281 kartu Kotoba, Kuis Latihan JLPT, Tema Terang/Gelap, Backup/Restore JSON, serta Sinkronisasi Cloud Firebase."
+    />
+    <meta property="og:image" content="./icon-512x512.png" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Noto+Sans+JP:wght@500;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem('minna_bunpou_theme_v1');
+          var isDark =
+            saved === 'dark' ||
+            (!saved && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (isDark) document.documentElement.classList.add('dark');
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 antialiased selection:bg-indigo-100 selection:text-indigo-900 dark:selection:bg-indigo-900 dark:selection:text-indigo-100">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
