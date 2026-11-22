@@ -66,15 +66,25 @@ export default function App() {
   const activeBook = getBookData(activeBookId);
   const activeKotobaChapters = getKotobaChapters(activeBookId);
 
-  const daily = useDailyTracker();
-  const kotoba = useKotobaProgress({
-    onMasteredToggled: daily.recordMasteredChange,
-  });
-
   const authActions = useAuthActions({ showToast });
   const userProfile = useUserProfile({
     user: authActions.user,
     isVerified: authActions.isVerified,
+    showToast,
+  });
+
+  const daily = useDailyTracker({
+    user: authActions.user,
+    isVerified: authActions.isVerified,
+    profileReady: userProfile.profileReady,
+    showToast,
+  });
+
+  const kotoba = useKotobaProgress({
+    user: authActions.user,
+    isVerified: authActions.isVerified,
+    profileReady: userProfile.profileReady,
+    onMasteredToggled: daily.recordMasteredChange,
     showToast,
   });
 
@@ -157,10 +167,16 @@ export default function App() {
 
   const handleManualSync = () => {
     void progressSync.syncAllBooksWithCloud(false);
+    void kotoba.syncKotobaWithCloud(true);
+    void daily.syncDailyWithCloud(true);
     void quizSync.syncQuizHistoryWithCloud();
   };
 
-  const syncingAny = progressSync.syncingProgress || quizSync.syncingQuiz;
+  const syncingAny =
+    progressSync.syncingProgress ||
+    kotoba.syncingKotoba ||
+    daily.syncingDaily ||
+    quizSync.syncingQuiz;
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col">

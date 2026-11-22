@@ -15,9 +15,13 @@ import {
   N5_KOTOBA_WORDS,
 } from '../data/minnaKotobaData.ts';
 import {
+  areDailyTrackerStatesEqual,
   buildRecent7Days,
   calculateCurrentStreak,
   createEmptyDailyTrackerState,
+  decodeDailyTrackerDays,
+  encodeDailyTrackerDays,
+  mergeDailyTrackerStates,
   recordMasteredToggleForDay,
   recordQuizSessionForDay,
 } from './dailyProgress.ts';
@@ -36,7 +40,12 @@ import {
   generateQuizQuestions,
   getQuizPatternLabel,
 } from './quizGenerator.ts';
-import { mergePatternSets, sanitizePatternIds } from './bunpouSync.ts';
+import {
+  mergeKotobaSets,
+  mergePatternSets,
+  sanitizeKotobaIds,
+  sanitizePatternIds,
+} from './bunpouSync.ts';
 
 const BARE_KANJI_REGEX = /[\u4e00-\u9faf\u3400-\u4dbf々]/;
 const KATAKANA_ONLY_RUBY_REGEX = /\{([\u30a0-\u30ffー・]+)\|[^}]+\}/;
@@ -351,3 +360,61 @@ test('meaning mode never leaks Indonesian hints in promptSub and all choices hav
     }
   }
 });
+
+test('kotoba cloud IDs and daily tracker tokens strictly comply with Firestore security rule regexes', () => {
+  const n5KotobaRe = /^n5-bab-([1-9]|1[0-9]|2[0-5])-w[1-9][0-9]{0,2}$/;
+  const n4KotobaRe = /^n4-bab-(2[6-9]|[34][0-9]|50)-w[1-9][0-9]{0,2}$/;
+  const dailyTokenRe =
+    /^[0-9]{4}-[0-9]{2}-[0-9]{2}\|[0-9]{1,3}\|(|(n5|n4)-bab-[1-9][0-9]?-[pw][1-9][0-9]{0,2}(,(n5|n4)-bab-[1-9][0-9]?-[pw][1-9][0-9]{0,2})*)$/;
+
+  for (const w of N5_KOTOBA_WORDS) {
+    assert.ok(n5KotobaRe.test(w.id), `N5 kotoba ID violates Firestore regex: ${w.id}`);
+  }
+  for (const w of N4_KOTOBA_WORDS) {
+    assert.ok(n4KotobaRe.test(w.id), `N4 kotoba ID violates Firestore regex: ${w.id}`);
+  }
+  assert.ok(N5_KOTOBA_WORDS.map(w => w.id).join(',').length <= 20000);
+  assert.ok(N4_KOTOBA_WORDS.map(w => w.id).join(',').length <= 20000);
+
+  // Kotoba sanitization & book isolation
+  assert.deepEqual(
+    sanitizeKotobaIds(['n5-bab-1-w1', 'n4-bab-26-w1', 'n5-bab-1-w1', 'bad'], 'n5'),
+    ['n5-bab-1-w1']
+  );
+  const mergedN4Kotoba = mergeKotobaSets(['n4-bab-26-w1'], ['n4-bab-50-w1', 'n5-bab-1-w1'], 'n4');
+  assert.deepEqual(Array.from(mergedN4Kotoba).sort(), ['n4-bab-26-w1', 'n4-bab-50-w1']);
+
+  // Daily tracker codec roundtrip & merge across devices
+  let local = createEmptyDailyTrackerState(5);
+  local = recordMasteredToggleForDay(local, 'n5-bab-1-p1', true, '2026-11-20');
+  local = recordMasteredToggleForDay(local, 'n5-bab-1-w1', true, '2026-11-20');
+  local = recordQuizSessionForDay(local, '2026-11-21'); // quiz-only day (empty masteredIds)
+
+  let remote = createEmptyDailyTrackerState(10);
+  remote = recordMasteredToggleForDay(remote, 'n4-bab-26-p1', true, '2026-11-20');
+  remote = recordQuizSessionForDay(remote, '2026-11-20');
+  remote = recordQuizSessionForDay(remote, '2026-11-21');
+  remote = recordQuizSessionForDay(remote, '2026-11-21');
+
+  const merged = mergeDailyTrackerStates(local, remote);
+  assert.equal(merged.dailyGoal, 10);
+  assert.deepEqual(merged.days['2026-11-20'].masteredIds, [
+    'n5-bab-1-p1',
+    'n5-bab-1-w1',
+    'n4-bab-26-p1',
+  ]);
+  assert.equal(merged.days['2026-11-20'].quizSessions, 1);
+  assert.equal(merged.days['2026-11-21'].quizSessions, 2);
+  assert.deepEqual(merged.days['2026-11-21'].masteredIds, []);
+
+  const tokens = encodeDailyTrackerDays(merged.days);
+  assert.equal(tokens.length, 2);
+  for (const t of tokens) {
+    assert.ok(t.length >= 13 && t.length <= 8000, `Daily token length out of bounds: ${t}`);
+    assert.ok(dailyTokenRe.test(t), `Daily token violates Firestore regex: ${t}`);
+  }
+
+  const decoded = decodeDailyTrackerDays(tokens);
+  assert.ok(areDailyTrackerStatesEqual(merged, { dailyGoal: merged.dailyGoal, days: decoded }));
+});
+

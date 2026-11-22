@@ -106,6 +106,78 @@
         }
       },
       "required": ["uid", "bookId", "sessions", "createdAt", "updatedAt"]
+    },
+    "KotobaBookProgress": {
+      "title": "KotobaBookProgress",
+      "description": "Per-book mastered and hard Minna Kotoba vocabulary word IDs synced for a learner.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth UID of the owner.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "bookId": {
+          "type": "string",
+          "enum": ["n5", "n4"],
+          "description": "Minna Kotoba book identifier matching the document ID (n5 or n4)."
+        },
+        "mastered": {
+          "type": "array",
+          "description": "Unique list of mastered Kotoba word IDs belonging to bookId (disjoint from hard)."
+        },
+        "hard": {
+          "type": "array",
+          "description": "Unique list of hard/review Kotoba word IDs belonging to bookId (disjoint from mastered)."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when this Kotoba progress record was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of the latest Kotoba progress sync."
+        }
+      },
+      "required": ["uid", "bookId", "mastered", "hard", "createdAt", "updatedAt"]
+    },
+    "DailyStudyTracker": {
+      "title": "DailyStudyTracker",
+      "description": "Daily memorization goal, streak, and up to 90 days of compact pure-ASCII activity tokens synced for a learner.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth UID of the owner.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "dailyGoal": {
+          "type": "number",
+          "enum": [3, 5, 10, 15],
+          "description": "Daily memorization goal selected by the learner."
+        },
+        "days": {
+          "type": "array",
+          "description": "Up to 90 compact pure-ASCII daily activity tokens (YYYY-MM-DD|quizSessions|id1,id2,...)."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the daily tracker document was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of the latest daily tracker sync."
+        }
+      },
+      "required": ["uid", "dailyGoal", "days", "createdAt", "updatedAt"]
     }
   },
   "firestore": {
@@ -120,6 +192,14 @@
     "/users/{userId}/quizHistory/{bookId}": {
       "schema": { "$ref": "#/entities/BunpouQuizHistory" },
       "description": "Per-book compact quiz session history tokens (n5, n4)."
+    },
+    "/users/{userId}/kotobaProgress/{bookId}": {
+      "schema": { "$ref": "#/entities/KotobaBookProgress" },
+      "description": "Per-book mastered and hard Kotoba vocabulary progress (n5, n4)."
+    },
+    "/users/{userId}/dailyTracker/{trackerId}": {
+      "schema": { "$ref": "#/entities/DailyStudyTracker" },
+      "description": "Singleton ('state') daily memorization target, streak, and 90-day activity history."
     }
   }
 }

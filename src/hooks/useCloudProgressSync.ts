@@ -110,7 +110,7 @@ export function useCloudProgressSync({
 
         setBooksProgress(next);
         if (!silent) {
-          showToast('Progres N5 & N4 berhasil disinkronkan ke cloud.', 'success');
+          showToast('Semua progres (Bunpou, Kotoba, Streak & Kuis) berhasil disinkronkan ke cloud.', 'success');
         }
       } catch (error) {
         if (isFirestoreQuotaError(error)) {

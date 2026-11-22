@@ -16,10 +16,15 @@ test('firestore.rules enforces default-deny, email_verified, Master Gate, and N5
   // Closed schema
   assert.ok(rules.includes('keys().hasOnly('), 'Missing closed schema hasOnly check');
 
-  // N5 (Bab 1-25) & N4 (Bab 26-50) book scoping & 30-slot detailed quiz history validation
+  // N5 (Bab 1-25) & N4 (Bab 26-50) book scoping, Kotoba, Daily Tracker & 30-slot detailed quiz history validation
   assert.ok(rules.includes("bookId == 'n5'"), 'Missing n5 bookId scoping');
   assert.ok(rules.includes("bookId == 'n4'"), 'Missing n4 bookId scoping');
-  assert.ok(rules.includes('isValidBunpouList'), 'Missing dual-separator full-array validation');
+  assert.ok(rules.includes('isValidBunpouList'), 'Missing Bunpou dual-separator full-array validation');
+  assert.ok(rules.includes('match /kotobaProgress/{bookId}'), 'Missing kotobaProgress subcollection rule');
+  assert.ok(rules.includes('isValidKotobaList'), 'Missing Kotoba dual-separator full-array validation');
+  assert.ok(rules.includes('match /dailyTracker/{trackerId}'), 'Missing dailyTracker subcollection rule');
+  assert.ok(rules.includes("trackerId == 'state'"), 'Missing dailyTracker singleton state ID gate');
+  assert.ok(rules.includes('isValidDailyDaysList'), 'Missing dailyTracker dual-separator full-array validation');
   assert.ok(rules.includes('isValidQuizHistorySessions'), 'Missing 30-slot quiz session validation');
   assert.ok(rules.includes('arr.size() <= 30'), 'Expected 30-slot cloud quiz history cap');
   assert.ok(rules.includes('[0-3]'), 'Expected strict exampleIndex [0-3] bound in V2 quiz token');
@@ -31,3 +36,4 @@ test('firestore.rules enforces default-deny, email_verified, Master Gate, and N5
   );
   assert.ok(rules.includes('incoming().updatedAt == request.time'), 'Missing server timestamp check');
 });
+

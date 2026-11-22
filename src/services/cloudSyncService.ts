@@ -2,6 +2,7 @@ import { doc, getDoc, serverTimestamp, setDoc, updateDoc } from 'firebase/firest
 import { db, logFirestoreError, OperationType } from '../firebase';
 import type {
   BookId,
+  DailyTrackerState,
   QuizMode,
   QuizSavedAnswer,
   QuizSessionRecord,
@@ -10,9 +11,16 @@ import type {
 import {
   sanitizeAvatarUrl,
   sanitizeDisplayName,
+  sanitizeKotobaIds,
   sanitizePatternIds,
   sanitizeQuizHistoryForBook,
 } from '../utils/bunpouSync';
+import {
+  DAILY_GOAL_OPTIONS,
+  decodeDailyTrackerDays,
+  DEFAULT_DAILY_GOAL,
+  encodeDailyTrackerDays,
+} from '../utils/dailyProgress';
 import { MAX_CLOUD_QUIZ_HISTORY_PER_BOOK } from '../utils/quizStats';
 
 export async function fetchUserProfileDoc(uid: string): Promise<UserProfileDoc | null> {
@@ -120,6 +128,118 @@ export async function saveBookProgressDoc(
         bookId,
         mastered,
         hard,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    }
+  } catch (error) {
+    logFirestoreError(error, OperationType.WRITE, path);
+    throw error;
+  }
+}
+
+export async function fetchKotobaProgressDoc(
+  uid: string,
+  bookId: BookId
+): Promise<BookProgressPayload | null> {
+  const path = `users/${uid}/kotobaProgress/${bookId}`;
+  try {
+    const snap = await getDoc(doc(db, 'users', uid, 'kotobaProgress', bookId));
+    if (!snap.exists()) return null;
+    const data = snap.data() as Record<string, unknown>;
+    const mastered = sanitizeKotobaIds(data.mastered, bookId);
+    const masteredSet = new Set(mastered);
+    const hard = sanitizeKotobaIds(data.hard, bookId).filter(id => !masteredSet.has(id));
+    return {
+      mastered,
+      difficult: hard,
+    };
+  } catch (error) {
+    logFirestoreError(error, OperationType.GET, path);
+    throw error;
+  }
+}
+
+export async function saveKotobaProgressDoc(
+  uid: string,
+  bookId: BookId,
+  payload: BookProgressPayload
+): Promise<void> {
+  const path = `users/${uid}/kotobaProgress/${bookId}`;
+  const ref = doc(db, 'users', uid, 'kotobaProgress', bookId);
+  const mastered = sanitizeKotobaIds(payload.mastered, bookId);
+  const masteredSet = new Set(mastered);
+  // Firestore rules enforce mutual exclusion between mastered and hard
+  const hard = sanitizeKotobaIds(payload.difficult, bookId).filter(id => !masteredSet.has(id));
+
+  try {
+    const existing = await getDoc(ref);
+    if (existing.exists()) {
+      await updateDoc(ref, {
+        mastered,
+        hard,
+        updatedAt: serverTimestamp(),
+      });
+    } else {
+      await setDoc(ref, {
+        uid,
+        bookId,
+        mastered,
+        hard,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    }
+  } catch (error) {
+    logFirestoreError(error, OperationType.WRITE, path);
+    throw error;
+  }
+}
+
+export async function fetchDailyTrackerDoc(uid: string): Promise<DailyTrackerState | null> {
+  const path = `users/${uid}/dailyTracker/state`;
+  try {
+    const snap = await getDoc(doc(db, 'users', uid, 'dailyTracker', 'state'));
+    if (!snap.exists()) return null;
+    const data = snap.data() as Record<string, unknown>;
+    const rawGoal = typeof data.dailyGoal === 'number' ? data.dailyGoal : DEFAULT_DAILY_GOAL;
+    const dailyGoal = (DAILY_GOAL_OPTIONS as readonly number[]).includes(rawGoal)
+      ? rawGoal
+      : DEFAULT_DAILY_GOAL;
+    return {
+      dailyGoal,
+      days: decodeDailyTrackerDays(data.days),
+    };
+  } catch (error) {
+    logFirestoreError(error, OperationType.GET, path);
+    throw error;
+  }
+}
+
+export async function saveDailyTrackerDoc(
+  uid: string,
+  state: DailyTrackerState
+): Promise<void> {
+  const path = `users/${uid}/dailyTracker/state`;
+  const ref = doc(db, 'users', uid, 'dailyTracker', 'state');
+  const dailyGoal = (DAILY_GOAL_OPTIONS as readonly number[]).includes(state.dailyGoal)
+    ? state.dailyGoal
+    : DEFAULT_DAILY_GOAL;
+  const days = encodeDailyTrackerDays(state.days);
+
+  try {
+    const existing = await getDoc(ref);
+    if (existing.exists()) {
+      await updateDoc(ref, {
+        dailyGoal,
+        days,
+        updatedAt: serverTimestamp(),
+      });
+    } else {
+      await setDoc(ref, {
+        uid,
+        dailyGoal,
+        days,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });

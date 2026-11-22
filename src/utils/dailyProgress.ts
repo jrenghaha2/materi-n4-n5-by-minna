@@ -231,3 +231,160 @@ export function buildRecent7Days(
   }
   return list;
 }
+
+const MAX_DAILY_TOKEN_CHARS = 8000;
+const MAX_DAILY_JOINED_CHARS = 60000;
+
+/**
+ * Encodes daily activity records into compact pure-ASCII tokens aligned 1:1 with firestore.rules:
+ * Format per element: YYYY-MM-DD|quizSessions|id1,id2,...
+ */
+export function encodeDailyTrackerDays(days: Record<string, DailyActivityDay>): string[] {
+  const sortedEntries = Object.entries(days)
+    .filter(([key]) => isValidDateKey(key))
+    .sort(([a], [b]) => b.localeCompare(a))
+    .slice(0, MAX_STORED_DAYS);
+
+  const tokens: string[] = [];
+  let totalJoinedChars = 0;
+
+  for (const [dateKey, entry] of sortedEntries) {
+    const quizSessions =
+      typeof entry.quizSessions === 'number' && Number.isFinite(entry.quizSessions)
+        ? Math.max(0, Math.min(200, Math.floor(entry.quizSessions)))
+        : 0;
+
+    const seen = new Set<string>();
+    const validIds: string[] = [];
+    for (const id of entry.masteredIds) {
+      if (typeof id === 'string' && ALL_VALID_STUDY_IDS.has(id) && !seen.has(id)) {
+        seen.add(id);
+        validIds.push(id);
+      }
+    }
+
+    if (validIds.length === 0 && quizSessions === 0) continue;
+
+    const prefix = `${dateKey}|${quizSessions}|`;
+    const keptIds: string[] = [];
+    let tokenLen = prefix.length;
+    for (const id of validIds) {
+      const added = keptIds.length === 0 ? id.length : id.length + 1;
+      if (tokenLen + added > MAX_DAILY_TOKEN_CHARS) break;
+      keptIds.push(id);
+      tokenLen += added;
+    }
+
+    const token = `${prefix}${keptIds.join(',')}`;
+    const addedJoined = tokens.length === 0 ? token.length : token.length + 1;
+    if (totalJoinedChars + addedJoined > MAX_DAILY_JOINED_CHARS) break;
+
+    tokens.push(token);
+    totalJoinedChars += addedJoined;
+  }
+
+  return tokens;
+}
+
+export function decodeDailyTrackerDays(rawTokens: unknown): Record<string, DailyActivityDay> {
+  const days: Record<string, DailyActivityDay> = {};
+  if (!Array.isArray(rawTokens)) return days;
+
+  for (const item of rawTokens) {
+    if (typeof item !== 'string') continue;
+    const parts = item.split('|');
+    if (parts.length !== 3) continue;
+
+    const [dateKey, quizStr, idsCsv] = parts;
+    if (!isValidDateKey(dateKey)) continue;
+
+    const parsedQuiz = Number(quizStr);
+    const quizSessions = Number.isFinite(parsedQuiz)
+      ? Math.max(0, Math.min(200, Math.floor(parsedQuiz)))
+      : 0;
+
+    const seen = new Set<string>();
+    const masteredIds: string[] = [];
+    if (idsCsv.length > 0) {
+      for (const id of idsCsv.split(',')) {
+        if (ALL_VALID_STUDY_IDS.has(id) && !seen.has(id)) {
+          seen.add(id);
+          masteredIds.push(id);
+        }
+      }
+    }
+
+    if (masteredIds.length > 0 || quizSessions > 0) {
+      days[dateKey] = {
+        date: dateKey,
+        masteredIds,
+        quizSessions,
+      };
+    }
+  }
+
+  return sanitizeDailyTrackerState({ dailyGoal: DEFAULT_DAILY_GOAL, days }).days;
+}
+
+export function mergeDailyTrackerStates(
+  local: DailyTrackerState,
+  remote: DailyTrackerState | null
+): DailyTrackerState {
+  const cleanLocal = sanitizeDailyTrackerState(local);
+  if (!remote) return cleanLocal;
+  const cleanRemote = sanitizeDailyTrackerState(remote);
+
+  const dailyGoal =
+    cleanLocal.dailyGoal === DEFAULT_DAILY_GOAL && cleanRemote.dailyGoal !== DEFAULT_DAILY_GOAL
+      ? cleanRemote.dailyGoal
+      : cleanLocal.dailyGoal;
+
+  const allDateKeys = Array.from(
+    new Set([...Object.keys(cleanLocal.days), ...Object.keys(cleanRemote.days)])
+  )
+    .sort((a, b) => b.localeCompare(a))
+    .slice(0, MAX_STORED_DAYS);
+
+  const mergedDays: Record<string, DailyActivityDay> = {};
+  for (const dateKey of allDateKeys) {
+    const l = cleanLocal.days[dateKey];
+    const r = cleanRemote.days[dateKey];
+    const seen = new Set<string>();
+    const masteredIds: string[] = [];
+    for (const id of [...(l?.masteredIds ?? []), ...(r?.masteredIds ?? [])]) {
+      if (ALL_VALID_STUDY_IDS.has(id) && !seen.has(id)) {
+        seen.add(id);
+        masteredIds.push(id);
+      }
+    }
+    const quizSessions = Math.max(l?.quizSessions ?? 0, r?.quizSessions ?? 0);
+    if (masteredIds.length > 0 || quizSessions > 0) {
+      mergedDays[dateKey] = {
+        date: dateKey,
+        masteredIds,
+        quizSessions,
+      };
+    }
+  }
+
+  return {
+    dailyGoal,
+    days: mergedDays,
+  };
+}
+
+export function areDailyTrackerStatesEqual(
+  a: DailyTrackerState,
+  b: DailyTrackerState | null
+): boolean {
+  if (!b) return false;
+  if (a.dailyGoal !== b.dailyGoal) return false;
+  const tokensA = encodeDailyTrackerDays(a.days);
+  const tokensB = encodeDailyTrackerDays(b.days);
+  if (tokensA.length !== tokensB.length) return false;
+  for (let i = 0; i < tokensA.length; i += 1) {
+    if (tokensA[i] !== tokensB[i]) return false;
+  }
+  return true;
+}
+
