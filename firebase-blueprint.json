@@ -2,7 +2,7 @@
   "entities": {
     "UserProfile": {
       "title": "UserProfile",
-      "description": "Root user profile document for an authenticated Minna Bunpou learner.",
+      "description": "Root user profile document for an authenticated Minna Bunpou learner, admin, or superadmin.",
       "type": "object",
       "properties": {
         "uid": {
@@ -14,13 +14,23 @@
         },
         "displayName": {
           "type": "string",
-          "description": "Optional learner display name shown in the header and account menu.",
+          "description": "Optional learner display name shown in the header, account menu, and monitoring panel.",
           "maxLength": 60
+        },
+        "email": {
+          "type": "string",
+          "description": "Normalized lowercase email address from Firebase Auth (auto-healed for legacy users).",
+          "maxLength": 120
         },
         "avatarUrl": {
           "type": "string",
           "description": "Optional avatar URL (HTTPS or compressed JPEG/PNG/WebP data URI).",
           "maxLength": 20000
+        },
+        "role": {
+          "type": "string",
+          "enum": ["user", "admin", "superadmin"],
+          "description": "3-tier RBAC role. Bootstrap superadmin jrenghaha2@gmail.com is permanently superadmin."
         },
         "createdAt": {
           "type": "string",
@@ -30,7 +40,7 @@
         "updatedAt": {
           "type": "string",
           "format": "date-time",
-          "description": "Server timestamp of the latest profile update."
+          "description": "Server timestamp of the latest profile or role update."
         }
       },
       "required": ["uid", "createdAt", "updatedAt"]
@@ -178,12 +188,225 @@
         }
       },
       "required": ["uid", "dailyGoal", "days", "createdAt", "updatedAt"]
+    },
+    "LiveActivity": {
+      "title": "LiveActivity",
+      "description": "Real-time presence, active study module, live quiz progress, and summary stats for an authenticated user.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth UID matching the document ID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "maxLength": 60,
+          "description": "Display name snapshot for real-time monitoring list."
+        },
+        "email": {
+          "type": "string",
+          "maxLength": 120,
+          "description": "User email snapshot."
+        },
+        "avatarUrl": {
+          "type": "string",
+          "maxLength": 20000,
+          "description": "Avatar URL snapshot."
+        },
+        "role": {
+          "type": "string",
+          "enum": ["user", "admin", "superadmin"],
+          "description": "User role snapshot."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["browsing", "studying", "quizzing", "idle"],
+          "description": "Current live activity state."
+        },
+        "activeTab": {
+          "type": "string",
+          "enum": ["flashcard", "kotoba", "list", "quiz", "info", "admin"],
+          "description": "Currently open navigation tab."
+        },
+        "activeBookId": {
+          "type": "string",
+          "enum": ["n5", "n4"],
+          "description": "Currently active Minna book."
+        },
+        "moduleLabel": {
+          "type": "string",
+          "maxLength": 80,
+          "description": "Human-readable label of the current study module."
+        },
+        "quizInProgress": {
+          "type": "boolean",
+          "description": "Whether the user is currently answering an active quiz."
+        },
+        "quizMode": {
+          "type": "string",
+          "enum": ["", "meaning", "cloze", "pattern"],
+          "description": "Active quiz mode when quizzing."
+        },
+        "quizBookId": {
+          "type": "string",
+          "enum": ["", "n5", "n4"],
+          "description": "Active quiz book ID when quizzing."
+        },
+        "quizCurrentQuestion": {
+          "type": "number",
+          "description": "1-based current question index (0..50)."
+        },
+        "quizTotalQuestions": {
+          "type": "number",
+          "description": "Total questions in active quiz (0..50)."
+        },
+        "quizCorrectCount": {
+          "type": "number",
+          "description": "Running correct answer count in active quiz (0..50)."
+        },
+        "totalMasteredBunpou": {
+          "type": "number",
+          "description": "Total mastered Bunpou patterns across N5 and N4."
+        },
+        "totalMasteredKotoba": {
+          "type": "number",
+          "description": "Total mastered Kotoba words across N5 and N4."
+        },
+        "totalMastered": {
+          "type": "number",
+          "description": "Combined mastered count (Bunpou + Kotoba)."
+        },
+        "totalQuizSessions": {
+          "type": "number",
+          "description": "Total completed quiz sessions across N5 and N4."
+        },
+        "lastQuizScore": {
+          "type": "number",
+          "description": "Latest quiz percentage score (0..100, or -1 if none)."
+        },
+        "lastQuizSummary": {
+          "type": "string",
+          "maxLength": 120,
+          "description": "Compact summary of the latest completed quiz."
+        },
+        "currentStreak": {
+          "type": "number",
+          "description": "Current daily study streak in days."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of the latest heartbeat or state transition."
+        }
+      },
+      "required": [
+        "uid",
+        "displayName",
+        "email",
+        "avatarUrl",
+        "role",
+        "status",
+        "activeTab",
+        "activeBookId",
+        "moduleLabel",
+        "quizInProgress",
+        "quizMode",
+        "quizBookId",
+        "quizCurrentQuestion",
+        "quizTotalQuestions",
+        "quizCorrectCount",
+        "totalMasteredBunpou",
+        "totalMasteredKotoba",
+        "totalMastered",
+        "totalQuizSessions",
+        "lastQuizScore",
+        "lastQuizSummary",
+        "currentStreak",
+        "updatedAt"
+      ]
+    },
+    "ActivityEvent": {
+      "title": "ActivityEvent",
+      "description": "Append-only chronological log of significant learning and quiz events for real-time admin monitoring.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Firebase Auth UID of the learner who triggered the event."
+        },
+        "displayName": {
+          "type": "string",
+          "maxLength": 60,
+          "description": "Learner display name snapshot."
+        },
+        "email": {
+          "type": "string",
+          "maxLength": 120,
+          "description": "Learner email snapshot."
+        },
+        "type": {
+          "type": "string",
+          "enum": ["quiz_started", "quiz_completed", "progress_milestone"],
+          "description": "Categorized event type."
+        },
+        "bookId": {
+          "type": "string",
+          "enum": ["n5", "n4"],
+          "description": "Target book identifier."
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 120,
+          "description": "Short human-readable event headline."
+        },
+        "detail": {
+          "type": "string",
+          "maxLength": 240,
+          "description": "Event detail including scope, score, or milestone summary."
+        },
+        "score": {
+          "type": "number",
+          "description": "Percentage score (0..100) for quiz_completed, or -1 otherwise."
+        },
+        "correctCount": {
+          "type": "number",
+          "description": "Number of correct answers (0..50)."
+        },
+        "totalQuestions": {
+          "type": "number",
+          "description": "Total quiz questions (0..50)."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the event was recorded."
+        }
+      },
+      "required": [
+        "uid",
+        "displayName",
+        "email",
+        "type",
+        "bookId",
+        "title",
+        "detail",
+        "score",
+        "correctCount",
+        "totalQuestions",
+        "createdAt"
+      ]
     }
   },
   "firestore": {
     "/users/{userId}": {
       "schema": { "$ref": "#/entities/UserProfile" },
-      "description": "Root profile document for each authenticated learner (Master Gate parent for all subcollections)."
+      "description": "Root profile & RBAC role document for each authenticated user (Master Gate parent for all subcollections)."
     },
     "/users/{userId}/bunpouProgress/{bookId}": {
       "schema": { "$ref": "#/entities/BunpouBookProgress" },
@@ -200,6 +423,14 @@
     "/users/{userId}/dailyTracker/{trackerId}": {
       "schema": { "$ref": "#/entities/DailyStudyTracker" },
       "description": "Singleton ('state') daily memorization target, streak, and 90-day activity history."
+    },
+    "/liveActivity/{userId}": {
+      "schema": { "$ref": "#/entities/LiveActivity" },
+      "description": "Real-time presence, live quiz progress, and summary stats per user."
+    },
+    "/activityEvents/{eventId}": {
+      "schema": { "$ref": "#/entities/ActivityEvent" },
+      "description": "Append-only chronological stream of quiz starts, quiz completions, and study progress milestones."
     }
   }
 }

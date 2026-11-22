@@ -13,10 +13,13 @@ import {
   Menu,
   Moon,
   RefreshCw,
+  Shield,
+  ShieldCheck,
   Sun,
   Users,
 } from 'lucide-react';
-import type { BookData, UserProfileDoc } from '../types/bunpou';
+import type { BookData, UserProfileDoc, UserRole } from '../types/bunpou';
+import { getRoleLabel, isBootstrapSuperAdminEmail } from '../utils/rbac';
 import { BrandLogo } from './BrandLogo';
 
 interface AppHeaderProps {
@@ -26,6 +29,9 @@ interface AppHeaderProps {
   isDark: boolean;
   user: User | null;
   profile: UserProfileDoc | null;
+  role: UserRole;
+  isAdminOrAbove: boolean;
+  isSuperAdmin: boolean;
   isVerified: boolean;
   authBusy: boolean;
   syncing: boolean;
@@ -35,6 +41,7 @@ interface AppHeaderProps {
   onToggleMobileSidebar: () => void;
   onOpenAuthModal: (isSwitch?: boolean) => void;
   onOpenProfileModal: () => void;
+  onOpenAdminPanel: () => void;
   onManualSync: () => void;
   onResendVerification: () => void;
   onRefreshVerification: () => void;
@@ -57,6 +64,9 @@ export function AppHeader({
   isDark,
   user,
   profile,
+  role,
+  isAdminOrAbove,
+  isSuperAdmin,
   isVerified,
   authBusy,
   syncing,
@@ -66,6 +76,7 @@ export function AppHeader({
   onToggleMobileSidebar,
   onOpenAuthModal,
   onOpenProfileModal,
+  onOpenAdminPanel,
   onManualSync,
   onResendVerification,
   onRefreshVerification,
@@ -287,7 +298,21 @@ export function AppHeader({
                           {user.email}
                         </p>
                       ) : null}
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1.5">
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 flex flex-wrap items-center gap-1.5">
+                        <span
+                          className={`font-semibold ${
+                            role === 'superadmin'
+                              ? 'text-indigo-700 dark:text-indigo-300'
+                              : role === 'admin'
+                              ? 'text-teal-700 dark:text-teal-300'
+                              : 'text-slate-600 dark:text-slate-300'
+                          }`}
+                        >
+                          {isBootstrapSuperAdminEmail(user.email)
+                            ? 'Superadmin Utama'
+                            : getRoleLabel(role)}
+                        </span>
+                        <span aria-hidden="true">·</span>
                         <span>{getProviderLabel(user)}</span>
                         <span aria-hidden="true">·</span>
                         {isVerified ? (
@@ -332,6 +357,26 @@ export function AppHeader({
                   ) : null}
 
                   <div className="py-1">
+                    {isAdminOrAbove && isVerified ? (
+                      <button
+                        type="button"
+                        role="menuitem"
+                        id="menuOpenAdminPanel"
+                        onClick={() => {
+                          setMenuOpen(false);
+                          onOpenAdminPanel();
+                        }}
+                        className="w-full px-4 py-2.5 text-left text-sm font-semibold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50/70 dark:hover:bg-indigo-950/50 flex items-center gap-2.5 transition-colors cursor-pointer"
+                      >
+                        {isSuperAdmin ? (
+                          <ShieldCheck className="w-4 h-4 shrink-0" aria-hidden="true" />
+                        ) : (
+                          <Shield className="w-4 h-4 shrink-0" aria-hidden="true" />
+                        )}
+                        <span>{isSuperAdmin ? 'Panel Superadmin' : 'Panel Admin'}</span>
+                      </button>
+                    ) : null}
+
                     <button
                       type="button"
                       role="menuitem"

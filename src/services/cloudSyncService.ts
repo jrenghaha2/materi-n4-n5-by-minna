@@ -1,4 +1,12 @@
-import { doc, getDoc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
+import {
+  doc,
+  getDoc,
+  onSnapshot,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+  type Unsubscribe,
+} from 'firebase/firestore';
 import { db, logFirestoreError, OperationType } from '../firebase';
 import type {
   BookId,
@@ -7,6 +15,7 @@ import type {
   QuizSavedAnswer,
   QuizSessionRecord,
   UserProfileDoc,
+  UserRole,
 } from '../types/bunpou';
 import {
   sanitizeAvatarUrl,
@@ -22,6 +31,25 @@ import {
   encodeDailyTrackerDays,
 } from '../utils/dailyProgress';
 import { MAX_CLOUD_QUIZ_HISTORY_PER_BOOK } from '../utils/quizStats';
+import { normalizeEmail, sanitizeUserRole } from '../utils/rbac';
+
+export interface RawUserProfileSnapshot {
+  exists: boolean;
+  profile: UserProfileDoc | null;
+  hasEmailField: boolean;
+  hasRoleField: boolean;
+  hasDisplayNameField: boolean;
+  hasAvatarField: boolean;
+}
+
+function parseUserProfileSnapshot(data: Record<string, unknown>): UserProfileDoc {
+  return {
+    displayName: sanitizeDisplayName(data.displayName, 'Pengguna'),
+    avatarUrl: sanitizeAvatarUrl(data.avatarUrl),
+    email: normalizeEmail(typeof data.email === 'string' ? data.email : ''),
+    role: sanitizeUserRole(data.role),
+  };
+}
 
 export async function fetchUserProfileDoc(uid: string): Promise<UserProfileDoc | null> {
   const path = `users/${uid}`;
@@ -29,26 +57,64 @@ export async function fetchUserProfileDoc(uid: string): Promise<UserProfileDoc |
     const snap = await getDoc(doc(db, 'users', uid));
     if (!snap.exists()) return null;
     const data = snap.data() as Record<string, unknown>;
-    return {
-      displayName: sanitizeDisplayName(data.displayName, 'Pengguna'),
-      avatarUrl: sanitizeAvatarUrl(data.avatarUrl),
-    };
+    return parseUserProfileSnapshot(data);
   } catch (error) {
     logFirestoreError(error, OperationType.GET, path);
     throw error;
   }
 }
 
+export function subscribeUserProfileDoc(
+  uid: string,
+  onUpdate: (snapshot: RawUserProfileSnapshot) => void,
+  onError: (error: unknown) => void
+): Unsubscribe {
+  const path = `users/${uid}`;
+  return onSnapshot(
+    doc(db, 'users', uid),
+    snap => {
+      if (!snap.exists()) {
+        onUpdate({
+          exists: false,
+          profile: null,
+          hasEmailField: false,
+          hasRoleField: false,
+          hasDisplayNameField: false,
+          hasAvatarField: false,
+        });
+        return;
+      }
+      const data = snap.data() as Record<string, unknown>;
+      onUpdate({
+        exists: true,
+        profile: parseUserProfileSnapshot(data),
+        hasEmailField: typeof data.email === 'string' && data.email.trim().length > 0,
+        hasRoleField:
+          data.role === 'user' || data.role === 'admin' || data.role === 'superadmin',
+        hasDisplayNameField:
+          typeof data.displayName === 'string' && data.displayName.trim().length > 0,
+        hasAvatarField: typeof data.avatarUrl === 'string' && data.avatarUrl.trim().length > 0,
+      });
+    },
+    error => {
+      logFirestoreError(error, OperationType.GET, path);
+      onError(error);
+    }
+  );
+}
+
 export async function createUserProfileDoc(
   uid: string,
-  profile: UserProfileDoc
+  profile: UserProfileDoc & { role: UserRole }
 ): Promise<void> {
   const path = `users/${uid}`;
   try {
     await setDoc(doc(db, 'users', uid), {
       uid,
       displayName: sanitizeDisplayName(profile.displayName, 'Pengguna'),
+      email: normalizeEmail(profile.email),
       avatarUrl: sanitizeAvatarUrl(profile.avatarUrl),
+      role: sanitizeUserRole(profile.role),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
@@ -63,12 +129,51 @@ export async function updateUserProfileDoc(
   profile: UserProfileDoc
 ): Promise<void> {
   const path = `users/${uid}`;
+  const patch: Record<string, unknown> = {
+    displayName: sanitizeDisplayName(profile.displayName, 'Pengguna'),
+    avatarUrl: sanitizeAvatarUrl(profile.avatarUrl),
+    updatedAt: serverTimestamp(),
+  };
+  if (typeof profile.email === 'string' && profile.email.trim().length > 0) {
+    patch.email = normalizeEmail(profile.email);
+  }
   try {
-    await updateDoc(doc(db, 'users', uid), {
-      displayName: sanitizeDisplayName(profile.displayName, 'Pengguna'),
-      avatarUrl: sanitizeAvatarUrl(profile.avatarUrl),
-      updatedAt: serverTimestamp(),
-    });
+    await updateDoc(doc(db, 'users', uid), patch);
+  } catch (error) {
+    logFirestoreError(error, OperationType.UPDATE, path);
+    throw error;
+  }
+}
+
+export async function autoHealUserProfileDoc(
+  uid: string,
+  patch: {
+    displayName?: string;
+    email?: string;
+    avatarUrl?: string;
+    role?: UserRole;
+  }
+): Promise<void> {
+  const path = `users/${uid}`;
+  const payload: Record<string, unknown> = {
+    updatedAt: serverTimestamp(),
+  };
+  if (patch.displayName !== undefined) {
+    payload.displayName = sanitizeDisplayName(patch.displayName, 'Pengguna');
+  }
+  if (patch.email !== undefined) {
+    payload.email = normalizeEmail(patch.email);
+  }
+  if (patch.avatarUrl !== undefined) {
+    payload.avatarUrl = sanitizeAvatarUrl(patch.avatarUrl);
+  }
+  if (patch.role !== undefined) {
+    payload.role = sanitizeUserRole(patch.role);
+  }
+  if (Object.keys(payload).length <= 1) return;
+
+  try {
+    await updateDoc(doc(db, 'users', uid), payload);
   } catch (error) {
     logFirestoreError(error, OperationType.UPDATE, path);
     throw error;

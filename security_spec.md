@@ -1,56 +1,56 @@
-# Security Specification — Minna Bunpou (JLPT N5 & N4) Cloud Sync
+# Security Specification — Minna Bunpou (JLPT N5 & N4) + 3-Tier RBAC & Live Monitoring
 
-## 1. Data Invariants
+## 1. Role Hierarchy & Identity Primitives
+- **Bootstrap Superadmin**: `request.auth.token.email_verified == true && request.auth.token.email.lower() == 'jrenghaha2@gmail.com'`.
+- **Superadmin (`isSuperAdmin()`)**: Bootstrap Superadmin OR verified user whose `/users/{request.auth.uid}` document has `role == 'superadmin'`.
+- **Admin or Above (`isAdminOrAbove()`)**: `isSuperAdmin()` OR verified user whose `/users/{request.auth.uid}` document has `role == 'admin'`.
+- **Learner (`user`)**: Verified authenticated user accessing only their own resources.
+
+## 2. Data Invariants
 
 ### A. `/users/{userId}` (`UserProfile`)
-1. **Strict Ownership**: Every document in `/users/{userId}` belongs strictly to the authenticated user where `request.auth.uid == userId` and `data.uid == request.auth.uid`. Cross-user `get`, `list`, `create`, `update`, and `delete` are denied.
-2. **Verified Identity**: All mutations (`create`, `update`) require `request.auth != null && request.auth.token.email_verified == true`.
-3. **Closed Schema & Action-Based Updates**: Only `uid`, `createdAt`, `updatedAt`, and optional `displayName` (`<= 60` chars) / `avatarUrl` (`<= 20,000` chars, strictly `""`, `https://...`, or `data:image/(jpeg|png|webp);base64,...`) are permitted. Updates may only affect `['displayName', 'avatarUrl', 'updatedAt']`. Shadow fields (`role`, `isAdmin`, `email`, etc.) are rejected.
-4. **Immutable Identity & Server Timestamps**: `uid` and `createdAt` can never change after creation; `createdAt` (on create) and `updatedAt` (on create/update) must equal `request.time`.
-5. **Zero Listing & No Client Delete**: `allow list: if false;` prevents user enumeration, and `allow delete: if false;` prevents leaving orphaned `bunpouProgress` / `quizHistory` subcollections.
+1. **Read Access**: `get` allowed for `isOwner(userId)` or `isAdminOrAbove()`. `list` allowed strictly for `isAdminOrAbove()`.
+2. **Verified Identity on Writes**: All `create` and `update` operations require `request.auth != null && request.auth.token.email_verified == true`.
+3. **Closed Schema**: Only `uid`, `displayName`, `email`, `avatarUrl`, `role`, `createdAt`, `updatedAt` are permitted.
+4. **Anti-Privilege-Escalation on Create**:
+   - Bootstrap Superadmin (`jrenghaha2@gmail.com`) creates with `role == 'superadmin'`.
+   - All other users MUST create with `role == 'user'`. Self-assigning `admin` or `superadmin` is strictly denied.
+5. **Action-Based Updates & Permanent Bootstrap Protection**:
+   - **Action 1a (Owner Profile Edit)**: Owner updates only `['displayName', 'avatarUrl', 'email', 'updatedAt']` without altering `role`.
+   - **Action 1b (Owner Legacy Auto-Heal)**: Owner updates `['displayName', 'avatarUrl', 'email', 'role', 'updatedAt']` ONLY if (`isBootstrapSuperAdmin() && incoming().role == 'superadmin'`) OR (`!('role' in existing()) && incoming().role == 'user'`).
+   - **Action 2 (Superadmin Role Management)**: `isSuperAdmin()` updates ONLY `['role', 'updatedAt']` on OTHER users (`userId != request.auth.uid`), with `incoming().role in ['user', 'admin', 'superadmin']`, and strictly DENIED if the target document is the Bootstrap Superadmin (`existing().email.lower() == 'jrenghaha2@gmail.com'`).
+   - Regular `admin` and `user` are strictly denied from changing any user's `role`.
+6. **Immutable Identity & Zero Client Delete**: `uid` and `createdAt` are immutable; `createdAt` (create) and `updatedAt` (create/update) must equal `request.time`; `allow delete: if false;`.
 
-### B. `/users/{userId}/bunpouProgress/{bookId}` (`BunpouBookProgress`)
-1. **Master Gate**: All operations (`get`, `create`, `update`, `delete`) require the parent `/users/{userId}` document to exist (`exists(/databases/$(database)/documents/users/$(userId))`), evaluated after all cheap static checks.
-2. **Strict Book Allowlist**: `bookId` path variable and `data.bookId` field must match and be strictly in `['n5', 'n4']`.
-3. **Closed Schema & Immutability**: Only `uid`, `bookId`, `mastered`, `hard`, `createdAt`, and `updatedAt` are permitted. Updates may only mutate `['mastered', 'hard', 'updatedAt']`; `uid`, `bookId`, and `createdAt` are immutable.
-4. **Per-Book Full-Array Validation**: Every element of `mastered` and `hard` is validated via uniqueness (`toSet()`), mutual exclusivity (`intersection().size() == 0`), size limit (`<= 150` items — covering all 101 N5 and 81 N4 patterns), and dual-separator join (`','` and `'|'`) against exact per-book pattern ID regexes:
-   - `n5`: `^n5-bab-([1-9]|1[0-9]|2[0-5])-p[1-9][0-9]?$` (`join(',').size() <= 4000`)
-   - `n4`: `^n4-bab-(2[6-9]|[34][0-9]|50)-p[1-9][0-9]?$` (`join(',').size() <= 4000`)
-5. **Zero Listing**: `allow list: if false;` — client reads only the 2 known book IDs (`n5`, `n4`) directly.
+### B. Learner Subcollections under `/users/{userId}`
+- `/users/{userId}/bunpouProgress/{bookId}` (`n5`, `n4`)
+- `/users/{userId}/kotobaProgress/{bookId}` (`n5`, `n4`)
+- `/users/{userId}/quizHistory/{bookId}` (`n5`, `n4`)
+- `/users/{userId}/dailyTracker/{trackerId}` (`state`)
+1. **Read Access**: `get` allowed for `isOwner(userId)` or `isAdminOrAbove()` (with Master Gate `exists(/databases/$(database)/documents/users/$(userId))`). `list` remains `false`.
+2. **Write Access**: Strictly `isVerifiedUser() && isOwner(userId)` (Admins and Superadmins are strictly read-only on learner progress and quiz history).
+3. **Existing Schema Invariants Preserved**: Dual-separator full-array validation, mutual exclusion of `mastered` & `hard`, 30-slot V2 quiz tokens, 90-day daily tokens, strict server timestamps.
 
-### C. `/users/{userId}/quizHistory/{bookId}` (`BunpouQuizHistory`)
-1. **Master Gate**: All operations (`get`, `create`, `update`, `delete`) require `/users/{userId}` to exist (`exists(...)`), evaluated after all cheap static checks.
-2. **Strict Book Allowlist**: `bookId` path variable and `data.bookId` must match and be in `['n5', 'n4']`.
-3. **Closed Schema & Immutability**: Only `uid`, `bookId`, `sessions`, `createdAt`, and `updatedAt` are permitted. Updates may only mutate `['sessions', 'updatedAt']`.
-4. **Compact Pure-ASCII Element-Wise Token Validation**: `sessions` must be a unique list of `<= 30` compact ASCII tokens (`24..8000` chars each), validated individually across all 30 bounded slots (`arr[0]..arr[29]`) with per-book chapter ranges and `patternId` / `selectedPatternId` prefix matching against strict token grammar:
-   `id|completedAt|focus|correct|total|score|scopeCode|answersPacked`
-   Zero free-form user text, HTML, or JSON strings are stored; full pattern titles, formulas, and explanations are hydrated client-side from the static Minna Bunpou dataset.
-5. **Zero Listing**: `allow list: if false;`.
+### C. `/liveActivity/{userId}` (`LiveActivity`)
+1. **Read Access**: `get` allowed for `isOwner(userId)` or `isAdminOrAbove()`. `list` allowed strictly for `isAdminOrAbove()`.
+2. **Write Access**: `create` and `update` allowed strictly for `isVerifiedUser() && isOwner(userId)` with Master Gate `exists(/databases/$(database)/documents/users/$(userId))`, strict closed schema (`uid`, `displayName`, `email`, `avatarUrl`, `role`, `status`, `activeTab`, `activeBookId`, `moduleLabel`, `quizInProgress`, `quizMode`, `quizBookId`, `quizCurrentQuestion`, `quizTotalQuestions`, `quizCorrectCount`, `totalMasteredBunpou`, `totalMasteredKotoba`, `totalMastered`, `totalQuizSessions`, `lastQuizScore`, `lastQuizSummary`, `currentStreak`, `updatedAt`), bounded sizes/ranges, and `updatedAt == request.time`.
+3. **No Client Delete**: `allow delete: if false;`.
 
-### D. `/users/{userId}/kotobaProgress/{bookId}` (`KotobaBookProgress`)
-1. **Master Gate**: All operations (`get`, `create`, `update`, `delete`) require `/users/{userId}` to exist (`exists(...)`), evaluated after all cheap static checks.
-2. **Strict Book Allowlist**: `bookId` path variable and `data.bookId` field must match and be strictly in `['n5', 'n4']`.
-3. **Closed Schema & Immutability**: Only `uid`, `bookId`, `mastered`, `hard`, `createdAt`, and `updatedAt` are permitted. Updates may only mutate `['mastered', 'hard', 'updatedAt']`; `uid`, `bookId`, and `createdAt` are immutable.
-4. **Per-Book Full-Array Validation**: Every element of `mastered` and `hard` is validated via uniqueness (`toSet()`), mutual exclusivity (`intersection().size() == 0`), size limit (`<= 1000` items — covering all 851 N5 and 430 N4 Kotoba words), and dual-separator join (`','` and `'|'`) against exact per-book word ID regexes (`n5-bab-1..25-w...` / `n4-bab-26..50-w...`, `join(',').size() <= 20000`).
-5. **Zero Listing**: `allow list: if false;`.
+### D. `/activityEvents/{eventId}` (`ActivityEvent`)
+1. **Read Access**: `get` allowed for `isAdminOrAbove()` or event owner (`existing().uid == request.auth.uid`). `list` allowed strictly for `isAdminOrAbove()`.
+2. **Create Only (Append-Only Audit Feed)**: `create` allowed strictly for `isVerifiedUser()` with `isValidId(eventId)`, `incoming().uid == request.auth.uid`, Master Gate `exists(/databases/$(database)/documents/users/$(request.auth.uid))`, strict closed schema (`uid`, `displayName`, `email`, `type`, `bookId`, `title`, `detail`, `score`, `correctCount`, `totalQuestions`, `createdAt`), and `createdAt == request.time`.
+3. **Immutable**: `allow update, delete: if false;`.
 
-### E. `/users/{userId}/dailyTracker/{trackerId}` (`DailyStudyTracker`)
-1. **Master Gate**: All operations (`get`, `create`, `update`, `delete`) require `/users/{userId}` to exist (`exists(...)`).
-2. **Strict Singleton Document ID**: `trackerId` must equal `'state'`.
-3. **Closed Schema & Immutability**: Only `uid`, `dailyGoal`, `days`, `createdAt`, and `updatedAt` are permitted. Updates may only mutate `['dailyGoal', 'days', 'updatedAt']`.
-4. **Strict Goal & Full-Array Daily Token Validation**: `dailyGoal` must be in `[3, 5, 10, 15]`. `days` is a unique list of `<= 90` compact pure-ASCII daily tokens (`YYYY-MM-DD|quizSessions|id1,id2,...`) validated via dual-separator join (`';'` and `'#'`, max 60,000 chars).
-5. **Zero Listing**: `allow list: if false;`.
-
-## 2. The "Dirty Dozen" Adversarial Payloads (`firestore.rules.test.ts`)
-1. **Unauthenticated Access**: `auth = null` attempting read/write on `/users/userA` or subcollections -> `PERMISSION_DENIED`.
-2. **Unverified Email Write**: `email_verified = false` attempting create/update -> `PERMISSION_DENIED`.
-3. **Cross-User Access**: `userB` attempting get/create/update/delete on `userA` documents -> `PERMISSION_DENIED`.
-4. **Collection Scraping (`list`) & Profile Orphan Delete**: Listing `/users`, `bunpouProgress`, `kotobaProgress`, `quizHistory`, or `dailyTracker`, or deleting `/users/{uid}` -> `PERMISSION_DENIED`.
-5. **Identity & BookId/TrackerId Spoofing**: Mismatched `uid`, mismatched `bookId`, unknown `bookId` (`n3`), or non-`'state'` `trackerId` -> `PERMISSION_DENIED`.
-6. **Master Gate Bypass**: Accessing any subcollection when `/users/{uid}` does not exist -> `PERMISSION_DENIED`.
-7. **Shadow / Ghost Field Injection**: Adding `role: 'admin'` or `isAdmin: true` -> `PERMISSION_DENIED`.
-8. **Immortal Field Tampering & Forged Timestamps**: Modifying `uid`, `bookId`, `createdAt`, or sending client timestamp instead of `request.time` -> `PERMISSION_DENIED`.
-9. **Full-Array XSS & Separator Smuggling (Index > 0)**: Injecting `<script>` or separator smuggling inside `mastered`, `hard`, `sessions`, or `days` at index > 0 -> `PERMISSION_DENIED`.
-10. **Cross-Book Prefix Spoofing & Out-of-Range Chapters**: Writing `n4` IDs inside `n5` or invalid `dailyGoal` (`999`) -> `PERMISSION_DENIED`.
-11. **Duplicates & Mastered/Hard Overlap**: Duplicate IDs inside `mastered` or same ID in both `mastered` and `hard` -> `PERMISSION_DENIED`.
-12. **Unsafe Avatar URLs**: `javascript:alert(1)` or `data:image/svg+xml;base64,...` -> `PERMISSION_DENIED`.
+## 3. The "Dirty Dozen" Adversarial Payloads (`firestore.rules.test.ts`)
+1. **Unauthenticated Access**: `auth = null` attempting read/write on `/users`, `/liveActivity`, `/activityEvents`, or subcollections -> `PERMISSION_DENIED`.
+2. **Unverified Bootstrap Email Spoof**: `email = 'jrenghaha2@gmail.com'` with `email_verified = false` -> `PERMISSION_DENIED`.
+3. **Self-Privilege Escalation on Create**: Regular user creating `/users/{uid}` with `role: 'admin'` or `'superadmin'` -> `PERMISSION_DENIED`.
+4. **Self-Privilege Escalation on Update**: Regular user updating own `role` to `'admin'` or `'superadmin'` -> `PERMISSION_DENIED`.
+5. **Admin Role Mutation**: `admin` attempting to change any user's `role` -> `PERMISSION_DENIED`.
+6. **Superadmin Self-Demotion**: `superadmin` attempting to change their own `role` (`targetUid == request.auth.uid`) -> `PERMISSION_DENIED`.
+7. **Bootstrap Superadmin Demotion Attack**: Another `superadmin` attempting to change `jrenghaha2@gmail.com`'s `role` -> `PERMISSION_DENIED`.
+8. **Superadmin Profile Tampering**: `superadmin` modifying `displayName` or `email` of another user instead of `['role', 'updatedAt']` -> `PERMISSION_DENIED`.
+9. **Admin Write to Learner Subcollections**: `admin` or `superadmin` attempting to write/delete a learner's `bunpouProgress`, `kotobaProgress`, `quizHistory`, or `dailyTracker` -> `PERMISSION_DENIED`.
+10. **Non-Admin Listing**: Regular `user` attempting `list` on `/users`, `/liveActivity`, or `/activityEvents` -> `PERMISSION_DENIED`.
+11. **LiveActivity / Event Identity Spoofing**: User writing `/liveActivity/{otherUid}` or creating `/activityEvents/{id}` with `uid != request.auth.uid` or mutating existing events -> `PERMISSION_DENIED`.
+12. **Shadow Field, Invalid Role, & Forged Timestamp Injection**: Adding ghost fields, setting `role: 'owner'`, or omitting `request.time` -> `PERMISSION_DENIED`.

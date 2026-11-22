@@ -23,6 +23,23 @@ interface QuizPanelProps {
   sessions: QuizSessionRecord[];
   isCloudSynced?: boolean;
   syncingQuiz?: boolean;
+  onQuizStarted?: (info: {
+    bookId: BookData['id'];
+    mode: QuizMode;
+    fromChapter: number;
+    toChapter: number;
+    totalQuestions: number;
+  }) => void;
+  onQuizProgress?: (info: {
+    bookId: BookData['id'];
+    mode: QuizMode;
+    fromChapter: number;
+    toChapter: number;
+    currentQuestion: number;
+    totalQuestions: number;
+    correctCount: number;
+  }) => void;
+  onQuizAborted?: () => void;
   onCompleteSession: (record: QuizSessionRecord) => void;
   onClearHistory: () => void;
   onMarkPatternsDifficult: (patternIds: string[]) => void;
@@ -38,6 +55,9 @@ export function QuizPanel({
   sessions,
   isCloudSynced = false,
   syncingQuiz = false,
+  onQuizStarted,
+  onQuizProgress,
+  onQuizAborted,
   onCompleteSession,
   onClearHistory,
   onMarkPatternsDifficult,
@@ -63,6 +83,7 @@ export function QuizPanel({
   // Reset quiz range and state whenever book switches (N5 <-> N4)
   useEffect(() => {
     stopJapaneseSpeech();
+    onQuizAborted?.();
     setPhase('setup');
     setFromChapter(minCh);
     setToChapter(maxCh);
@@ -72,7 +93,7 @@ export function QuizPanel({
     setSelectedChoiceId(null);
     setHistoryModalOpen(false);
     setInspectedSession(null);
-  }, [book.id, minCh, maxCh]);
+  }, [book.id, minCh, maxCh, onQuizAborted]);
 
   const availableCount = useMemo(
     () =>
@@ -139,28 +160,59 @@ export function QuizPanel({
     setAnswers([]);
     setInspectedSession(null);
     setPhase('running');
+    onQuizStarted?.({
+      bookId: book.id,
+      mode,
+      fromChapter: startCh,
+      toChapter: endCh,
+      totalQuestions: generated.length,
+    });
   };
 
   const handleSelectChoice = (choiceId: string) => {
     if (selectedChoiceId !== null) return;
     const current = questions[currentIndex];
     if (!current) return;
+    const isCorrect = choiceId === current.correctChoiceId;
+    const nextCorrectCount =
+      answers.reduce((acc, a) => acc + (a.isCorrect ? 1 : 0), 0) + (isCorrect ? 1 : 0);
+
     setSelectedChoiceId(choiceId);
     setAnswers(prev => [
       ...prev,
       {
         question: current,
         selectedChoiceId: choiceId,
-        isCorrect: choiceId === current.correctChoiceId,
+        isCorrect,
       },
     ]);
+
+    onQuizProgress?.({
+      bookId: book.id,
+      mode,
+      fromChapter,
+      toChapter,
+      currentQuestion: currentIndex + 1,
+      totalQuestions: questions.length,
+      correctCount: nextCorrectCount,
+    });
   };
 
   const handleNextQuestion = () => {
     stopJapaneseSpeech();
     if (currentIndex + 1 < questions.length) {
-      setCurrentIndex(prev => prev + 1);
+      const nextIdx = currentIndex + 1;
+      setCurrentIndex(nextIdx);
       setSelectedChoiceId(null);
+      onQuizProgress?.({
+        bookId: book.id,
+        mode,
+        fromChapter,
+        toChapter,
+        currentQuestion: nextIdx + 1,
+        totalQuestions: questions.length,
+        correctCount: answers.reduce((acc, a) => acc + (a.isCorrect ? 1 : 0), 0),
+      });
       return;
     }
 
@@ -240,6 +292,7 @@ export function QuizPanel({
           onNextQuestion={handleNextQuestion}
           onAbortQuiz={() => {
             stopJapaneseSpeech();
+            onQuizAborted?.();
             setPhase('setup');
           }}
         />

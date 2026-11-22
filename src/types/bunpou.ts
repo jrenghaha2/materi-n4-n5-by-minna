@@ -1,6 +1,8 @@
 export type BookId = 'n5' | 'n4';
 
-export type ActiveTab = 'flashcard' | 'kotoba' | 'list' | 'quiz' | 'info';
+export type ActiveTab = 'flashcard' | 'kotoba' | 'list' | 'quiz' | 'info' | 'admin';
+
+export type UserRole = 'user' | 'admin' | 'superadmin';
 
 export type FilterMode = 'all' | 'unmastered' | 'difficult';
 
@@ -80,6 +82,8 @@ export type AllBooksProgress = Record<BookId, BookProgress>;
 export interface UserProfileDoc {
   displayName: string;
   avatarUrl: string;
+  email?: string;
+  role?: UserRole;
 }
 
 export interface QuizChoice {
@@ -159,3 +163,137 @@ export interface DailyTrackerState {
   dailyGoal: number;
   days: Record<string, DailyActivityDay>;
 }
+
+export type PresenceStatus = 'online' | 'recent' | 'offline';
+
+export type LiveActivityStatus = 'browsing' | 'studying' | 'quizzing' | 'idle';
+
+export type ActivityEventType = 'quiz_started' | 'quiz_completed' | 'progress_milestone';
+
+export type AdminSortOption =
+  | 'latest'
+  | 'name_asc'
+  | 'name_desc'
+  | 'progress_desc'
+  | 'quiz_desc';
+
+export interface LiveQuizState {
+  inProgress: boolean;
+  bookId: BookId | '';
+  mode: QuizMode | '';
+  fromChapter: number;
+  toChapter: number;
+  currentQuestion: number;
+  totalQuestions: number;
+  correctCount: number;
+}
+
+export interface AdminUserRecord {
+  uid: string;
+  displayName: string;
+  email: string;
+  avatarUrl: string;
+  role: UserRole;
+  createdAtMs: number | null;
+  updatedAtMs: number | null;
+}
+
+export interface LiveActivityDoc {
+  uid: string;
+  displayName: string;
+  email: string;
+  avatarUrl: string;
+  role: UserRole;
+  status: LiveActivityStatus;
+  activeTab: ActiveTab;
+  activeBookId: BookId;
+  moduleLabel: string;
+  quizInProgress: boolean;
+  quizMode: QuizMode | '';
+  quizBookId: BookId | '';
+  quizCurrentQuestion: number;
+  quizTotalQuestions: number;
+  quizCorrectCount: number;
+  totalMasteredBunpou: number;
+  totalMasteredKotoba: number;
+  totalMastered: number;
+  totalQuizSessions: number;
+  lastQuizScore: number; // 0..100 or -1 if none
+  lastQuizSummary: string;
+  currentStreak: number;
+  updatedAtMs: number | null;
+}
+
+export interface ActivityEventDoc {
+  id: string;
+  uid: string;
+  displayName: string;
+  email: string;
+  type: ActivityEventType;
+  bookId: BookId;
+  title: string;
+  detail: string;
+  score: number; // 0..100 or -1
+  correctCount: number;
+  totalQuestions: number;
+  createdAtMs: number | null;
+}
+
+export interface HydratedUserStats {
+  uid: string;
+  totalMasteredBunpou: number;
+  totalMasteredKotoba: number;
+  totalMastered: number;
+  totalQuizSessions: number;
+  lastQuizScore: number;
+  lastQuizSummary: string;
+  currentStreak: number;
+  lastActivityMs: number | null;
+}
+
+export interface AdminMonitoredUserRow {
+  uid: string;
+  displayName: string;
+  email: string;
+  avatarUrl: string;
+  role: UserRole;
+  isBootstrapSuperAdmin: boolean;
+  presence: PresenceStatus;
+  status: LiveActivityStatus;
+  moduleLabel: string;
+  quizInProgress: boolean;
+  quizMode: QuizMode | '';
+  quizBookId: BookId | '';
+  quizCurrentQuestion: number;
+  quizTotalQuestions: number;
+  quizCorrectCount: number;
+  totalMasteredBunpou: number;
+  totalMasteredKotoba: number;
+  totalMastered: number;
+  totalQuizSessions: number;
+  lastQuizScore: number;
+  lastQuizSummary: string;
+  currentStreak: number;
+  lastActiveMs: number | null;
+  createdAtMs: number | null;
+  hasLiveActivity: boolean;
+  hydratedFromLegacy: boolean;
+}
+
+export interface UserDetailReport {
+  uid: string;
+  bunpouN5Mastered: number;
+  bunpouN5Difficult: number;
+  bunpouN4Mastered: number;
+  bunpouN4Difficult: number;
+  kotobaN5Mastered: number;
+  kotobaN5Difficult: number;
+  kotobaN4Mastered: number;
+  kotobaN4Difficult: number;
+  dailyGoal: number;
+  currentStreak: number;
+  todayMasteredCount: number;
+  quizSessionsN5: QuizSessionRecord[];
+  quizSessionsN4: QuizSessionRecord[];
+}
+

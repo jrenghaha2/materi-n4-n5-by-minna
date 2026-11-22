@@ -10,7 +10,7 @@
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
     "lint:rules": "eslint firestore.rules",
-    "test": "tsx --test src/utils/bunpouLogic.test.ts src/utils/storage.test.ts src/utils/quizStats.test.ts firestore.rules.test.ts"
+    "test": "tsx --test src/utils/bunpouLogic.test.ts src/utils/storage.test.ts src/utils/quizStats.test.ts src/utils/rbac.test.ts firestore.rules.test.ts"
   },
   "dependencies": {
     "@firebase/eslint-plugin-security-rules": "^0.0.2",

@@ -1,6 +1,15 @@
-import { useMemo, useState } from 'react';
-import { BookMarked, BookOpen, GraduationCap, Info, Layers } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  BookMarked,
+  BookOpen,
+  GraduationCap,
+  Info,
+  Layers,
+  Shield,
+  ShieldCheck,
+} from 'lucide-react';
 import { AbbreviationsView } from './components/AbbreviationsView';
+import { AdminPanel } from './components/admin/AdminPanel';
 import { AppHeader } from './components/AppHeader';
 import { AuthModal } from './components/AuthModal';
 import { BunpouListPanel } from './components/BunpouListPanel';
@@ -15,12 +24,14 @@ import { Sidebar } from './components/Sidebar';
 import { ToastBanner } from './components/ToastBanner';
 import { getBookData, MINNA_BOOKS } from './data/minnaDataset';
 import { getKotobaChapters } from './data/minnaKotobaData';
+import { useAdminMonitor } from './hooks/useAdminMonitor';
 import { useAuthActions } from './hooks/useAuthActions';
 import { useBackupRestore } from './hooks/useBackupRestore';
 import { useCloudProgressSync } from './hooks/useCloudProgressSync';
 import { useDailyTracker } from './hooks/useDailyTracker';
 import { useFlashcardDeck } from './hooks/useFlashcardDeck';
 import { useKotobaProgress } from './hooks/useKotobaProgress';
+import { useLiveActivityReporter } from './hooks/useLiveActivityReporter';
 import { useQuizHistorySync } from './hooks/useQuizHistorySync';
 import { useTheme } from './hooks/useTheme';
 import { useToast } from './hooks/useToast';
@@ -34,7 +45,7 @@ import {
   STORAGE_KEYS,
 } from './utils/storage';
 
-const TAB_ITEMS: { id: ActiveTab; label: string; icon: typeof Layers }[] = [
+const BASE_TAB_ITEMS: { id: ActiveTab; label: string; icon: typeof Layers }[] = [
   { id: 'flashcard', label: 'Flashcard Bunpou', icon: Layers },
   { id: 'kotoba', label: 'Flashcard Kotoba', icon: BookMarked },
   { id: 'list', label: 'Daftar Bunpou', icon: BookOpen },
@@ -103,6 +114,66 @@ export default function App() {
     showToast,
   });
 
+  const liveReporter = useLiveActivityReporter({
+    user: authActions.user,
+    isVerified: authActions.isVerified,
+    profileReady: userProfile.profileReady,
+    profile: userProfile.profile,
+    role: userProfile.role,
+    activeTab,
+    activeBookId,
+    booksProgress: progressSync.booksProgress,
+    kotobaProgress: kotoba.kotobaProgress,
+    quizHistory: quizSync.quizHistory,
+    currentStreak: daily.currentStreak,
+  });
+
+  const canAccessAdminPanel = Boolean(
+    authActions.user &&
+      authActions.isVerified &&
+      userProfile.profileReady &&
+      userProfile.isAdminOrAbove
+  );
+
+  const adminMonitor = useAdminMonitor({
+    enabled: activeTab === 'admin' && canAccessAdminPanel,
+    actorUid: authActions.user?.uid ?? null,
+    actorRole: userProfile.role,
+    showToast,
+  });
+
+  // Route guard: immediately eject user from Admin/Superadmin panel if role is revoked or user signs out
+  useEffect(() => {
+    if (activeTab !== 'admin') return;
+    if (!authActions.user || !authActions.isVerified) {
+      setActiveTab('flashcard');
+      return;
+    }
+    if (userProfile.profileReady && !userProfile.isAdminOrAbove) {
+      setActiveTab('flashcard');
+      showToast('Akses panel pemantauan telah dicabut atau memerlukan izin Admin.', 'info');
+    }
+  }, [
+    activeTab,
+    authActions.user,
+    authActions.isVerified,
+    userProfile.profileReady,
+    userProfile.isAdminOrAbove,
+    showToast,
+  ]);
+
+  const tabItems = useMemo(() => {
+    if (!canAccessAdminPanel) return BASE_TAB_ITEMS;
+    return [
+      ...BASE_TAB_ITEMS,
+      {
+        id: 'admin' as ActiveTab,
+        label: userProfile.isSuperAdmin ? 'Panel Superadmin' : 'Panel Admin',
+        icon: userProfile.isSuperAdmin ? ShieldCheck : Shield,
+      },
+    ];
+  }, [canAccessAdminPanel, userProfile.isSuperAdmin]);
+
   const backup = useBackupRestore({
     booksProgress: progressSync.booksProgress,
     quizHistory: quizSync.quizHistory,
@@ -165,6 +236,30 @@ export default function App() {
     }, 20);
   };
 
+  const handleToggleBunpouMastered = (bookId: BookId, patternId: string) => {
+    const wasMastered = progressSync.booksProgress[bookId].mastered.has(patternId);
+    progressSync.toggleMastered(bookId, patternId);
+    if (!wasMastered) {
+      liveReporter.reportProgressMilestone(
+        bookId,
+        'bunpou',
+        progressSync.booksProgress[bookId].mastered.size + 1
+      );
+    }
+  };
+
+  const handleToggleKotobaMastered = (bookId: BookId, wordId: string) => {
+    const wasMastered = kotoba.kotobaProgress[bookId].mastered.has(wordId);
+    kotoba.toggleKotobaMastered(bookId, wordId);
+    if (!wasMastered) {
+      liveReporter.reportProgressMilestone(
+        bookId,
+        'kotoba',
+        kotoba.kotobaProgress[bookId].mastered.size + 1
+      );
+    }
+  };
+
   const handleManualSync = () => {
     void progressSync.syncAllBooksWithCloud(false);
     void kotoba.syncKotobaWithCloud(true);
@@ -178,6 +273,8 @@ export default function App() {
     daily.syncingDaily ||
     quizSync.syncingQuiz;
 
+  const isAdminView = activeTab === 'admin' && canAccessAdminPanel;
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col">
       <AppHeader
@@ -187,6 +284,9 @@ export default function App() {
         isDark={isDark}
         user={authActions.user}
         profile={userProfile.profile}
+        role={userProfile.role}
+        isAdminOrAbove={canAccessAdminPanel}
+        isSuperAdmin={userProfile.isSuperAdmin}
         isVerified={authActions.isVerified}
         authBusy={authActions.authBusy}
         syncing={syncingAny}
@@ -199,6 +299,9 @@ export default function App() {
           setAuthModalOpen(true);
         }}
         onOpenProfileModal={() => setProfileModalOpen(true)}
+        onOpenAdminPanel={() => {
+          if (canAccessAdminPanel) setActiveTab('admin');
+        }}
         onManualSync={handleManualSync}
         onResendVerification={() => void authActions.resendVerificationEmail()}
         onRefreshVerification={() => void authActions.refreshVerificationStatus()}
@@ -221,47 +324,54 @@ export default function App() {
       />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-5 py-4 sm:py-5 space-y-4">
-        {/* Book Separator Menu: N5 vs N4 */}
-        <MinnaBookMenu
-          books={MINNA_BOOKS}
-          activeBookId={activeBookId}
-          booksProgress={progressSync.booksProgress}
-          onSelectBook={handleSelectBook}
-        />
+        {/* Book Separator & Daily Tracker (hidden when viewing full-width Admin Monitoring Console) */}
+        {!isAdminView ? (
+          <>
+            <MinnaBookMenu
+              books={MINNA_BOOKS}
+              activeBookId={activeBookId}
+              booksProgress={progressSync.booksProgress}
+              onSelectBook={handleSelectBook}
+            />
 
-        {/* Interactive Daily Memorization Progress Tracker */}
-        <DailyProgressBar
-          dailyGoal={daily.dailyGoal}
-          todayMasteredCount={daily.todayMasteredCount}
-          todayQuizCount={daily.todayQuizCount}
-          currentStreak={daily.currentStreak}
-          recent7Days={daily.recent7Days}
-          dailyPct={daily.dailyPct}
-          goalMetToday={daily.goalMetToday}
-          onChangeGoal={daily.setDailyGoal}
-        />
+            <DailyProgressBar
+              dailyGoal={daily.dailyGoal}
+              todayMasteredCount={daily.todayMasteredCount}
+              todayQuizCount={daily.todayQuizCount}
+              currentStreak={daily.currentStreak}
+              recent7Days={daily.recent7Days}
+              dailyPct={daily.dailyPct}
+              goalMetToday={daily.goalMetToday}
+              onChangeGoal={daily.setDailyGoal}
+            />
+          </>
+        ) : null}
 
-        {/* Main Workspace: Sidebar + Tabbed Content */}
+        {/* Main Workspace: Sidebar (for learner views) + Tabbed Content */}
         <div className="flex flex-col lg:flex-row items-start gap-4">
-          <Sidebar
-            book={activeBook}
-            selectedChapter={selectedChapter}
-            filterMode={filterMode}
-            masteredSet={activeProgress.mastered}
-            difficultSet={activeProgress.difficult}
-            mobileOpen={mobileSidebarOpen}
-            onSelectChapter={setSelectedChapter}
-            onChangeFilter={setFilterMode}
-            onCloseMobile={() => setMobileSidebarOpen(false)}
-          />
+          {!isAdminView ? (
+            <Sidebar
+              book={activeBook}
+              selectedChapter={selectedChapter}
+              filterMode={filterMode}
+              masteredSet={activeProgress.mastered}
+              difficultSet={activeProgress.difficult}
+              mobileOpen={mobileSidebarOpen}
+              onSelectChapter={setSelectedChapter}
+              onChangeFilter={setFilterMode}
+              onCloseMobile={() => setMobileSidebarOpen(false)}
+            />
+          ) : null}
 
           <div className="flex-1 min-w-0 w-full space-y-4">
             {/* Primary Navigation Tabs */}
             <nav
               aria-label="Mode belajar"
-              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-1.5 shadow-2xs grid grid-cols-2 sm:grid-cols-5 gap-1"
+              className={`bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-1.5 shadow-2xs grid grid-cols-2 gap-1 ${
+                canAccessAdminPanel ? 'sm:grid-cols-3 lg:grid-cols-6' : 'sm:grid-cols-5'
+              }`}
             >
-              {TAB_ITEMS.map(item => {
+              {tabItems.map(item => {
                 const Icon = item.icon;
                 const active = item.id === activeTab;
                 return (
@@ -285,7 +395,24 @@ export default function App() {
             </nav>
 
             {/* Tab Views */}
-            {activeTab === 'flashcard' ? (
+            {isAdminView && authActions.user ? (
+              <AdminPanel
+                actorUid={authActions.user.uid}
+                actorRole={userProfile.role}
+                isSuperAdmin={userProfile.isSuperAdmin}
+                rows={adminMonitor.rows}
+                events={adminMonitor.events}
+                kpis={adminMonitor.kpis}
+                nowMs={adminMonitor.nowMs}
+                loading={adminMonitor.loading}
+                hydratingLegacy={adminMonitor.hydratingLegacy}
+                hydrationProgress={adminMonitor.hydrationProgress}
+                updatingRoleUid={adminMonitor.updatingRoleUid}
+                showFurigana={showFurigana}
+                onChangeUserRole={adminMonitor.changeUserRole}
+                onLoadUserDetail={adminMonitor.loadUserDetail}
+              />
+            ) : activeTab === 'flashcard' ? (
               <FlashcardPanel
                 deck={deck.deck}
                 currentCard={deck.currentCard}
@@ -300,7 +427,7 @@ export default function App() {
                 onPrev={deck.goPrev}
                 onNext={deck.goNext}
                 onToggleShuffle={deck.toggleShuffle}
-                onToggleMastered={id => progressSync.toggleMastered(activeBookId, id)}
+                onToggleMastered={id => handleToggleBunpouMastered(activeBookId, id)}
                 onToggleDifficult={id => progressSync.toggleDifficult(activeBookId, id)}
                 onResetFilters={() => {
                   setSelectedChapter('all');
@@ -316,7 +443,7 @@ export default function App() {
                 showTranslation={showTranslation}
                 masteredSet={activeKotobaProgress.mastered}
                 difficultSet={activeKotobaProgress.difficult}
-                onToggleMastered={id => kotoba.toggleKotobaMastered(activeBookId, id)}
+                onToggleMastered={id => handleToggleKotobaMastered(activeBookId, id)}
                 onToggleDifficult={id => kotoba.toggleKotobaDifficult(activeBookId, id)}
                 onResetChapter={() => setSelectedChapter('all')}
               />
@@ -327,7 +454,7 @@ export default function App() {
                 showTranslation={showTranslation}
                 masteredSet={activeProgress.mastered}
                 difficultSet={activeProgress.difficult}
-                onToggleMastered={id => progressSync.toggleMastered(activeBookId, id)}
+                onToggleMastered={id => handleToggleBunpouMastered(activeBookId, id)}
                 onToggleDifficult={id => progressSync.toggleDifficult(activeBookId, id)}
                 onOpenInFlashcard={handleOpenInFlashcard}
               />
@@ -340,9 +467,13 @@ export default function App() {
                 sessions={quizSync.quizHistory[activeBookId]}
                 isCloudSynced={Boolean(authActions.user && authActions.isVerified)}
                 syncingQuiz={quizSync.syncingQuiz}
+                onQuizStarted={liveReporter.reportQuizStarted}
+                onQuizProgress={liveReporter.reportQuizProgress}
+                onQuizAborted={liveReporter.reportQuizAborted}
                 onCompleteSession={record => {
                   quizSync.recordQuizSession(record);
                   daily.recordQuizCompleted();
+                  liveReporter.reportQuizCompleted(record);
                 }}
                 onClearHistory={() => quizSync.clearBookQuizHistory(activeBookId)}
                 onMarkPatternsDifficult={ids => {
