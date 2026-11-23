@@ -4,7 +4,10 @@ import test from 'node:test';
 import { N4_BOOK_DATA, N5_BOOK_DATA } from '../data/minnaDataset.ts';
 import {
   computeQuizOverviewStats,
+  decodeLiveQuizAnswers,
+  encodeLiveQuizAnswers,
   mergeQuizHistory,
+  reconstructLiveQuizQuestion,
   reconstructSessionReview,
   sanitizeQuizSessionRecord,
 } from './quizStats.ts';
@@ -216,4 +219,82 @@ test('reconstructSessionReview restores exact wrong choice, exampleIndex, and fo
   const legacyReview = reconstructSessionReview(v1Session, N4_BOOK_DATA.patterns);
   assert.equal(legacyReview.length, 2);
   assert.equal(legacyReview[1].selectedChoiceId, '__legacy_wrong__');
+});
+
+test('reconstructLiveQuizQuestion restores exact 4-option order across meaning, cloze, and pattern modes and matches firestore.rules live token regex', () => {
+  const choiceIds = ['n4-bab-36-p2', 'n4-bab-36-p1', 'n4-bab-36-p3', 'n4-bab-35-p1'];
+
+  const meaningQ = reconstructLiveQuizQuestion({
+    mode: 'meaning',
+    patternId: 'n4-bab-36-p1',
+    exampleIndex: 1,
+    choiceIds,
+    patterns: N4_BOOK_DATA.patterns,
+  });
+  assert.ok(meaningQ);
+  assert.deepEqual(
+    meaningQ!.choices.map(c => c.id),
+    choiceIds
+  );
+  assert.equal(meaningQ!.correctChoiceId, 'n4-bab-36-p1');
+  assert.equal(meaningQ!.choices[0].isJapanese, false);
+
+  const clozeQ = reconstructLiveQuizQuestion({
+    mode: 'cloze',
+    patternId: 'n4-bab-36-p1',
+    exampleIndex: 0,
+    choiceIds,
+    patterns: N4_BOOK_DATA.patterns,
+  });
+  assert.ok(clozeQ);
+  assert.ok(clozeQ!.prompt.includes('（　　）'), 'Cloze live question should contain blank marker');
+  assert.equal(clozeQ!.choices[1].isJapanese, true);
+
+  const patternQ = reconstructLiveQuizQuestion({
+    mode: 'pattern',
+    patternId: 'n4-bab-36-p1',
+    exampleIndex: 2,
+    choiceIds,
+    patterns: N4_BOOK_DATA.patterns,
+  });
+  assert.ok(patternQ);
+  assert.equal(patternQ!.exampleIndex, 2);
+  assert.equal(patternQ!.choices.length, 4);
+
+  // Encode/decode roundtrip + strict verification against firestore.rules regex
+  const encoded = encodeLiveQuizAnswers([
+    {
+      questionNo: 1,
+      mode: 'meaning',
+      patternId: 'n4-bab-36-p1',
+      selectedPatternId: 'n4-bab-36-p2',
+      isCorrect: false,
+      exampleIndex: 1,
+    },
+    {
+      questionNo: 2,
+      mode: 'cloze',
+      patternId: 'n4-bab-35-p1',
+      selectedPatternId: 'n4-bab-35-p1',
+      isCorrect: true,
+      exampleIndex: 0,
+    },
+  ]);
+  assert.equal(encoded.length, 2);
+
+  const decoded = decodeLiveQuizAnswers(encoded);
+  assert.equal(decoded.length, 2);
+  assert.equal(decoded[0].selectedPatternId, 'n4-bab-36-p2');
+  assert.equal(decoded[0].isCorrect, false);
+  assert.equal(decoded[1].isCorrect, true);
+
+  const rulesText = fs.readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8');
+  const liveMatch = rulesText.match(
+    /function isValidLiveQuizAnswers\(arr\) \{[\s\S]*?arr\[0\]\.matches\('([^']+)'\)/
+  );
+  assert.ok(liveMatch, 'Could not locate isValidLiveQuizAnswers regex in firestore.rules');
+  const liveTokenRegex = new RegExp(liveMatch[1].replace(/\\\\/g, '\\'));
+  for (const token of encoded) {
+    assert.ok(liveTokenRegex.test(token), `Live quiz answer token rejected by firestore.rules: ${token}`);
+  }
 });

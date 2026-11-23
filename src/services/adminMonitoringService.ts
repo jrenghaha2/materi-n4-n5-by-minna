@@ -21,19 +21,32 @@ import type {
   HydratedUserStats,
   LiveActivityDoc,
   LiveActivityStatus,
+  LiveQuizAnswerCorrect,
   QuizMode,
+  QuizSavedAnswer,
   UserDetailReport,
   UserRole,
 } from '../types/bunpou';
 import { sanitizeAvatarUrl, sanitizeDisplayName } from '../utils/bunpouSync';
 import { calculateCurrentStreak, formatLocalDateKey } from '../utils/dailyProgress';
+import {
+  decodeLiveQuizAnswers,
+  encodeLiveQuizAnswers,
+  isValidAnyBunpouPatternId,
+} from '../utils/quizStats';
 import { normalizeEmail, sanitizeUserRole } from '../utils/rbac';
 import {
   fetchBookProgressDoc,
   fetchDailyTrackerDoc,
   fetchKotobaProgressDoc,
   fetchQuizHistoryDoc,
+  subscribeBookProgressDoc,
+  subscribeDailyTrackerDoc,
+  subscribeKotobaProgressDoc,
+  subscribeQuizHistoryDoc,
+  type BookProgressPayload,
 } from './cloudSyncService';
+import type { DailyTrackerState, QuizSessionRecord } from '../types/bunpou';
 
 function toMillis(value: unknown): number | null {
   if (value instanceof Timestamp) return value.toMillis();
@@ -84,6 +97,28 @@ function clampInt(raw: unknown, min: number, max: number, fallback = 0): number 
   return Math.max(min, Math.min(max, Math.floor(raw)));
 }
 
+function sanitizeOptionalPatternId(raw: unknown): string {
+  return isValidAnyBunpouPatternId(raw) ? raw : '';
+}
+
+function sanitizeChoiceIds(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const item of raw) {
+    if (!isValidAnyBunpouPatternId(item) || seen.has(item)) continue;
+    seen.add(item);
+    out.push(item);
+    if (out.length >= 4) break;
+  }
+  return out;
+}
+
+function sanitizeAnswerCorrect(raw: unknown): LiveQuizAnswerCorrect {
+  if (raw === 0 || raw === 1 || raw === -1) return raw;
+  return -1;
+}
+
 export interface UpsertLiveActivityPayload {
   displayName: string;
   email: string;
@@ -99,6 +134,14 @@ export interface UpsertLiveActivityPayload {
   quizCurrentQuestion: number;
   quizTotalQuestions: number;
   quizCorrectCount: number;
+  quizFromChapter: number;
+  quizToChapter: number;
+  quizPatternId: string;
+  quizExampleIndex: number;
+  quizChoiceIds: string[];
+  quizSelectedChoiceId: string;
+  quizAnswerCorrect: LiveQuizAnswerCorrect;
+  quizLiveAnswers: QuizSavedAnswer[];
   totalMasteredBunpou: number;
   totalMasteredKotoba: number;
   totalMastered: number;
@@ -114,6 +157,7 @@ export async function upsertLiveActivityDoc(
 ): Promise<void> {
   const path = `liveActivity/${uid}`;
   try {
+    const activeQuiz = Boolean(payload.quizInProgress);
     await setDoc(doc(db, 'liveActivity', uid), {
       uid,
       displayName: sanitizeDisplayName(payload.displayName, 'Pengguna'),
@@ -124,12 +168,22 @@ export async function upsertLiveActivityDoc(
       activeTab: sanitizeTab(payload.activeTab),
       activeBookId: payload.activeBookId === 'n4' ? 'n4' : 'n5',
       moduleLabel: String(payload.moduleLabel || '').trim().slice(0, 80),
-      quizInProgress: Boolean(payload.quizInProgress),
-      quizMode: sanitizeQuizModeOrEmpty(payload.quizMode),
-      quizBookId: sanitizeBookIdOrEmpty(payload.quizBookId),
-      quizCurrentQuestion: clampInt(payload.quizCurrentQuestion, 0, 50, 0),
-      quizTotalQuestions: clampInt(payload.quizTotalQuestions, 0, 50, 0),
-      quizCorrectCount: clampInt(payload.quizCorrectCount, 0, 50, 0),
+      quizInProgress: activeQuiz,
+      quizMode: activeQuiz ? sanitizeQuizModeOrEmpty(payload.quizMode) : '',
+      quizBookId: activeQuiz ? sanitizeBookIdOrEmpty(payload.quizBookId) : '',
+      quizCurrentQuestion: activeQuiz ? clampInt(payload.quizCurrentQuestion, 0, 50, 0) : 0,
+      quizTotalQuestions: activeQuiz ? clampInt(payload.quizTotalQuestions, 0, 50, 0) : 0,
+      quizCorrectCount: activeQuiz ? clampInt(payload.quizCorrectCount, 0, 50, 0) : 0,
+      quizFromChapter: activeQuiz ? clampInt(payload.quizFromChapter, 0, 50, 0) : 0,
+      quizToChapter: activeQuiz ? clampInt(payload.quizToChapter, 0, 50, 0) : 0,
+      quizPatternId: activeQuiz ? sanitizeOptionalPatternId(payload.quizPatternId) : '',
+      quizExampleIndex: activeQuiz ? clampInt(payload.quizExampleIndex, 0, 3, 0) : 0,
+      quizChoiceIds: activeQuiz ? sanitizeChoiceIds(payload.quizChoiceIds) : [],
+      quizSelectedChoiceId: activeQuiz
+        ? sanitizeOptionalPatternId(payload.quizSelectedChoiceId)
+        : '',
+      quizAnswerCorrect: activeQuiz ? sanitizeAnswerCorrect(payload.quizAnswerCorrect) : -1,
+      quizLiveAnswers: activeQuiz ? encodeLiveQuizAnswers(payload.quizLiveAnswers) : [],
       totalMasteredBunpou: clampInt(payload.totalMasteredBunpou, 0, 300, 0),
       totalMasteredKotoba: clampInt(payload.totalMasteredKotoba, 0, 2000, 0),
       totalMastered: clampInt(payload.totalMastered, 0, 2300, 0),
@@ -240,6 +294,14 @@ export function subscribeLiveActivities(
           quizCurrentQuestion: clampInt(data.quizCurrentQuestion, 0, 50, 0),
           quizTotalQuestions: clampInt(data.quizTotalQuestions, 0, 50, 0),
           quizCorrectCount: clampInt(data.quizCorrectCount, 0, 50, 0),
+          quizFromChapter: clampInt(data.quizFromChapter, 0, 50, 0),
+          quizToChapter: clampInt(data.quizToChapter, 0, 50, 0),
+          quizPatternId: sanitizeOptionalPatternId(data.quizPatternId),
+          quizExampleIndex: clampInt(data.quizExampleIndex, 0, 3, 0),
+          quizChoiceIds: sanitizeChoiceIds(data.quizChoiceIds),
+          quizSelectedChoiceId: sanitizeOptionalPatternId(data.quizSelectedChoiceId),
+          quizAnswerCorrect: sanitizeAnswerCorrect(data.quizAnswerCorrect),
+          quizLiveAnswers: decodeLiveQuizAnswers(data.quizLiveAnswers),
           totalMasteredBunpou: clampInt(data.totalMasteredBunpou, 0, 300, 0),
           totalMasteredKotoba: clampInt(data.totalMasteredKotoba, 0, 2000, 0),
           totalMastered: clampInt(data.totalMastered, 0, 2300, 0),
@@ -330,17 +392,16 @@ function formatModeShort(mode: QuizMode): string {
   return 'Tebak Arti';
 }
 
-export async function fetchUserFullDetail(uid: string): Promise<UserDetailReport> {
-  const [bunpouN5, bunpouN4, kotobaN5, kotobaN4, quizN5, quizN4, daily] = await Promise.all([
-    fetchBookProgressDoc(uid, 'n5').catch(() => null),
-    fetchBookProgressDoc(uid, 'n4').catch(() => null),
-    fetchKotobaProgressDoc(uid, 'n5').catch(() => null),
-    fetchKotobaProgressDoc(uid, 'n4').catch(() => null),
-    fetchQuizHistoryDoc(uid, 'n5').catch(() => null),
-    fetchQuizHistoryDoc(uid, 'n4').catch(() => null),
-    fetchDailyTrackerDoc(uid).catch(() => null),
-  ]);
-
+function buildUserDetailReport(
+  uid: string,
+  bunpouN5: BookProgressPayload | null,
+  bunpouN4: BookProgressPayload | null,
+  kotobaN5: BookProgressPayload | null,
+  kotobaN4: BookProgressPayload | null,
+  quizN5: QuizSessionRecord[] | null,
+  quizN4: QuizSessionRecord[] | null,
+  daily: DailyTrackerState | null
+): UserDetailReport {
   const todayKey = formatLocalDateKey();
   const currentStreak = daily ? calculateCurrentStreak(daily, todayKey) : 0;
   const todayMasteredCount = daily?.days[todayKey]?.masteredIds.length ?? 0;
@@ -360,6 +421,159 @@ export async function fetchUserFullDetail(uid: string): Promise<UserDetailReport
     todayMasteredCount,
     quizSessionsN5: quizN5 ?? [],
     quizSessionsN4: quizN4 ?? [],
+  };
+}
+
+export async function fetchUserFullDetail(uid: string): Promise<UserDetailReport> {
+  const [bunpouN5, bunpouN4, kotobaN5, kotobaN4, quizN5, quizN4, daily] = await Promise.all([
+    fetchBookProgressDoc(uid, 'n5').catch(() => null),
+    fetchBookProgressDoc(uid, 'n4').catch(() => null),
+    fetchKotobaProgressDoc(uid, 'n5').catch(() => null),
+    fetchKotobaProgressDoc(uid, 'n4').catch(() => null),
+    fetchQuizHistoryDoc(uid, 'n5').catch(() => null),
+    fetchQuizHistoryDoc(uid, 'n4').catch(() => null),
+    fetchDailyTrackerDoc(uid).catch(() => null),
+  ]);
+
+  return buildUserDetailReport(
+    uid,
+    bunpouN5,
+    bunpouN4,
+    kotobaN5,
+    kotobaN4,
+    quizN5,
+    quizN4,
+    daily
+  );
+}
+
+/**
+ * Attaches real-time onSnapshot listeners to all 7 learner progress/history docs
+ * so the Admin/Superadmin Detail modal reflects every single mastery toggle & quiz live.
+ */
+export function subscribeUserFullDetail(
+  uid: string,
+  onUpdate: (detail: UserDetailReport) => void,
+  onError?: (error: unknown) => void
+): Unsubscribe {
+  let bunpouN5: BookProgressPayload | null = null;
+  let bunpouN4: BookProgressPayload | null = null;
+  let kotobaN5: BookProgressPayload | null = null;
+  let kotobaN4: BookProgressPayload | null = null;
+  let quizN5: QuizSessionRecord[] | null = null;
+  let quizN4: QuizSessionRecord[] | null = null;
+  let daily: DailyTrackerState | null = null;
+
+  const ready = {
+    bunpouN5: false,
+    bunpouN4: false,
+    kotobaN5: false,
+    kotobaN4: false,
+    quizN5: false,
+    quizN4: false,
+    daily: false,
+  };
+  let emittedOnce = false;
+  let disposed = false;
+
+  const emit = () => {
+    if (disposed) return;
+    const allReady =
+      ready.bunpouN5 &&
+      ready.bunpouN4 &&
+      ready.kotobaN5 &&
+      ready.kotobaN4 &&
+      ready.quizN5 &&
+      ready.quizN4 &&
+      ready.daily;
+    if (!allReady && !emittedOnce) return;
+    emittedOnce = true;
+    onUpdate(
+      buildUserDetailReport(uid, bunpouN5, bunpouN4, kotobaN5, kotobaN4, quizN5, quizN4, daily)
+    );
+  };
+
+  const handleErr = (key: keyof typeof ready) => (error: unknown) => {
+    ready[key] = true;
+    emit();
+    onError?.(error);
+  };
+
+  const unsubs = [
+    subscribeBookProgressDoc(
+      uid,
+      'n5',
+      val => {
+        bunpouN5 = val;
+        ready.bunpouN5 = true;
+        emit();
+      },
+      handleErr('bunpouN5')
+    ),
+    subscribeBookProgressDoc(
+      uid,
+      'n4',
+      val => {
+        bunpouN4 = val;
+        ready.bunpouN4 = true;
+        emit();
+      },
+      handleErr('bunpouN4')
+    ),
+    subscribeKotobaProgressDoc(
+      uid,
+      'n5',
+      val => {
+        kotobaN5 = val;
+        ready.kotobaN5 = true;
+        emit();
+      },
+      handleErr('kotobaN5')
+    ),
+    subscribeKotobaProgressDoc(
+      uid,
+      'n4',
+      val => {
+        kotobaN4 = val;
+        ready.kotobaN4 = true;
+        emit();
+      },
+      handleErr('kotobaN4')
+    ),
+    subscribeQuizHistoryDoc(
+      uid,
+      'n5',
+      val => {
+        quizN5 = val;
+        ready.quizN5 = true;
+        emit();
+      },
+      handleErr('quizN5')
+    ),
+    subscribeQuizHistoryDoc(
+      uid,
+      'n4',
+      val => {
+        quizN4 = val;
+        ready.quizN4 = true;
+        emit();
+      },
+      handleErr('quizN4')
+    ),
+    subscribeDailyTrackerDoc(
+      uid,
+      val => {
+        daily = val;
+        ready.daily = true;
+        emit();
+      },
+      handleErr('daily')
+    ),
+  ];
+
+  return () => {
+    disposed = true;
+    for (const u of unsubs) u();
   };
 }
 

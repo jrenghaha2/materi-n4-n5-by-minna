@@ -10,6 +10,7 @@ import {
   Shuffle,
 } from 'lucide-react';
 import type { BunpouPattern } from '../types/bunpou';
+import { useCardFlipHandlers } from '../utils/cardFlipGuard';
 import { AudioButton } from './AudioButton';
 import { FormulaDisplay } from './FormulaDisplay';
 import { JapaneseText } from './JapaneseText';
@@ -51,6 +52,8 @@ export function FlashcardPanel({
   onToggleDifficult,
   onResetFilters,
 }: FlashcardPanelProps) {
+  const cardFlipHandlers = useCardFlipHandlers(onFlip);
+
   // Keyboard shortcuts: Space/Enter flip, ArrowLeft/ArrowRight navigate, H hafal, S sulit
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -150,17 +153,11 @@ export function FlashcardPanel({
         >
           {/* FRONT FACE */}
           <div
-            onClick={onFlip}
+            {...cardFlipHandlers}
             role="button"
-            tabIndex={0}
+            tabIndex={isFlipped ? -1 : 0}
             aria-label="Balik kartu flashcard untuk melihat arti dan contoh kalimat"
-            onKeyDown={e => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                onFlip();
-              }
-            }}
-            className={`card-face col-start-1 row-start-1 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm p-5 sm:p-7 min-h-[340px] flex flex-col justify-between cursor-pointer select-none ${
+            className={`card-face col-start-1 row-start-1 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm p-5 sm:p-7 min-h-[340px] flex flex-col justify-between cursor-pointer select-text ${
               isFlipped ? 'pointer-events-none' : ''
             }`}
           >
@@ -202,7 +199,11 @@ export function FlashcardPanel({
 
           {/* BACK FACE */}
           <div
-            className={`card-face card-face-back col-start-1 row-start-1 rounded-2xl border border-indigo-200 dark:border-indigo-800/80 bg-white dark:bg-slate-900 shadow-sm p-5 sm:p-6 flex flex-col justify-between gap-4 ${
+            {...cardFlipHandlers}
+            role="button"
+            tabIndex={isFlipped ? 0 : -1}
+            aria-label="Klik kartu untuk kembali ke sisi depan flashcard"
+            className={`card-face card-face-back col-start-1 row-start-1 rounded-2xl border border-indigo-200 dark:border-indigo-800/80 bg-white dark:bg-slate-900 shadow-sm p-5 sm:p-6 flex flex-col justify-between gap-4 cursor-pointer select-text ${
               !isFlipped ? 'pointer-events-none max-h-[340px] overflow-hidden' : ''
             }`}
           >
@@ -222,7 +223,10 @@ export function FlashcardPanel({
 
                 <button
                   type="button"
-                  onClick={onFlip}
+                  onClick={e => {
+                    e.stopPropagation();
+                    onFlip();
+                  }}
                   className="min-h-[34px] px-3 py-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 inline-flex items-center gap-1.5 shrink-0 cursor-pointer"
                 >
                   <RotateCw className="w-3.5 h-3.5" aria-hidden="true" />
@@ -279,6 +283,13 @@ export function FlashcardPanel({
                   ))}
                 </div>
               </div>
+            </div>
+
+            <div className="flex items-center justify-end pt-3 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400">
+              <span className="inline-flex items-center gap-1.5 font-semibold text-indigo-700 dark:text-indigo-300">
+                <RotateCw className="w-3.5 h-3.5" aria-hidden="true" />
+                Klik kartu atau tekan Spasi untuk balik ke depan
+              </span>
             </div>
           </div>
         </div>

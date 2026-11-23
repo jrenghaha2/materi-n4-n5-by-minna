@@ -73,6 +73,9 @@ test('firestore.rules enforces 3-tier RBAC, Bootstrap Superadmin protection, liv
   // Admin & Superadmin read access to users, liveActivity, activityEvents, and learner subcollections
   assert.ok(rules.includes('match /liveActivity/{userId}'), 'Missing liveActivity collection rules');
   assert.ok(rules.includes('matchesActualUserRole(incoming().role, userId)'), 'Missing liveActivity role anti-spoof guard');
+  assert.ok(rules.includes('isValidLiveQuizDetailFields(data)'), 'Missing live quiz detail field validation');
+  assert.ok(rules.includes('isValidLiveQuizChoiceIds'), 'Missing live quiz choice IDs validation');
+  assert.ok(rules.includes('isValidLiveQuizAnswers'), 'Missing live quiz running answers dual-separator validation');
   assert.ok(rules.includes('match /activityEvents/{eventId}'), 'Missing activityEvents collection rules');
   assert.ok(rules.includes('allow update, delete: if false;'), 'Missing immutable audit lock on activityEvents');
   assert.ok(rules.includes('(isOwner(userId) || isAdminOrAbove())'), 'Missing read-only admin access to learner subcollections');

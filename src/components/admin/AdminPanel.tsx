@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Activity,
   ArrowUpDown,
@@ -30,6 +30,7 @@ import {
   formatRelativeTimeId,
   getRoleLabel,
 } from '../../utils/rbac';
+import { LiveQuizMonitorModal } from './LiveQuizMonitorModal';
 import { UserDetailModal } from './UserDetailModal';
 
 type AdminSubTab = 'realtime' | 'events' | 'users';
@@ -48,7 +49,10 @@ interface AdminPanelProps {
   updatingRoleUid: string | null;
   showFurigana: boolean;
   onChangeUserRole: (target: AdminMonitoredUserRow, nextRole: UserRole) => Promise<boolean>;
-  onLoadUserDetail: (uid: string) => Promise<UserDetailReport | null>;
+  onSubscribeUserDetail: (
+    uid: string,
+    onUpdate: (detail: UserDetailReport) => void
+  ) => () => void;
 }
 
 const SORT_OPTIONS: { value: AdminSortOption; label: string }[] = [
@@ -142,7 +146,7 @@ export function AdminPanel({
   updatingRoleUid,
   showFurigana,
   onChangeUserRole,
-  onLoadUserDetail,
+  onSubscribeUserDetail,
 }: AdminPanelProps) {
   const [subTab, setSubTab] = useState<AdminSubTab>('realtime');
 
@@ -161,10 +165,41 @@ export function AdminPanel({
   const [usersSort, setUsersSort] = useState<AdminSortOption>('latest');
   const [draftRoles, setDraftRoles] = useState<Record<string, UserRole>>({});
 
-  // Detail Modal state
-  const [selectedUser, setSelectedUser] = useState<AdminMonitoredUserRow | null>(null);
+  // Real-time Detail Modal & Live Quiz Monitor Modal state (derived from live rows)
+  const [selectedUserUid, setSelectedUserUid] = useState<string | null>(null);
+  const [liveQuizMonitorUid, setLiveQuizMonitorUid] = useState<string | null>(null);
   const [detailReport, setDetailReport] = useState<UserDetailReport | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+
+  const selectedUser = useMemo(
+    () => (selectedUserUid ? rows.find(r => r.uid === selectedUserUid) ?? null : null),
+    [rows, selectedUserUid]
+  );
+
+  const liveQuizUser = useMemo(
+    () => (liveQuizMonitorUid ? rows.find(r => r.uid === liveQuizMonitorUid) ?? null : null),
+    [rows, liveQuizMonitorUid]
+  );
+
+  useEffect(() => {
+    if (!selectedUserUid) {
+      setDetailReport(null);
+      setDetailLoading(false);
+      return;
+    }
+
+    setDetailReport(null);
+    setDetailLoading(true);
+
+    const unsubscribe = onSubscribeUserDetail(selectedUserUid, report => {
+      setDetailReport(report);
+      setDetailLoading(false);
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [selectedUserUid, onSubscribeUserDetail]);
 
   const realtimeRows = useMemo(
     () =>
@@ -198,13 +233,8 @@ export function AdminPanel({
     });
   }, [events, eventSearch, eventTypeFilter]);
 
-  const handleOpenDetail = async (row: AdminMonitoredUserRow) => {
-    setSelectedUser(row);
-    setDetailReport(null);
-    setDetailLoading(true);
-    const report = await onLoadUserDetail(row.uid);
-    setDetailReport(report);
-    setDetailLoading(false);
+  const handleOpenDetail = (row: AdminMonitoredUserRow) => {
+    setSelectedUserUid(row.uid);
   };
 
   const handleConfirmRole = async (row: AdminMonitoredUserRow) => {
@@ -504,11 +534,29 @@ export function AdminPanel({
                           {/* Live Quiz Progress Bar if currently taking a quiz */}
                           {row.quizInProgress ? (
                             <div className="pt-1 max-w-md space-y-1">
-                              <div className="flex items-center justify-between text-xs font-medium text-indigo-700 dark:text-indigo-300 tabular-nums">
+                              <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-medium text-indigo-700 dark:text-indigo-300 tabular-nums">
                                 <span>
                                   Mengerjakan Soal {row.quizCurrentQuestion}/{row.quizTotalQuestions}
                                 </span>
-                                <span>Benar: {row.quizCorrectCount}</span>
+                                <span className="flex items-center gap-2">
+                                  <span>Benar: {row.quizCorrectCount}</span>
+                                  <span
+                                    className={
+                                      row.quizAnswerCorrect === 1
+                                        ? 'text-emerald-700 dark:text-emerald-400 font-semibold'
+                                        : row.quizAnswerCorrect === 0
+                                        ? 'text-rose-700 dark:text-rose-400 font-semibold'
+                                        : 'text-slate-500 dark:text-slate-400'
+                                    }
+                                  >
+                                    ·{' '}
+                                    {row.quizAnswerCorrect === 1
+                                      ? 'Dijawab Benar'
+                                      : row.quizAnswerCorrect === 0
+                                      ? 'Dijawab Salah'
+                                      : 'Memilih jawaban...'}
+                                  </span>
+                                </span>
                               </div>
                               <div className="h-1.5 rounded-full bg-indigo-100 dark:bg-indigo-950 overflow-hidden">
                                 <div
@@ -521,8 +569,8 @@ export function AdminPanel({
                         </div>
                       </div>
 
-                      {/* Progress & Quiz metrics + Detail button */}
-                      <div className="flex flex-wrap sm:flex-nowrap items-center justify-between lg:justify-end gap-4 shrink-0">
+                      {/* Progress & Quiz metrics + Live Quiz & Detail buttons */}
+                      <div className="flex flex-wrap sm:flex-nowrap items-center justify-between lg:justify-end gap-3 shrink-0">
                         <div className="flex items-center gap-4 text-xs tabular-nums">
                           <div>
                             <p className="text-slate-500 dark:text-slate-400">Hafalan</p>
@@ -548,14 +596,27 @@ export function AdminPanel({
                           </div>
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={() => void handleOpenDetail(row)}
-                          className="min-h-[38px] px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer"
-                        >
-                          <Eye className="w-3.5 h-3.5" aria-hidden="true" />
-                          <span>Detail</span>
-                        </button>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {row.quizInProgress ? (
+                            <button
+                              type="button"
+                              onClick={() => setLiveQuizMonitorUid(row.uid)}
+                              className="min-h-[38px] px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer shadow-2xs"
+                            >
+                              <Radio className="w-3.5 h-3.5" aria-hidden="true" />
+                              <span>Cek Soal Live</span>
+                            </button>
+                          ) : null}
+
+                          <button
+                            type="button"
+                            onClick={() => void handleOpenDetail(row)}
+                            className="min-h-[38px] px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer"
+                          >
+                            <Eye className="w-3.5 h-3.5" aria-hidden="true" />
+                            <span>Detail</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
@@ -874,6 +935,17 @@ export function AdminPanel({
                           )
                         ) : null}
 
+                        {row.quizInProgress ? (
+                          <button
+                            type="button"
+                            onClick={() => setLiveQuizMonitorUid(row.uid)}
+                            className="min-h-[38px] px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer"
+                          >
+                            <Radio className="w-3.5 h-3.5" aria-hidden="true" />
+                            <span>Soal Live</span>
+                          </button>
+                        ) : null}
+
                         <button
                           type="button"
                           onClick={() => void handleOpenDetail(row)}
@@ -892,17 +964,33 @@ export function AdminPanel({
         ) : null}
       </div>
 
-      {/* Full Progress & Quiz Detail Modal */}
+      {/* Full Progress & Quiz Detail Modal (100% Real-Time) */}
       <UserDetailModal
         open={Boolean(selectedUser)}
         userRow={selectedUser}
         detail={detailReport}
         loading={detailLoading}
+        nowMs={nowMs}
         showFurigana={showFurigana}
+        onOpenLiveQuiz={row => {
+          setSelectedUserUid(null);
+          setDetailReport(null);
+          setLiveQuizMonitorUid(row.uid);
+        }}
         onClose={() => {
-          setSelectedUser(null);
+          setSelectedUserUid(null);
           setDetailReport(null);
         }}
+      />
+
+      {/* Real-Time Live Quiz Question & Answer Inspector Modal */}
+      <LiveQuizMonitorModal
+        open={Boolean(liveQuizUser)}
+        userRow={liveQuizUser}
+        nowMs={nowMs}
+        showFurigana={showFurigana}
+        onOpenFullDetail={row => handleOpenDetail(row)}
+        onClose={() => setLiveQuizMonitorUid(null)}
       />
     </section>
   );

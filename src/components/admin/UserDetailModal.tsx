@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { BookMarked, BookOpen, Eye, Flame, GraduationCap, Loader2, X } from 'lucide-react';
+import { BookMarked, BookOpen, Eye, Flame, GraduationCap, Loader2, Radio, X } from 'lucide-react';
 import { BOOKS_BY_ID } from '../../data/minnaDataset';
 import { N4_KOTOBA_WORDS, N5_KOTOBA_WORDS } from '../../data/minnaKotobaData';
 import type {
@@ -8,7 +8,7 @@ import type {
   UserDetailReport,
 } from '../../types/bunpou';
 import { reconstructSessionReview } from '../../utils/quizStats';
-import { formatRelativeTimeId, getRoleLabel } from '../../utils/rbac';
+import { formatProgressPercent, formatRelativeTimeId, getRoleLabel } from '../../utils/rbac';
 import { QuizAnswerHistoryModal } from '../quiz/QuizAnswerHistoryModal';
 import { QUIZ_MODE_INFO } from '../quiz/quizHelpers';
 
@@ -17,7 +17,9 @@ interface UserDetailModalProps {
   userRow: AdminMonitoredUserRow | null;
   detail: UserDetailReport | null;
   loading: boolean;
+  nowMs: number;
   showFurigana: boolean;
+  onOpenLiveQuiz?: (row: AdminMonitoredUserRow) => void;
   onClose: () => void;
 }
 
@@ -39,13 +41,13 @@ function ProgressMetricRow({
   difficult: number;
   barColor: string;
 }) {
-  const pct = total > 0 ? Math.min(100, Math.round((mastered / total) * 100)) : 0;
+  const { label: pctLabel, barWidthPct } = formatProgressPercent(mastered, total);
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between gap-2 text-xs">
         <span className="font-semibold text-slate-800 dark:text-slate-100">{label}</span>
         <span className="font-mono tabular-nums text-slate-600 dark:text-slate-300">
-          {mastered}/{total} ({pct}%)
+          {mastered}/{total} ({pctLabel})
           {difficult > 0 ? (
             <span className="text-amber-700 dark:text-amber-400"> · {difficult} sulit</span>
           ) : null}
@@ -54,7 +56,7 @@ function ProgressMetricRow({
       <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
         <div
           className={`h-full rounded-full transition-all duration-300 ${barColor}`}
-          style={{ width: `${pct}%` }}
+          style={{ width: `${barWidthPct}%` }}
         />
       </div>
     </div>
@@ -66,7 +68,9 @@ export function UserDetailModal({
   userRow,
   detail,
   loading,
+  nowMs,
   showFurigana,
+  onOpenLiveQuiz,
   onClose,
 }: UserDetailModalProps) {
   const [inspectedSession, setInspectedSession] = useState<QuizSessionRecord | null>(null);
@@ -157,16 +161,22 @@ export function UserDetailModal({
                 </span>
               )}
               <div className="min-w-0">
-                <h2
-                  id="userDetailModalTitle"
-                  className="text-base font-bold text-slate-900 dark:text-slate-50 truncate"
-                >
-                  {userRow.displayName}
-                </h2>
+                <div className="flex items-center gap-2">
+                  <h2
+                    id="userDetailModalTitle"
+                    className="text-base font-bold text-slate-900 dark:text-slate-50 truncate"
+                  >
+                    {userRow.displayName}
+                  </h2>
+                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 shrink-0">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" aria-hidden="true" />
+                    Live
+                  </span>
+                </div>
                 <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                   {userRow.email || 'Email belum tercatat'} · {getRoleLabel(userRow.role)}
                   {userRow.isBootstrapSuperAdmin ? ' Utama' : ''} · Aktif{' '}
-                  {formatRelativeTimeId(userRow.lastActiveMs)}
+                  {formatRelativeTimeId(userRow.lastActiveMs, nowMs)}
                 </p>
               </div>
             </div>
@@ -190,6 +200,32 @@ export function UserDetailModal({
               </div>
             ) : (
               <>
+                {/* Live Quiz Active Banner */}
+                {userRow.quizInProgress ? (
+                  <div className="rounded-xl border border-indigo-200 dark:border-indigo-800/80 bg-indigo-50/70 dark:bg-indigo-950/35 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+                    <div className="space-y-0.5 min-w-0">
+                      <p className="text-xs font-bold text-indigo-800 dark:text-indigo-200 inline-flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" aria-hidden="true" />
+                        Sedang Mengerjakan Kuis Secara Live
+                      </p>
+                      <p className="text-xs text-slate-700 dark:text-slate-300 tabular-nums">
+                        {userRow.moduleLabel} · Soal {userRow.quizCurrentQuestion}/
+                        {userRow.quizTotalQuestions} · Benar: {userRow.quizCorrectCount}
+                      </p>
+                    </div>
+                    {onOpenLiveQuiz ? (
+                      <button
+                        type="button"
+                        onClick={() => onOpenLiveQuiz(userRow)}
+                        className="min-h-[36px] px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
+                      >
+                        <Radio className="w-3.5 h-3.5" aria-hidden="true" />
+                        <span>Cek Soal Live</span>
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
+
                 {/* Top Summary Strip */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-3.5 bg-slate-50/70 dark:bg-slate-950/40">

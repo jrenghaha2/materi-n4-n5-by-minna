@@ -4,6 +4,7 @@ import type { AllBooksProgress, BookId } from '../types/bunpou';
 import {
   fetchBookProgressDoc,
   saveBookProgressDoc,
+  subscribeBookProgressDoc,
 } from '../services/cloudSyncService';
 import { BOOK_IDS, mergePatternSets } from '../utils/bunpouSync';
 import {
@@ -25,6 +26,15 @@ interface UseCloudProgressSyncOptions {
   ) => void;
 }
 
+function areSetsEqual(a: Set<string>, b: Iterable<string>): boolean {
+  const bArr = Array.isArray(b) ? b : Array.from(b);
+  if (a.size !== bArr.length) return false;
+  for (const item of bArr) {
+    if (!a.has(item)) return false;
+  }
+  return true;
+}
+
 export function useCloudProgressSync({
   user,
   isVerified,
@@ -40,8 +50,12 @@ export function useCloudProgressSync({
   const progressRef = useRef(booksProgress);
   progressRef.current = booksProgress;
 
+  // Track in-flight local writes per book so stale remote snapshots never clobber rapid clicks
+  const pendingWritesRef = useRef<Record<BookId, number>>({ n5: 0, n4: 0 });
+
   const pushBookToCloud = useCallback(
     async (uid: string, bookId: BookId, mastered: Set<string>, difficult: Set<string>) => {
+      pendingWritesRef.current[bookId] += 1;
       try {
         await saveBookProgressDoc(uid, bookId, {
           mastered: Array.from(mastered),
@@ -54,63 +68,153 @@ export function useCloudProgressSync({
             actionHref: getFirestoreUpgradeUrl(),
           });
         }
+      } finally {
+        pendingWritesRef.current[bookId] = Math.max(0, pendingWritesRef.current[bookId] - 1);
       }
     },
     [showToast]
   );
+
+  // Real-time onSnapshot subscription for both N5 & N4 Bunpou progress
+  useEffect(() => {
+    if (!user || !isVerified || !profileReady) return;
+
+    const uid = user.uid;
+    const initialized: Record<BookId, boolean> = { n5: false, n4: false };
+    let disposed = false;
+
+    const unsubs = BOOK_IDS.map(bookId =>
+      subscribeBookProgressDoc(
+        uid,
+        bookId,
+        remote => {
+          if (disposed) return;
+
+          const isFirst = !initialized[bookId];
+          initialized[bookId] = true;
+
+          // Ignore transient remote snapshots while a local write for this book is still settling
+          if (!isFirst && pendingWritesRef.current[bookId] > 0) return;
+
+          const currentBucket = progressRef.current[bookId];
+
+          if (isFirst) {
+            const mergedMastered = mergePatternSets(
+              currentBucket.mastered,
+              remote?.mastered ?? [],
+              bookId
+            );
+            const rawDifficult = mergePatternSets(
+              currentBucket.difficult,
+              remote?.difficult ?? [],
+              bookId
+            );
+            const mergedDifficult = new Set(
+              Array.from(rawDifficult).filter(id => !mergedMastered.has(id))
+            );
+
+            saveBookProgressToLocal(bookId, mergedMastered, mergedDifficult);
+            const nextAll: AllBooksProgress = {
+              ...progressRef.current,
+              [bookId]: { mastered: mergedMastered, difficult: mergedDifficult },
+            };
+            progressRef.current = nextAll;
+            setBooksProgress(nextAll);
+
+            const needsPush =
+              !remote ||
+              !areSetsEqual(mergedMastered, remote.mastered) ||
+              !areSetsEqual(mergedDifficult, remote.difficult);
+            if (needsPush) {
+              void pushBookToCloud(uid, bookId, mergedMastered, mergedDifficult);
+            }
+            return;
+          }
+
+          if (!remote) return;
+
+          const nextMastered = new Set(remote.mastered);
+          const nextDifficult = new Set(
+            remote.difficult.filter(id => !nextMastered.has(id))
+          );
+
+          if (
+            areSetsEqual(currentBucket.mastered, nextMastered) &&
+            areSetsEqual(currentBucket.difficult, nextDifficult)
+          ) {
+            return;
+          }
+
+          saveBookProgressToLocal(bookId, nextMastered, nextDifficult);
+          const nextAll: AllBooksProgress = {
+            ...progressRef.current,
+            [bookId]: { mastered: nextMastered, difficult: nextDifficult },
+          };
+          progressRef.current = nextAll;
+          setBooksProgress(nextAll);
+        },
+        error => {
+          if (isFirestoreQuotaError(error)) {
+            showToast('Kuota Firestore tercapai saat menyinkronkan Bunpou.', 'error', {
+              actionLabel: 'Lihat Kuota',
+              actionHref: getFirestoreUpgradeUrl(),
+            });
+          }
+        }
+      )
+    );
+
+    return () => {
+      disposed = true;
+      for (const unsub of unsubs) unsub();
+    };
+  }, [user, isVerified, profileReady, pushBookToCloud, showToast]);
 
   const syncAllBooksWithCloud = useCallback(
     async (silent = false) => {
       if (!user || !isVerified || !profileReady) return;
       setSyncingProgress(true);
       try {
-        const current = progressRef.current;
-        const next: AllBooksProgress = {
-          n5: {
-            mastered: new Set(current.n5.mastered),
-            difficult: new Set(current.n5.difficult),
-          },
-          n4: {
-            mastered: new Set(current.n4.mastered),
-            difficult: new Set(current.n4.difficult),
-          },
-        };
-
         for (const bookId of BOOK_IDS) {
           const remote = await fetchBookProgressDoc(user.uid, bookId);
+          // Always merge against the LATEST local ref after await so rapid clicks are never lost
+          const latestBucket = progressRef.current[bookId];
           const mergedMastered = mergePatternSets(
-            next[bookId].mastered,
+            latestBucket.mastered,
             remote?.mastered ?? [],
             bookId
           );
-          const mergedDifficult = mergePatternSets(
-            next[bookId].difficult,
+          const rawDifficult = mergePatternSets(
+            latestBucket.difficult,
             remote?.difficult ?? [],
             bookId
           );
-          next[bookId] = {
-            mastered: mergedMastered,
-            difficult: mergedDifficult,
-          };
-          saveBookProgressToLocal(bookId, mergedMastered, mergedDifficult);
+          const mergedDifficult = new Set(
+            Array.from(rawDifficult).filter(id => !mergedMastered.has(id))
+          );
 
-          const remoteMasteredCount = remote?.mastered.length ?? 0;
-          const remoteDifficultCount = remote?.difficult.length ?? 0;
+          saveBookProgressToLocal(bookId, mergedMastered, mergedDifficult);
+          const nextAll: AllBooksProgress = {
+            ...progressRef.current,
+            [bookId]: { mastered: mergedMastered, difficult: mergedDifficult },
+          };
+          progressRef.current = nextAll;
+          setBooksProgress(nextAll);
+
           if (
             !remote ||
-            mergedMastered.size !== remoteMasteredCount ||
-            mergedDifficult.size !== remoteDifficultCount
+            !areSetsEqual(mergedMastered, remote.mastered) ||
+            !areSetsEqual(mergedDifficult, remote.difficult)
           ) {
-            await saveBookProgressDoc(user.uid, bookId, {
-              mastered: Array.from(mergedMastered),
-              difficult: Array.from(mergedDifficult),
-            });
+            await pushBookToCloud(user.uid, bookId, mergedMastered, mergedDifficult);
           }
         }
 
-        setBooksProgress(next);
         if (!silent) {
-          showToast('Semua progres (Bunpou, Kotoba, Streak & Kuis) berhasil disinkronkan ke cloud.', 'success');
+          showToast(
+            'Semua progres (Bunpou, Kotoba, Streak & Kuis) berhasil disinkronkan ke cloud.',
+            'success'
+          );
         }
       } catch (error) {
         if (isFirestoreQuotaError(error)) {
@@ -119,47 +223,44 @@ export function useCloudProgressSync({
             actionHref: getFirestoreUpgradeUrl(),
           });
         } else if (!silent) {
-          showToast('Gagal menyinkronkan progres ke cloud. Progres tetap aman di lokal.', 'error');
+          showToast(
+            'Gagal menyinkronkan progres ke cloud. Progres tetap aman di lokal.',
+            'error'
+          );
         }
       } finally {
         setSyncingProgress(false);
       }
     },
-    [user, isVerified, profileReady, showToast]
+    [user, isVerified, profileReady, pushBookToCloud, showToast]
   );
-
-  useEffect(() => {
-    if (user && isVerified && profileReady) {
-      void syncAllBooksWithCloud(true);
-    }
-  }, [user, isVerified, profileReady, syncAllBooksWithCloud]);
 
   const toggleMastered = useCallback(
     (bookId: BookId, patternId: string) => {
-      const wasMastered = progressRef.current[bookId].mastered.has(patternId);
-      const isNowMastered = !wasMastered;
+      const prev = progressRef.current;
+      const bucket = prev[bookId];
+      const isNowMastered = !bucket.mastered.has(patternId);
+      const nextMastered = new Set(bucket.mastered);
+      const nextDifficult = new Set(bucket.difficult);
 
-      setBooksProgress(prev => {
-        const bucket = prev[bookId];
-        const nextMastered = new Set(bucket.mastered);
-        const nextDifficult = new Set(bucket.difficult);
-        if (isNowMastered) {
-          nextMastered.add(patternId);
-          nextDifficult.delete(patternId);
-        } else {
-          nextMastered.delete(patternId);
-        }
+      if (isNowMastered) {
+        nextMastered.add(patternId);
+        nextDifficult.delete(patternId);
+      } else {
+        nextMastered.delete(patternId);
+      }
 
-        saveBookProgressToLocal(bookId, nextMastered, nextDifficult);
-        if (user && isVerified && profileReady) {
-          void pushBookToCloud(user.uid, bookId, nextMastered, nextDifficult);
-        }
+      const nextAll: AllBooksProgress = {
+        ...prev,
+        [bookId]: { mastered: nextMastered, difficult: nextDifficult },
+      };
+      progressRef.current = nextAll;
+      setBooksProgress(nextAll);
+      saveBookProgressToLocal(bookId, nextMastered, nextDifficult);
 
-        return {
-          ...prev,
-          [bookId]: { mastered: nextMastered, difficult: nextDifficult },
-        };
-      });
+      if (user && isVerified && profileReady) {
+        void pushBookToCloud(user.uid, bookId, nextMastered, nextDifficult);
+      }
 
       onMasteredToggled?.(patternId, isNowMastered);
     },
@@ -168,30 +269,31 @@ export function useCloudProgressSync({
 
   const toggleDifficult = useCallback(
     (bookId: BookId, patternId: string) => {
-      const wasMastered = progressRef.current[bookId].mastered.has(patternId);
-      const willBeDifficult = !progressRef.current[bookId].difficult.has(patternId);
+      const prev = progressRef.current;
+      const bucket = prev[bookId];
+      const wasMastered = bucket.mastered.has(patternId);
+      const willBeDifficult = !bucket.difficult.has(patternId);
+      const nextMastered = new Set(bucket.mastered);
+      const nextDifficult = new Set(bucket.difficult);
 
-      setBooksProgress(prev => {
-        const bucket = prev[bookId];
-        const nextMastered = new Set(bucket.mastered);
-        const nextDifficult = new Set(bucket.difficult);
-        if (willBeDifficult) {
-          nextDifficult.add(patternId);
-          nextMastered.delete(patternId);
-        } else {
-          nextDifficult.delete(patternId);
-        }
+      if (willBeDifficult) {
+        nextDifficult.add(patternId);
+        nextMastered.delete(patternId);
+      } else {
+        nextDifficult.delete(patternId);
+      }
 
-        saveBookProgressToLocal(bookId, nextMastered, nextDifficult);
-        if (user && isVerified && profileReady) {
-          void pushBookToCloud(user.uid, bookId, nextMastered, nextDifficult);
-        }
+      const nextAll: AllBooksProgress = {
+        ...prev,
+        [bookId]: { mastered: nextMastered, difficult: nextDifficult },
+      };
+      progressRef.current = nextAll;
+      setBooksProgress(nextAll);
+      saveBookProgressToLocal(bookId, nextMastered, nextDifficult);
 
-        return {
-          ...prev,
-          [bookId]: { mastered: nextMastered, difficult: nextDifficult },
-        };
-      });
+      if (user && isVerified && profileReady) {
+        void pushBookToCloud(user.uid, bookId, nextMastered, nextDifficult);
+      }
 
       if (willBeDifficult && wasMastered) {
         onMasteredToggled?.(patternId, false);
@@ -203,35 +305,36 @@ export function useCloudProgressSync({
   const markPatternsDifficult = useCallback(
     (bookId: BookId, patternIds: string[]) => {
       if (patternIds.length === 0) return;
-      const prevBucket = progressRef.current[bookId];
-      const demotedMasteredIds = patternIds.filter(
-        id => !prevBucket.difficult.has(id) && prevBucket.mastered.has(id)
-      );
+      const prev = progressRef.current;
+      const bucket = prev[bookId];
+      const nextMastered = new Set(bucket.mastered);
+      const nextDifficult = new Set(bucket.difficult);
+      const demotedMasteredIds: string[] = [];
+      let changed = false;
 
-      setBooksProgress(prev => {
-        const bucket = prev[bookId];
-        const nextMastered = new Set(bucket.mastered);
-        const nextDifficult = new Set(bucket.difficult);
-        let changed = false;
-        for (const id of patternIds) {
-          if (!nextDifficult.has(id)) {
-            nextDifficult.add(id);
-            nextMastered.delete(id);
-            changed = true;
+      for (const id of patternIds) {
+        if (!nextDifficult.has(id)) {
+          if (nextMastered.has(id)) {
+            demotedMasteredIds.push(id);
           }
+          nextDifficult.add(id);
+          nextMastered.delete(id);
+          changed = true;
         }
-        if (!changed) return prev;
+      }
+      if (!changed) return;
 
-        saveBookProgressToLocal(bookId, nextMastered, nextDifficult);
-        if (user && isVerified && profileReady) {
-          void pushBookToCloud(user.uid, bookId, nextMastered, nextDifficult);
-        }
+      const nextAll: AllBooksProgress = {
+        ...prev,
+        [bookId]: { mastered: nextMastered, difficult: nextDifficult },
+      };
+      progressRef.current = nextAll;
+      setBooksProgress(nextAll);
+      saveBookProgressToLocal(bookId, nextMastered, nextDifficult);
 
-        return {
-          ...prev,
-          [bookId]: { mastered: nextMastered, difficult: nextDifficult },
-        };
-      });
+      if (user && isVerified && profileReady) {
+        void pushBookToCloud(user.uid, bookId, nextMastered, nextDifficult);
+      }
 
       for (const id of demotedMasteredIds) {
         onMasteredToggled?.(id, false);
@@ -269,6 +372,7 @@ export function useCloudProgressSync({
       for (const bookId of BOOK_IDS) {
         saveBookProgressToLocal(bookId, next[bookId].mastered, next[bookId].difficult);
       }
+      progressRef.current = next;
       setBooksProgress(next);
 
       if (user && isVerified && profileReady) {

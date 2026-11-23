@@ -180,9 +180,114 @@ export async function autoHealUserProfileDoc(
   }
 }
 
+interface QueuedWriteEntry {
+  inFlight: boolean;
+  pendingTask: (() => Promise<void>) | null;
+  pendingResolvers: { resolve: () => void; reject: (err: unknown) => void }[];
+}
+
+const docWriteQueues = new Map<string, QueuedWriteEntry>();
+
+/**
+ * Coalescing per-document serial write queue:
+ * Guarantees strictly ordered Firestore writes per document path and eliminates
+ * concurrent setDoc/createdAt races or out-of-order overwrites during rapid clicks.
+ */
+function enqueueCoalescedWrite(key: string, task: () => Promise<void>): Promise<void> {
+  let entry = docWriteQueues.get(key);
+  if (!entry) {
+    entry = { inFlight: false, pendingTask: null, pendingResolvers: [] };
+    docWriteQueues.set(key, entry);
+  }
+
+  return new Promise<void>((resolve, reject) => {
+    entry!.pendingTask = task;
+    entry!.pendingResolvers.push({ resolve, reject });
+
+    if (entry!.inFlight) return;
+
+    const drain = async () => {
+      entry!.inFlight = true;
+      try {
+        while (entry!.pendingTask) {
+          const nextTask = entry!.pendingTask;
+          const batchResolvers = entry!.pendingResolvers.splice(0);
+          entry!.pendingTask = null;
+          try {
+            await nextTask();
+            for (const r of batchResolvers) r.resolve();
+          } catch (err) {
+            for (const r of batchResolvers) r.reject(err);
+          }
+        }
+      } finally {
+        entry!.inFlight = false;
+        if (!entry!.pendingTask && entry!.pendingResolvers.length === 0) {
+          docWriteQueues.delete(key);
+        }
+      }
+    };
+
+    void drain();
+  });
+}
+
+function getFirestoreErrorCode(error: unknown): string {
+  if (error && typeof error === 'object' && 'code' in error) {
+    return String((error as { code?: unknown }).code ?? '');
+  }
+  return '';
+}
+
+/**
+ * Race-free upsert for documents with immutable `createdAt`:
+ * 1. Tries `updateDoc` first (single RPC, never touches `createdAt`).
+ * 2. Only creates with `setDoc` when Firestore reports `not-found`.
+ * 3. If `setDoc` collides with a simultaneous cross-tab creation, retries `updateDoc` once.
+ */
+async function upsertImmutableCreatedDoc(
+  ref: ReturnType<typeof doc>,
+  updatePayload: Record<string, unknown>,
+  createPayload: Record<string, unknown>
+): Promise<void> {
+  try {
+    await updateDoc(ref, updatePayload);
+    return;
+  } catch (updateErr) {
+    const code = getFirestoreErrorCode(updateErr);
+    if (code !== 'not-found') {
+      throw updateErr;
+    }
+  }
+
+  try {
+    await setDoc(ref, createPayload);
+  } catch (createErr) {
+    const code = getFirestoreErrorCode(createErr);
+    if (code === 'already-exists' || code === 'permission-denied') {
+      await updateDoc(ref, updatePayload);
+      return;
+    }
+    throw createErr;
+  }
+}
+
 export interface BookProgressPayload {
   mastered: string[];
   difficult: string[];
+}
+
+function parseBookProgressData(
+  data: Record<string, unknown>,
+  bookId: BookId
+): BookProgressPayload {
+  const mastered = sanitizePatternIds(data.mastered, bookId);
+  const masteredSet = new Set(mastered);
+  const hard = sanitizePatternIds(data.hard, bookId).filter(id => !masteredSet.has(id));
+  return {
+    mastered,
+    difficult: hard,
+  };
 }
 
 export async function fetchBookProgressDoc(
@@ -193,21 +298,37 @@ export async function fetchBookProgressDoc(
   try {
     const snap = await getDoc(doc(db, 'users', uid, 'bunpouProgress', bookId));
     if (!snap.exists()) return null;
-    const data = snap.data() as Record<string, unknown>;
-    const mastered = sanitizePatternIds(data.mastered, bookId);
-    const masteredSet = new Set(mastered);
-    const hard = sanitizePatternIds(data.hard, bookId).filter(id => !masteredSet.has(id));
-    return {
-      mastered,
-      difficult: hard,
-    };
+    return parseBookProgressData(snap.data() as Record<string, unknown>, bookId);
   } catch (error) {
     logFirestoreError(error, OperationType.GET, path);
     throw error;
   }
 }
 
-export async function saveBookProgressDoc(
+export function subscribeBookProgressDoc(
+  uid: string,
+  bookId: BookId,
+  onUpdate: (payload: BookProgressPayload | null) => void,
+  onError?: (error: unknown) => void
+): Unsubscribe {
+  const path = `users/${uid}/bunpouProgress/${bookId}`;
+  return onSnapshot(
+    doc(db, 'users', uid, 'bunpouProgress', bookId),
+    snap => {
+      if (!snap.exists()) {
+        onUpdate(null);
+        return;
+      }
+      onUpdate(parseBookProgressData(snap.data() as Record<string, unknown>, bookId));
+    },
+    error => {
+      logFirestoreError(error, OperationType.GET, path);
+      onError?.(error);
+    }
+  );
+}
+
+export function saveBookProgressDoc(
   uid: string,
   bookId: BookId,
   payload: BookProgressPayload
@@ -219,28 +340,42 @@ export async function saveBookProgressDoc(
   // Firestore rules enforce mutual exclusion between mastered and hard
   const hard = sanitizePatternIds(payload.difficult, bookId).filter(id => !masteredSet.has(id));
 
-  try {
-    const existing = await getDoc(ref);
-    if (existing.exists()) {
-      await updateDoc(ref, {
-        mastered,
-        hard,
-        updatedAt: serverTimestamp(),
-      });
-    } else {
-      await setDoc(ref, {
-        uid,
-        bookId,
-        mastered,
-        hard,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
+  return enqueueCoalescedWrite(path, async () => {
+    try {
+      await upsertImmutableCreatedDoc(
+        ref,
+        {
+          mastered,
+          hard,
+          updatedAt: serverTimestamp(),
+        },
+        {
+          uid,
+          bookId,
+          mastered,
+          hard,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        }
+      );
+    } catch (error) {
+      logFirestoreError(error, OperationType.WRITE, path);
+      throw error;
     }
-  } catch (error) {
-    logFirestoreError(error, OperationType.WRITE, path);
-    throw error;
-  }
+  });
+}
+
+function parseKotobaProgressData(
+  data: Record<string, unknown>,
+  bookId: BookId
+): BookProgressPayload {
+  const mastered = sanitizeKotobaIds(data.mastered, bookId);
+  const masteredSet = new Set(mastered);
+  const hard = sanitizeKotobaIds(data.hard, bookId).filter(id => !masteredSet.has(id));
+  return {
+    mastered,
+    difficult: hard,
+  };
 }
 
 export async function fetchKotobaProgressDoc(
@@ -251,21 +386,37 @@ export async function fetchKotobaProgressDoc(
   try {
     const snap = await getDoc(doc(db, 'users', uid, 'kotobaProgress', bookId));
     if (!snap.exists()) return null;
-    const data = snap.data() as Record<string, unknown>;
-    const mastered = sanitizeKotobaIds(data.mastered, bookId);
-    const masteredSet = new Set(mastered);
-    const hard = sanitizeKotobaIds(data.hard, bookId).filter(id => !masteredSet.has(id));
-    return {
-      mastered,
-      difficult: hard,
-    };
+    return parseKotobaProgressData(snap.data() as Record<string, unknown>, bookId);
   } catch (error) {
     logFirestoreError(error, OperationType.GET, path);
     throw error;
   }
 }
 
-export async function saveKotobaProgressDoc(
+export function subscribeKotobaProgressDoc(
+  uid: string,
+  bookId: BookId,
+  onUpdate: (payload: BookProgressPayload | null) => void,
+  onError?: (error: unknown) => void
+): Unsubscribe {
+  const path = `users/${uid}/kotobaProgress/${bookId}`;
+  return onSnapshot(
+    doc(db, 'users', uid, 'kotobaProgress', bookId),
+    snap => {
+      if (!snap.exists()) {
+        onUpdate(null);
+        return;
+      }
+      onUpdate(parseKotobaProgressData(snap.data() as Record<string, unknown>, bookId));
+    },
+    error => {
+      logFirestoreError(error, OperationType.GET, path);
+      onError?.(error);
+    }
+  );
+}
+
+export function saveKotobaProgressDoc(
   uid: string,
   bookId: BookId,
   payload: BookProgressPayload
@@ -277,28 +428,40 @@ export async function saveKotobaProgressDoc(
   // Firestore rules enforce mutual exclusion between mastered and hard
   const hard = sanitizeKotobaIds(payload.difficult, bookId).filter(id => !masteredSet.has(id));
 
-  try {
-    const existing = await getDoc(ref);
-    if (existing.exists()) {
-      await updateDoc(ref, {
-        mastered,
-        hard,
-        updatedAt: serverTimestamp(),
-      });
-    } else {
-      await setDoc(ref, {
-        uid,
-        bookId,
-        mastered,
-        hard,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
+  return enqueueCoalescedWrite(path, async () => {
+    try {
+      await upsertImmutableCreatedDoc(
+        ref,
+        {
+          mastered,
+          hard,
+          updatedAt: serverTimestamp(),
+        },
+        {
+          uid,
+          bookId,
+          mastered,
+          hard,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        }
+      );
+    } catch (error) {
+      logFirestoreError(error, OperationType.WRITE, path);
+      throw error;
     }
-  } catch (error) {
-    logFirestoreError(error, OperationType.WRITE, path);
-    throw error;
-  }
+  });
+}
+
+function parseDailyTrackerData(data: Record<string, unknown>): DailyTrackerState {
+  const rawGoal = typeof data.dailyGoal === 'number' ? data.dailyGoal : DEFAULT_DAILY_GOAL;
+  const dailyGoal = (DAILY_GOAL_OPTIONS as readonly number[]).includes(rawGoal)
+    ? rawGoal
+    : DEFAULT_DAILY_GOAL;
+  return {
+    dailyGoal,
+    days: decodeDailyTrackerDays(data.days),
+  };
 }
 
 export async function fetchDailyTrackerDoc(uid: string): Promise<DailyTrackerState | null> {
@@ -306,22 +469,36 @@ export async function fetchDailyTrackerDoc(uid: string): Promise<DailyTrackerSta
   try {
     const snap = await getDoc(doc(db, 'users', uid, 'dailyTracker', 'state'));
     if (!snap.exists()) return null;
-    const data = snap.data() as Record<string, unknown>;
-    const rawGoal = typeof data.dailyGoal === 'number' ? data.dailyGoal : DEFAULT_DAILY_GOAL;
-    const dailyGoal = (DAILY_GOAL_OPTIONS as readonly number[]).includes(rawGoal)
-      ? rawGoal
-      : DEFAULT_DAILY_GOAL;
-    return {
-      dailyGoal,
-      days: decodeDailyTrackerDays(data.days),
-    };
+    return parseDailyTrackerData(snap.data() as Record<string, unknown>);
   } catch (error) {
     logFirestoreError(error, OperationType.GET, path);
     throw error;
   }
 }
 
-export async function saveDailyTrackerDoc(
+export function subscribeDailyTrackerDoc(
+  uid: string,
+  onUpdate: (state: DailyTrackerState | null) => void,
+  onError?: (error: unknown) => void
+): Unsubscribe {
+  const path = `users/${uid}/dailyTracker/state`;
+  return onSnapshot(
+    doc(db, 'users', uid, 'dailyTracker', 'state'),
+    snap => {
+      if (!snap.exists()) {
+        onUpdate(null);
+        return;
+      }
+      onUpdate(parseDailyTrackerData(snap.data() as Record<string, unknown>));
+    },
+    error => {
+      logFirestoreError(error, OperationType.GET, path);
+      onError?.(error);
+    }
+  );
+}
+
+export function saveDailyTrackerDoc(
   uid: string,
   state: DailyTrackerState
 ): Promise<void> {
@@ -332,27 +509,28 @@ export async function saveDailyTrackerDoc(
     : DEFAULT_DAILY_GOAL;
   const days = encodeDailyTrackerDays(state.days);
 
-  try {
-    const existing = await getDoc(ref);
-    if (existing.exists()) {
-      await updateDoc(ref, {
-        dailyGoal,
-        days,
-        updatedAt: serverTimestamp(),
-      });
-    } else {
-      await setDoc(ref, {
-        uid,
-        dailyGoal,
-        days,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
+  return enqueueCoalescedWrite(path, async () => {
+    try {
+      await upsertImmutableCreatedDoc(
+        ref,
+        {
+          dailyGoal,
+          days,
+          updatedAt: serverTimestamp(),
+        },
+        {
+          uid,
+          dailyGoal,
+          days,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        }
+      );
+    } catch (error) {
+      logFirestoreError(error, OperationType.WRITE, path);
+      throw error;
     }
-  } catch (error) {
-    logFirestoreError(error, OperationType.WRITE, path);
-    throw error;
-  }
+  });
 }
 
 // Compact pure-ASCII quiz session token codec aligned 1:1 with firestore.rules
@@ -513,6 +691,17 @@ export function decodeQuizSessionToken(
   return record;
 }
 
+function parseQuizHistoryData(
+  data: Record<string, unknown>,
+  bookId: BookId
+): QuizSessionRecord[] {
+  const rawTokens = Array.isArray(data.sessions) ? data.sessions : [];
+  const decoded = rawTokens
+    .map(t => (typeof t === 'string' ? decodeQuizSessionToken(t, bookId) : null))
+    .filter((x): x is QuizSessionRecord => x !== null);
+  return sanitizeQuizHistoryForBook(decoded, bookId);
+}
+
 export async function fetchQuizHistoryDoc(
   uid: string,
   bookId: BookId
@@ -521,19 +710,37 @@ export async function fetchQuizHistoryDoc(
   try {
     const snap = await getDoc(doc(db, 'users', uid, 'quizHistory', bookId));
     if (!snap.exists()) return null;
-    const data = snap.data() as Record<string, unknown>;
-    const rawTokens = Array.isArray(data.sessions) ? data.sessions : [];
-    const decoded = rawTokens
-      .map(t => (typeof t === 'string' ? decodeQuizSessionToken(t, bookId) : null))
-      .filter((x): x is QuizSessionRecord => x !== null);
-    return sanitizeQuizHistoryForBook(decoded, bookId);
+    return parseQuizHistoryData(snap.data() as Record<string, unknown>, bookId);
   } catch (error) {
     logFirestoreError(error, OperationType.GET, path);
     throw error;
   }
 }
 
-export async function saveQuizHistoryDoc(
+export function subscribeQuizHistoryDoc(
+  uid: string,
+  bookId: BookId,
+  onUpdate: (sessions: QuizSessionRecord[] | null) => void,
+  onError?: (error: unknown) => void
+): Unsubscribe {
+  const path = `users/${uid}/quizHistory/${bookId}`;
+  return onSnapshot(
+    doc(db, 'users', uid, 'quizHistory', bookId),
+    snap => {
+      if (!snap.exists()) {
+        onUpdate(null);
+        return;
+      }
+      onUpdate(parseQuizHistoryData(snap.data() as Record<string, unknown>, bookId));
+    },
+    error => {
+      logFirestoreError(error, OperationType.GET, path);
+      onError?.(error);
+    }
+  );
+}
+
+export function saveQuizHistoryDoc(
   uid: string,
   bookId: BookId,
   sessions: QuizSessionRecord[]
@@ -546,24 +753,25 @@ export async function saveQuizHistoryDoc(
     MAX_CLOUD_QUIZ_HISTORY_PER_BOOK
   );
 
-  try {
-    const existing = await getDoc(ref);
-    if (existing.exists()) {
-      await updateDoc(ref, {
-        sessions: tokens,
-        updatedAt: serverTimestamp(),
-      });
-    } else {
-      await setDoc(ref, {
-        uid,
-        bookId,
-        sessions: tokens,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
+  return enqueueCoalescedWrite(path, async () => {
+    try {
+      await upsertImmutableCreatedDoc(
+        ref,
+        {
+          sessions: tokens,
+          updatedAt: serverTimestamp(),
+        },
+        {
+          uid,
+          bookId,
+          sessions: tokens,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        }
+      );
+    } catch (error) {
+      logFirestoreError(error, OperationType.WRITE, path);
+      throw error;
     }
-  } catch (error) {
-    logFirestoreError(error, OperationType.WRITE, path);
-    throw error;
-  }
+  });
 }

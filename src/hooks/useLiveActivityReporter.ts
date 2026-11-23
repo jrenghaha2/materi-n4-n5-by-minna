@@ -11,15 +11,17 @@ import type {
   AllBooksQuizHistory,
   BookId,
   LiveActivityStatus,
+  LiveQuizAnswerCorrect,
   LiveQuizState,
   QuizMode,
+  QuizSavedAnswer,
   QuizSessionRecord,
   UserProfileDoc,
   UserRole,
 } from '../types/bunpou';
 import { normalizeEmail } from '../utils/rbac';
 
-const DEBOUNCE_MS = 1800;
+const DEBOUNCE_MS = 300;
 const HEARTBEAT_MS = 60_000;
 
 function formatQuizModeLabel(mode: QuizMode | ''): string {
@@ -98,11 +100,17 @@ const EMPTY_LIVE_QUIZ: LiveQuizState = {
   inProgress: false,
   bookId: '',
   mode: '',
-  fromChapter: 1,
-  toChapter: 25,
+  fromChapter: 0,
+  toChapter: 0,
   currentQuestion: 0,
   totalQuestions: 0,
   correctCount: 0,
+  patternId: '',
+  exampleIndex: 0,
+  choiceIds: [],
+  selectedChoiceId: '',
+  answerCorrect: -1,
+  liveAnswers: [],
 };
 
 interface UseLiveActivityReporterOptions {
@@ -175,6 +183,14 @@ export function useLiveActivityReporter({
         quizCurrentQuestion: q.inProgress ? q.currentQuestion : 0,
         quizTotalQuestions: q.inProgress ? q.totalQuestions : 0,
         quizCorrectCount: q.inProgress ? q.correctCount : 0,
+        quizFromChapter: q.inProgress ? q.fromChapter : 0,
+        quizToChapter: q.inProgress ? q.toChapter : 0,
+        quizPatternId: q.inProgress ? q.patternId : '',
+        quizExampleIndex: q.inProgress ? q.exampleIndex : 0,
+        quizChoiceIds: q.inProgress ? q.choiceIds : [],
+        quizSelectedChoiceId: q.inProgress ? q.selectedChoiceId : '',
+        quizAnswerCorrect: q.inProgress ? q.answerCorrect : -1,
+        quizLiveAnswers: q.inProgress ? q.liveAnswers : [],
         totalMasteredBunpou,
         totalMasteredKotoba,
         totalMastered,
@@ -271,6 +287,9 @@ export function useLiveActivityReporter({
       fromChapter: number;
       toChapter: number;
       totalQuestions: number;
+      patternId: string;
+      exampleIndex: number;
+      choiceIds: string[];
     }) => {
       const nextQuiz: LiveQuizState = {
         inProgress: true,
@@ -281,6 +300,12 @@ export function useLiveActivityReporter({
         currentQuestion: 1,
         totalQuestions: info.totalQuestions,
         correctCount: 0,
+        patternId: info.patternId,
+        exampleIndex: info.exampleIndex,
+        choiceIds: info.choiceIds,
+        selectedChoiceId: '',
+        answerCorrect: -1,
+        liveAnswers: [],
       };
       liveQuizRef.current = nextQuiz;
       flushNow(nextQuiz);
@@ -315,6 +340,12 @@ export function useLiveActivityReporter({
       currentQuestion: number;
       totalQuestions: number;
       correctCount: number;
+      patternId: string;
+      exampleIndex: number;
+      choiceIds: string[];
+      selectedChoiceId: string;
+      answerCorrect: LiveQuizAnswerCorrect;
+      liveAnswers: QuizSavedAnswer[];
     }) => {
       const nextQuiz: LiveQuizState = {
         inProgress: true,
@@ -325,6 +356,12 @@ export function useLiveActivityReporter({
         currentQuestion: info.currentQuestion,
         totalQuestions: info.totalQuestions,
         correctCount: info.correctCount,
+        patternId: info.patternId,
+        exampleIndex: info.exampleIndex,
+        choiceIds: info.choiceIds,
+        selectedChoiceId: info.selectedChoiceId,
+        answerCorrect: info.answerCorrect,
+        liveAnswers: info.liveAnswers,
       };
       liveQuizRef.current = nextQuiz;
       flushNow(nextQuiz);

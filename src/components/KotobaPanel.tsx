@@ -14,7 +14,9 @@ import {
   Shuffle,
 } from 'lucide-react';
 import type { BookData, FilterMode, KotobaChapter, KotobaWord } from '../types/bunpou';
+import { useCardFlipHandlers } from '../utils/cardFlipGuard';
 import { buildKotobaRubySegments } from '../utils/furiganaConverter';
+import { formatProgressPercent } from '../utils/rbac';
 import { AudioButton } from './AudioButton';
 import { RubySegmentsView } from './JapaneseText';
 
@@ -72,6 +74,8 @@ export function KotobaPanel({
   const [shuffleSeed, setShuffleSeed] = useState(0);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
+
+  const kotobaFlipHandlers = useCardFlipHandlers(() => setIsFlipped(v => !v));
 
   // List / Veil mode states
   const [searchQuery, setSearchQuery] = useState('');
@@ -214,7 +218,10 @@ export function KotobaPanel({
   const parsedExample = currentCard ? splitExample(currentCard.example) : null;
   const isMastered = currentCard ? masteredSet.has(currentCard.id) : false;
   const isDifficult = currentCard ? difficultSet.has(currentCard.id) : false;
-  const scopePct = totalScoped > 0 ? Math.round((masteredInScope / totalScoped) * 100) : 0;
+  const { label: scopePctLabel, barWidthPct: scopeBarWidthPct } = formatProgressPercent(
+    masteredInScope,
+    totalScoped
+  );
 
   return (
     <div className="space-y-4">
@@ -236,7 +243,7 @@ export function KotobaPanel({
                 ·
               </span>
               <span className="text-xs sm:text-sm font-mono-num font-semibold text-emerald-700 dark:text-emerald-400">
-                {masteredInScope}/{totalScoped} hafal ({scopePct}%)
+                {masteredInScope}/{totalScoped} hafal ({scopePctLabel})
               </span>
             </div>
             {activeChapterObj?.theme ? (
@@ -292,7 +299,7 @@ export function KotobaPanel({
           <div className="h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
             <div
               className="h-full rounded-full bg-emerald-600 dark:bg-emerald-400 transition-all duration-300"
-              style={{ width: `${scopePct}%` }}
+              style={{ width: `${scopeBarWidthPct}%` }}
             />
           </div>
 
@@ -427,17 +434,11 @@ export function KotobaPanel({
               >
                 {/* FRONT FACE */}
                 <div
-                  onClick={() => setIsFlipped(v => !v)}
+                  {...kotobaFlipHandlers}
                   role="button"
-                  tabIndex={0}
+                  tabIndex={isFlipped ? -1 : 0}
                   aria-label="Balik kartu flashcard kotoba"
-                  onKeyDown={e => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      setIsFlipped(v => !v);
-                    }
-                  }}
-                  className={`card-face col-start-1 row-start-1 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm p-5 sm:p-7 min-h-[300px] flex flex-col justify-between cursor-pointer select-none ${
+                  className={`card-face col-start-1 row-start-1 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm p-5 sm:p-7 min-h-[300px] flex flex-col justify-between cursor-pointer select-text ${
                     isFlipped ? 'pointer-events-none' : ''
                   }`}
                 >
@@ -486,7 +487,11 @@ export function KotobaPanel({
 
                 {/* BACK FACE */}
                 <div
-                  className={`card-face card-face-back col-start-1 row-start-1 rounded-2xl border border-indigo-200 dark:border-indigo-800/80 bg-white dark:bg-slate-900 shadow-sm p-5 sm:p-7 min-h-[300px] flex flex-col justify-between gap-4 ${
+                  {...kotobaFlipHandlers}
+                  role="button"
+                  tabIndex={isFlipped ? 0 : -1}
+                  aria-label="Klik kartu untuk kembali ke sisi depan flashcard kotoba"
+                  className={`card-face card-face-back col-start-1 row-start-1 rounded-2xl border border-indigo-200 dark:border-indigo-800/80 bg-white dark:bg-slate-900 shadow-sm p-5 sm:p-7 min-h-[300px] flex flex-col justify-between gap-4 cursor-pointer select-text ${
                     !isFlipped ? 'pointer-events-none max-h-[300px] overflow-hidden' : ''
                   }`}
                 >
@@ -524,7 +529,10 @@ export function KotobaPanel({
                       />
                       <button
                         type="button"
-                        onClick={() => setIsFlipped(false)}
+                        onClick={e => {
+                          e.stopPropagation();
+                          setIsFlipped(false);
+                        }}
                         className="min-h-[34px] px-3 py-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 inline-flex items-center gap-1.5 cursor-pointer"
                       >
                         <RotateCw className="w-3.5 h-3.5" aria-hidden="true" />
@@ -567,6 +575,13 @@ export function KotobaPanel({
                         />
                       </div>
                     ) : null}
+                  </div>
+
+                  <div className="flex items-center justify-end pt-3 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400">
+                    <span className="inline-flex items-center gap-1.5 font-semibold text-indigo-700 dark:text-indigo-300">
+                      <RotateCw className="w-3.5 h-3.5" aria-hidden="true" />
+                      Klik kartu atau tekan Spasi untuk balik ke depan
+                    </span>
                   </div>
                 </div>
               </div>
@@ -680,7 +695,9 @@ export function KotobaPanel({
                   <article
                     key={word.id}
                     onClick={() => {
-                      if (veilMode) toggleRevealWord(word.id);
+                      if (!veilMode) return;
+                      if (window.getSelection()?.toString().trim()) return;
+                      toggleRevealWord(word.id);
                     }}
                     className={`rounded-2xl border bg-white dark:bg-slate-900 p-4 flex flex-col justify-between gap-2.5 transition-colors ${
                       veilMode ? 'cursor-pointer hover:border-indigo-300 dark:hover:border-indigo-700' : ''

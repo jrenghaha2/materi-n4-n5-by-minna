@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { AdminUserRecord, HydratedUserStats, LiveActivityDoc } from '../types/bunpou.ts';
+import { shouldFlipOnCardClick } from './cardFlipGuard.ts';
 import {
   BOOTSTRAP_SUPERADMIN_EMAIL,
   canModifyTargetRole,
   computeAdminKpis,
   filterAndSortMonitoredUsers,
+  formatProgressPercent,
   getPresenceStatus,
   getRoleLabel,
   isAdminOrAboveRole,
@@ -140,6 +142,23 @@ test('presence, legacy hydration merge, KPI calculation, and 5-mode sorting work
     quizCurrentQuestion: 4,
     quizTotalQuestions: 10,
     quizCorrectCount: 3,
+    quizFromChapter: 1,
+    quizToChapter: 25,
+    quizPatternId: 'n5-bab-14-p1',
+    quizExampleIndex: 1,
+    quizChoiceIds: ['n5-bab-14-p1', 'n5-bab-15-p1', 'n5-bab-16-p1', 'n5-bab-17-p1'],
+    quizSelectedChoiceId: 'n5-bab-14-p1',
+    quizAnswerCorrect: 1,
+    quizLiveAnswers: [
+      {
+        questionNo: 1,
+        mode: 'meaning',
+        patternId: 'n5-bab-1-p1',
+        selectedPatternId: 'n5-bab-1-p1',
+        isCorrect: true,
+        exampleIndex: 0,
+      },
+    ],
     totalMasteredBunpou: 20,
     totalMasteredKotoba: 50,
     totalMastered: 70,
@@ -168,6 +187,18 @@ test('presence, legacy hydration merge, KPI calculation, and 5-mode sorting work
     mergeUserMonitoringRow(users[1], undefined, undefined, now),
     mergeUserMonitoringRow(users[2], undefined, hydratedU3, now),
   ];
+
+  // Live quiz detail passthrough check
+  assert.equal(rows[0].quizPatternId, 'n5-bab-14-p1');
+  assert.deepEqual(rows[0].quizChoiceIds, [
+    'n5-bab-14-p1',
+    'n5-bab-15-p1',
+    'n5-bab-16-p1',
+    'n5-bab-17-p1',
+  ]);
+  assert.equal(rows[0].quizSelectedChoiceId, 'n5-bab-14-p1');
+  assert.equal(rows[0].quizAnswerCorrect, 1);
+  assert.equal(rows[0].quizLiveAnswers.length, 1);
 
   // Legacy hydration check
   assert.equal(rows[2].hydratedFromLegacy, true);
@@ -217,5 +248,102 @@ test('presence, legacy hydration merge, KPI calculation, and 5-mode sorting work
       r => r.uid
     ),
     ['u1']
+  );
+});
+
+test('formatProgressPercent shows non-zero decimal percent and visible bar from the very first mastered item', () => {
+  assert.deepEqual(formatProgressPercent(0, 851), { label: '0%', barWidthPct: 0 });
+
+  const oneOf851 = formatProgressPercent(1, 851);
+  assert.equal(oneOf851.label, '0.1%');
+  assert.ok(oneOf851.barWidthPct >= 1.5);
+
+  const fourOf851 = formatProgressPercent(4, 851);
+  assert.equal(fourOf851.label, '0.5%');
+  assert.ok(fourOf851.barWidthPct >= 1.5);
+
+  const fourOf430 = formatProgressPercent(4, 430);
+  assert.equal(fourOf430.label, '0.9%');
+  assert.ok(fourOf430.barWidthPct >= 1.5);
+
+  const tenOf851 = formatProgressPercent(10, 851);
+  assert.equal(tenOf851.label, '1%');
+  assert.ok(tenOf851.barWidthPct > 1);
+
+  assert.deepEqual(formatProgressPercent(101, 101), { label: '100%', barWidthPct: 100 });
+});
+
+test('shouldFlipOnCardClick flips on clean click anywhere but never blocks text selection or interactive buttons', () => {
+  // Clean single click anywhere on card
+  assert.equal(
+    shouldFlipOnCardClick({
+      isInteractiveTarget: false,
+      hadSelectionOnPointerDown: false,
+      currentSelectionText: '',
+      startPoint: { x: 120, y: 200 },
+      endPoint: { x: 122, y: 201 },
+    }),
+    true
+  );
+
+  // Dragging across Japanese characters (> 6px) must NOT flip
+  assert.equal(
+    shouldFlipOnCardClick({
+      isInteractiveTarget: false,
+      hadSelectionOnPointerDown: false,
+      currentSelectionText: '',
+      startPoint: { x: 100, y: 200 },
+      endPoint: { x: 145, y: 202 },
+    }),
+    false
+  );
+
+  // Active text selection must NOT flip
+  assert.equal(
+    shouldFlipOnCardClick({
+      isInteractiveTarget: false,
+      hadSelectionOnPointerDown: false,
+      currentSelectionText: '〜ように',
+      startPoint: { x: 100, y: 200 },
+      endPoint: { x: 100, y: 200 },
+    }),
+    false
+  );
+
+  // Clicking to clear a previously highlighted selection must NOT flip on that click
+  assert.equal(
+    shouldFlipOnCardClick({
+      isInteractiveTarget: false,
+      hadSelectionOnPointerDown: true,
+      currentSelectionText: '',
+      startPoint: { x: 100, y: 200 },
+      endPoint: { x: 100, y: 200 },
+    }),
+    false
+  );
+
+  // Double-clicking a word to select it must NOT flip
+  assert.equal(
+    shouldFlipOnCardClick({
+      isInteractiveTarget: false,
+      hadSelectionOnPointerDown: false,
+      currentSelectionText: '',
+      startPoint: { x: 100, y: 200 },
+      endPoint: { x: 100, y: 200 },
+      clickDetail: 2,
+    }),
+    false
+  );
+
+  // Clicking nested interactive controls (AudioButton / Depan button) must NOT double-flip
+  assert.equal(
+    shouldFlipOnCardClick({
+      isInteractiveTarget: true,
+      hadSelectionOnPointerDown: false,
+      currentSelectionText: '',
+      startPoint: { x: 100, y: 200 },
+      endPoint: { x: 100, y: 200 },
+    }),
+    false
   );
 });

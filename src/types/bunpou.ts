@@ -177,6 +177,8 @@ export type AdminSortOption =
   | 'progress_desc'
   | 'quiz_desc';
 
+export type LiveQuizAnswerCorrect = -1 | 0 | 1;
+
 export interface LiveQuizState {
   inProgress: boolean;
   bookId: BookId | '';
@@ -186,6 +188,12 @@ export interface LiveQuizState {
   currentQuestion: number;
   totalQuestions: number;
   correctCount: number;
+  patternId: string;
+  exampleIndex: number;
+  choiceIds: string[];
+  selectedChoiceId: string;
+  answerCorrect: LiveQuizAnswerCorrect;
+  liveAnswers: QuizSavedAnswer[];
 }
 
 export interface AdminUserRecord {
@@ -214,6 +222,14 @@ export interface LiveActivityDoc {
   quizCurrentQuestion: number;
   quizTotalQuestions: number;
   quizCorrectCount: number;
+  quizFromChapter: number;
+  quizToChapter: number;
+  quizPatternId: string;
+  quizExampleIndex: number;
+  quizChoiceIds: string[];
+  quizSelectedChoiceId: string;
+  quizAnswerCorrect: LiveQuizAnswerCorrect;
+  quizLiveAnswers: QuizSavedAnswer[];
   totalMasteredBunpou: number;
   totalMasteredKotoba: number;
   totalMastered: number;
@@ -267,6 +283,14 @@ export interface AdminMonitoredUserRow {
   quizCurrentQuestion: number;
   quizTotalQuestions: number;
   quizCorrectCount: number;
+  quizFromChapter: number;
+  quizToChapter: number;
+  quizPatternId: string;
+  quizExampleIndex: number;
+  quizChoiceIds: string[];
+  quizSelectedChoiceId: string;
+  quizAnswerCorrect: LiveQuizAnswerCorrect;
+  quizLiveAnswers: QuizSavedAnswer[];
   totalMasteredBunpou: number;
   totalMasteredKotoba: number;
   totalMastered: number;

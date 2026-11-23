@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import type {
   BookData,
+  LiveQuizAnswerCorrect,
   QuizAnswerEntry,
   QuizMode,
   QuizQuestion,
+  QuizSavedAnswer,
   QuizSessionRecord,
 } from '../types/bunpou';
 import { filterQuizPool, generateQuizQuestions } from '../utils/quizGenerator';
@@ -14,6 +16,17 @@ import { QUIZ_MODE_INFO } from './quiz/quizHelpers';
 import { QuizResultView } from './quiz/QuizResultView';
 import { QuizRunView } from './quiz/QuizRunView';
 import { QuizSetupView } from './quiz/QuizSetupView';
+
+function toSavedAnswers(entries: QuizAnswerEntry[]): QuizSavedAnswer[] {
+  return entries.map((a, idx) => ({
+    questionNo: idx + 1,
+    mode: a.question.mode,
+    patternId: a.question.patternId,
+    selectedPatternId: a.isCorrect ? a.question.patternId : a.selectedChoiceId,
+    isCorrect: a.isCorrect,
+    exampleIndex: a.question.exampleIndex,
+  }));
+}
 
 interface QuizPanelProps {
   book: BookData;
@@ -29,6 +42,9 @@ interface QuizPanelProps {
     fromChapter: number;
     toChapter: number;
     totalQuestions: number;
+    patternId: string;
+    exampleIndex: number;
+    choiceIds: string[];
   }) => void;
   onQuizProgress?: (info: {
     bookId: BookData['id'];
@@ -38,6 +54,12 @@ interface QuizPanelProps {
     currentQuestion: number;
     totalQuestions: number;
     correctCount: number;
+    patternId: string;
+    exampleIndex: number;
+    choiceIds: string[];
+    selectedChoiceId: string;
+    answerCorrect: LiveQuizAnswerCorrect;
+    liveAnswers: QuizSavedAnswer[];
   }) => void;
   onQuizAborted?: () => void;
   onCompleteSession: (record: QuizSessionRecord) => void;
@@ -160,12 +182,16 @@ export function QuizPanel({
     setAnswers([]);
     setInspectedSession(null);
     setPhase('running');
+    const firstQ = generated[0];
     onQuizStarted?.({
       bookId: book.id,
       mode,
       fromChapter: startCh,
       toChapter: endCh,
       totalQuestions: generated.length,
+      patternId: firstQ.patternId,
+      exampleIndex: firstQ.exampleIndex,
+      choiceIds: firstQ.choices.map(c => c.id),
     });
   };
 
@@ -174,18 +200,18 @@ export function QuizPanel({
     const current = questions[currentIndex];
     if (!current) return;
     const isCorrect = choiceId === current.correctChoiceId;
-    const nextCorrectCount =
-      answers.reduce((acc, a) => acc + (a.isCorrect ? 1 : 0), 0) + (isCorrect ? 1 : 0);
-
-    setSelectedChoiceId(choiceId);
-    setAnswers(prev => [
-      ...prev,
+    const nextAnswers: QuizAnswerEntry[] = [
+      ...answers,
       {
         question: current,
         selectedChoiceId: choiceId,
         isCorrect,
       },
-    ]);
+    ];
+    const nextCorrectCount = nextAnswers.reduce((acc, a) => acc + (a.isCorrect ? 1 : 0), 0);
+
+    setSelectedChoiceId(choiceId);
+    setAnswers(nextAnswers);
 
     onQuizProgress?.({
       bookId: book.id,
@@ -195,6 +221,12 @@ export function QuizPanel({
       currentQuestion: currentIndex + 1,
       totalQuestions: questions.length,
       correctCount: nextCorrectCount,
+      patternId: current.patternId,
+      exampleIndex: current.exampleIndex,
+      choiceIds: current.choices.map(c => c.id),
+      selectedChoiceId: choiceId,
+      answerCorrect: isCorrect ? 1 : 0,
+      liveAnswers: toSavedAnswers(nextAnswers),
     });
   };
 
@@ -202,17 +234,26 @@ export function QuizPanel({
     stopJapaneseSpeech();
     if (currentIndex + 1 < questions.length) {
       const nextIdx = currentIndex + 1;
+      const nextQ = questions[nextIdx];
       setCurrentIndex(nextIdx);
       setSelectedChoiceId(null);
-      onQuizProgress?.({
-        bookId: book.id,
-        mode,
-        fromChapter,
-        toChapter,
-        currentQuestion: nextIdx + 1,
-        totalQuestions: questions.length,
-        correctCount: answers.reduce((acc, a) => acc + (a.isCorrect ? 1 : 0), 0),
-      });
+      if (nextQ) {
+        onQuizProgress?.({
+          bookId: book.id,
+          mode,
+          fromChapter,
+          toChapter,
+          currentQuestion: nextIdx + 1,
+          totalQuestions: questions.length,
+          correctCount: answers.reduce((acc, a) => acc + (a.isCorrect ? 1 : 0), 0),
+          patternId: nextQ.patternId,
+          exampleIndex: nextQ.exampleIndex,
+          choiceIds: nextQ.choices.map(c => c.id),
+          selectedChoiceId: '',
+          answerCorrect: -1,
+          liveAnswers: toSavedAnswers(answers),
+        });
+      }
       return;
     }
 
@@ -234,14 +275,7 @@ export function QuizPanel({
       correctCount: correctIds.length,
       wrongPatternIds: Array.from(new Set(wrongIds)),
       correctPatternIds: Array.from(new Set(correctIds)),
-      answers: answers.map((a, idx) => ({
-        questionNo: idx + 1,
-        mode: a.question.mode,
-        patternId: a.question.patternId,
-        selectedPatternId: a.isCorrect ? a.question.patternId : a.selectedChoiceId,
-        isCorrect: a.isCorrect,
-        exampleIndex: a.question.exampleIndex,
-      })),
+      answers: toSavedAnswers(answers),
       completedAt: new Date().toISOString(),
     };
 

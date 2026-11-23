@@ -5,6 +5,7 @@ import {
   subscribeActivityEvents,
   subscribeAllUsers,
   subscribeLiveActivities,
+  subscribeUserFullDetail,
   updateTargetUserRole,
 } from '../services/adminMonitoringService';
 import type {
@@ -239,6 +240,20 @@ export function useAdminMonitor({
     [showToast]
   );
 
+  const subscribeUserDetail = useCallback(
+    (uid: string, onUpdate: (detail: UserDetailReport) => void) => {
+      return subscribeUserFullDetail(uid, onUpdate, error => {
+        if (isFirestoreQuotaError(error)) {
+          showToast('Gagal memuat detail real-time: kuota Firestore tercapai.', 'error', {
+            actionLabel: 'Lihat Kuota',
+            actionHref: getFirestoreUpgradeUrl(),
+          });
+        }
+      });
+    },
+    [showToast]
+  );
+
   return {
     rows,
     events,
@@ -250,5 +265,6 @@ export function useAdminMonitor({
     updatingRoleUid,
     changeUserRole,
     loadUserDetail,
+    subscribeUserDetail,
   };
 }

@@ -4,6 +4,7 @@ import type { DailyTrackerState } from '../types/bunpou';
 import {
   fetchDailyTrackerDoc,
   saveDailyTrackerDoc,
+  subscribeDailyTrackerDoc,
 } from '../services/cloudSyncService';
 import {
   areDailyTrackerStatesEqual,
@@ -43,12 +44,11 @@ export function useDailyTracker({
   const stateRef = useRef(state);
   stateRef.current = state;
 
-  useEffect(() => {
-    saveDailyTrackerState(state);
-  }, [state]);
+  const pendingWritesRef = useRef(0);
 
   const pushDailyToCloud = useCallback(
     async (uid: string, nextState: DailyTrackerState) => {
+      pendingWritesRef.current += 1;
       try {
         await saveDailyTrackerDoc(uid, nextState);
       } catch (error) {
@@ -58,10 +58,65 @@ export function useDailyTracker({
             actionHref: getFirestoreUpgradeUrl(),
           });
         }
+      } finally {
+        pendingWritesRef.current = Math.max(0, pendingWritesRef.current - 1);
       }
     },
     [showToast]
   );
+
+  // Real-time onSnapshot subscription for daily tracker & streak
+  useEffect(() => {
+    if (!user || !isVerified || !profileReady) return;
+
+    const uid = user.uid;
+    let initialized = false;
+    let disposed = false;
+
+    const unsub = subscribeDailyTrackerDoc(
+      uid,
+      remote => {
+        if (disposed) return;
+
+        const isFirst = !initialized;
+        initialized = true;
+
+        if (!isFirst && pendingWritesRef.current > 0) return;
+
+        if (isFirst) {
+          const merged = mergeDailyTrackerStates(stateRef.current, remote);
+          saveDailyTrackerState(merged);
+          stateRef.current = merged;
+          setState(merged);
+
+          if (!remote || !areDailyTrackerStatesEqual(merged, remote)) {
+            void pushDailyToCloud(uid, merged);
+          }
+          return;
+        }
+
+        if (!remote) return;
+        if (areDailyTrackerStatesEqual(stateRef.current, remote)) return;
+
+        saveDailyTrackerState(remote);
+        stateRef.current = remote;
+        setState(remote);
+      },
+      error => {
+        if (isFirestoreQuotaError(error)) {
+          showToast('Kuota Firestore tercapai saat menyinkronkan target harian.', 'error', {
+            actionLabel: 'Lihat Kuota',
+            actionHref: getFirestoreUpgradeUrl(),
+          });
+        }
+      }
+    );
+
+    return () => {
+      disposed = true;
+      unsub();
+    };
+  }, [user, isVerified, profileReady, pushDailyToCloud, showToast]);
 
   const syncDailyWithCloud = useCallback(
     async (silent = false) => {
@@ -71,10 +126,11 @@ export function useDailyTracker({
         const remote = await fetchDailyTrackerDoc(user.uid);
         const merged = mergeDailyTrackerStates(stateRef.current, remote);
         saveDailyTrackerState(merged);
+        stateRef.current = merged;
         setState(merged);
 
         if (!remote || !areDailyTrackerStatesEqual(merged, remote)) {
-          await saveDailyTrackerDoc(user.uid, merged);
+          await pushDailyToCloud(user.uid, merged);
         }
 
         if (!silent) {
@@ -93,55 +149,49 @@ export function useDailyTracker({
         setSyncingDaily(false);
       }
     },
-    [user, isVerified, profileReady, showToast]
+    [user, isVerified, profileReady, pushDailyToCloud, showToast]
   );
-
-  useEffect(() => {
-    if (user && isVerified && profileReady) {
-      void syncDailyWithCloud(true);
-    }
-  }, [user, isVerified, profileReady, syncDailyWithCloud]);
 
   const setDailyGoal = useCallback(
     (goal: number) => {
       if (!(DAILY_GOAL_OPTIONS as readonly number[]).includes(goal)) return;
-      setState(prev => {
-        if (prev.dailyGoal === goal) return prev;
-        const next: DailyTrackerState = { ...prev, dailyGoal: goal };
-        saveDailyTrackerState(next);
-        if (user && isVerified && profileReady) {
-          void pushDailyToCloud(user.uid, next);
-        }
-        return next;
-      });
+      const prev = stateRef.current;
+      if (prev.dailyGoal === goal) return;
+      const next: DailyTrackerState = { ...prev, dailyGoal: goal };
+      stateRef.current = next;
+      setState(next);
+      saveDailyTrackerState(next);
+      if (user && isVerified && profileReady) {
+        void pushDailyToCloud(user.uid, next);
+      }
     },
     [user, isVerified, profileReady, pushDailyToCloud]
   );
 
   const recordMasteredChange = useCallback(
     (patternId: string, isNowMastered: boolean) => {
-      setState(prev => {
-        const next = recordMasteredToggleForDay(prev, patternId, isNowMastered);
-        if (next === prev) return prev;
-        saveDailyTrackerState(next);
-        if (user && isVerified && profileReady) {
-          void pushDailyToCloud(user.uid, next);
-        }
-        return next;
-      });
+      const prev = stateRef.current;
+      const next = recordMasteredToggleForDay(prev, patternId, isNowMastered);
+      if (next === prev) return;
+      stateRef.current = next;
+      setState(next);
+      saveDailyTrackerState(next);
+      if (user && isVerified && profileReady) {
+        void pushDailyToCloud(user.uid, next);
+      }
     },
     [user, isVerified, profileReady, pushDailyToCloud]
   );
 
   const recordQuizCompleted = useCallback(() => {
-    setState(prev => {
-      const next = recordQuizSessionForDay(prev);
-      saveDailyTrackerState(next);
-      if (user && isVerified && profileReady) {
-        void pushDailyToCloud(user.uid, next);
-      }
-      return next;
-    });
+    const prev = stateRef.current;
+    const next = recordQuizSessionForDay(prev);
+    stateRef.current = next;
+    setState(next);
+    saveDailyTrackerState(next);
+    if (user && isVerified && profileReady) {
+      void pushDailyToCloud(user.uid, next);
+    }
   }, [user, isVerified, profileReady, pushDailyToCloud]);
 
   const todayKey = formatLocalDateKey();
@@ -169,4 +219,3 @@ export function useDailyTracker({
     syncDailyWithCloud,
   };
 }
-

@@ -4,6 +4,7 @@ import type {
   QuizAnswerEntry,
   QuizChoice,
   QuizMode,
+  QuizQuestion,
   QuizSavedAnswer,
   QuizSessionRecord,
 } from '../types/bunpou';
@@ -279,6 +280,203 @@ export function reconstructSessionReview(
   }
 
   return entries;
+}
+
+const ANY_BUNPOU_PATTERN_ID_REGEX =
+  /^(n5-bab-([1-9]|1[0-9]|2[0-5])|n4-bab-(2[6-9]|[34][0-9]|50))-p[1-9][0-9]?$/;
+
+const MODE_TO_CODE: Record<QuizMode, number> = {
+  meaning: 0,
+  cloze: 1,
+  pattern: 2,
+};
+
+const CODE_TO_MODE: Record<number, QuizMode> = {
+  0: 'meaning',
+  1: 'cloze',
+  2: 'pattern',
+};
+
+export function isValidAnyBunpouPatternId(value: unknown): value is string {
+  return typeof value === 'string' && ANY_BUNPOU_PATTERN_ID_REGEX.test(value);
+}
+
+/**
+ * Encodes a single answered quiz item into a compact pure-ASCII token
+ * matching firestore.rules `isValidLiveQuizAnswers`:
+ * `questionNo:modeCode:patternId:isCorrectBit:selectedPatternId:exampleIndex`
+ */
+export function encodeLiveQuizAnswerToken(answer: QuizSavedAnswer): string | null {
+  if (!isValidAnyBunpouPatternId(answer.patternId)) return null;
+  const selectedId = isValidAnyBunpouPatternId(answer.selectedPatternId)
+    ? answer.selectedPatternId
+    : answer.patternId;
+  const qNo = Math.max(1, Math.min(50, Math.floor(answer.questionNo)));
+  const modeCode = MODE_TO_CODE[answer.mode] ?? 0;
+  const okBit = answer.isCorrect ? 1 : 0;
+  const exIdx = Math.max(0, Math.min(3, Math.floor(answer.exampleIndex)));
+  return `${qNo}:${modeCode}:${answer.patternId}:${okBit}:${selectedId}:${exIdx}`;
+}
+
+export function decodeLiveQuizAnswerToken(token: string): QuizSavedAnswer | null {
+  if (typeof token !== 'string' || token.length < 25 || token.length > 80) return null;
+  const parts = token.split(':');
+  if (parts.length !== 6) return null;
+  const questionNo = Number(parts[0]);
+  const modeCode = Number(parts[1]);
+  const patternId = parts[2];
+  const okBit = parts[3];
+  const selectedPatternId = parts[4];
+  const exampleIndex = Number(parts[5]);
+
+  if (!Number.isInteger(questionNo) || questionNo < 1 || questionNo > 50) return null;
+  const mode = CODE_TO_MODE[modeCode];
+  if (!mode) return null;
+  if (!isValidAnyBunpouPatternId(patternId)) return null;
+  if (okBit !== '0' && okBit !== '1') return null;
+  if (!isValidAnyBunpouPatternId(selectedPatternId)) return null;
+  if (!Number.isInteger(exampleIndex) || exampleIndex < 0 || exampleIndex > 3) return null;
+
+  return {
+    questionNo,
+    mode,
+    patternId,
+    selectedPatternId,
+    isCorrect: okBit === '1',
+    exampleIndex,
+  };
+}
+
+export function encodeLiveQuizAnswers(answers: QuizSavedAnswer[]): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const item of answers) {
+    const token = encodeLiveQuizAnswerToken(item);
+    if (!token || seen.has(token)) continue;
+    seen.add(token);
+    out.push(token);
+    if (out.length >= 50) break;
+  }
+  return out;
+}
+
+export function decodeLiveQuizAnswers(raw: unknown): QuizSavedAnswer[] {
+  if (!Array.isArray(raw)) return [];
+  const out: QuizSavedAnswer[] = [];
+  for (const entry of raw) {
+    if (typeof entry !== 'string') continue;
+    const parsed = decodeLiveQuizAnswerToken(entry);
+    if (parsed) out.push(parsed);
+    if (out.length >= 50) break;
+  }
+  return out.sort((a, b) => a.questionNo - b.questionNo);
+}
+
+/**
+ * Deterministically reconstructs the exact live QuizQuestion currently shown to a learner,
+ * preserving the exact 4-option order (`choiceIds`), prompt, context sentence, and explanation.
+ */
+export function reconstructLiveQuizQuestion(options: {
+  mode: QuizMode;
+  patternId: string;
+  exampleIndex: number;
+  choiceIds: string[];
+  patterns: BunpouPattern[];
+  questionId?: string;
+}): QuizQuestion | null {
+  const { mode, patternId, exampleIndex, choiceIds, patterns, questionId = 'live-q' } = options;
+  const patternById = new Map(patterns.map(p => [p.id, p]));
+  const targetPattern = patternById.get(patternId);
+  if (!targetPattern) return null;
+
+  const safeExIdx = Math.max(
+    0,
+    Math.min(Math.max(0, targetPattern.examples.length - 1), Math.floor(exampleIndex))
+  );
+  const ex = targetPattern.examples[safeExIdx] ?? targetPattern.examples[0];
+  const targetLabel = getQuizPatternLabel(targetPattern);
+  const isJapaneseChoice = mode !== 'meaning';
+
+  const resolvedChoiceIds = choiceIds.length > 0 ? choiceIds : [targetPattern.id];
+  const choices: QuizChoice[] = [];
+  const seen = new Set<string>();
+
+  for (const cid of resolvedChoiceIds) {
+    if (seen.has(cid)) continue;
+    const p = patternById.get(cid);
+    if (!p) continue;
+    seen.add(cid);
+    choices.push({
+      id: p.id,
+      label: isJapaneseChoice ? getQuizPatternLabel(p) : p.meaning,
+      subLabel: isJapaneseChoice ? p.formulas.join(' / ') : undefined,
+      isJapanese: isJapaneseChoice,
+    });
+  }
+
+  if (!seen.has(targetPattern.id)) {
+    choices.unshift({
+      id: targetPattern.id,
+      label: isJapaneseChoice ? targetLabel : targetPattern.meaning,
+      subLabel: isJapaneseChoice ? targetPattern.formulas.join(' / ') : undefined,
+      isJapanese: isJapaneseChoice,
+    });
+  }
+
+  let prompt = targetLabel;
+  let promptSub = ex?.japanese;
+  let explanation = `${stripFuriganaMarkup(targetLabel)} — ${targetPattern.meaning}`;
+
+  if (mode === 'pattern') {
+    prompt = targetPattern.meaning;
+    promptSub = ex?.indonesian;
+    explanation = `${stripFuriganaMarkup(targetLabel)} (${targetPattern.formulas.join(' / ')})`;
+  } else if (mode === 'cloze' && ex) {
+    const cloze = buildClozeForExample(targetPattern, ex.japanese);
+    prompt = cloze ? cloze.clozeMarkup : ex.japanese;
+    promptSub = ex.indonesian;
+  }
+
+  return {
+    id: questionId,
+    patternId: targetPattern.id,
+    chapter: targetPattern.chapter,
+    mode,
+    prompt,
+    promptSub,
+    formulas: targetPattern.formulas,
+    exampleIndex: safeExIdx,
+    exampleJapanese: ex?.japanese,
+    exampleIndonesian: ex?.indonesian,
+    choices,
+    correctChoiceId: targetPattern.id,
+    explanation,
+  };
+}
+
+/**
+ * Reconstructs answered questions so far in an active live quiz session for real-time review.
+ */
+export function reconstructLiveAnswersReview(
+  answers: QuizSavedAnswer[],
+  bookId: BookId,
+  patterns: BunpouPattern[]
+): QuizAnswerEntry[] {
+  if (answers.length === 0) return [];
+  const dummySession: QuizSessionRecord = {
+    id: 'live_session',
+    bookId,
+    mode: answers[0].mode,
+    fromChapter: bookId === 'n5' ? 1 : 26,
+    toChapter: bookId === 'n5' ? 25 : 50,
+    totalQuestions: answers.length,
+    correctCount: answers.filter(a => a.isCorrect).length,
+    wrongPatternIds: [],
+    correctPatternIds: [],
+    answers,
+    completedAt: new Date().toISOString(),
+  };
+  return reconstructSessionReview(dummySession, patterns);
 }
 
 export interface QuizOverviewStats {

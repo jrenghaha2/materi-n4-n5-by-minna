@@ -87,6 +87,27 @@ export function getPresenceStatus(
   return 'offline';
 }
 
+export function formatProgressPercent(
+  mastered: number,
+  total: number
+): { label: string; barWidthPct: number } {
+  if (total <= 0 || mastered <= 0) {
+    return { label: '0%', barWidthPct: 0 };
+  }
+  const raw = Math.min(100, (mastered / total) * 100);
+  if (raw < 1) {
+    const rounded1 = Math.max(0.1, Math.round(raw * 10) / 10);
+    return {
+      label: `${rounded1.toFixed(1)}%`,
+      barWidthPct: Math.max(raw, 1.5),
+    };
+  }
+  return {
+    label: `${Math.min(100, Math.round(raw))}%`,
+    barWidthPct: raw,
+  };
+}
+
 export function mergeUserMonitoringRow(
   user: AdminUserRecord,
   live: LiveActivityDoc | undefined,
@@ -96,18 +117,17 @@ export function mergeUserMonitoringRow(
   const isBootstrap = isBootstrapSuperAdminEmail(user.email);
   const role: UserRole = isBootstrap ? 'superadmin' : user.role;
 
-  const liveBunpou = live?.totalMasteredBunpou ?? 0;
-  const liveKotoba = live?.totalMasteredKotoba ?? 0;
-  const liveQuiz = live?.totalQuizSessions ?? 0;
-
-  const hydBunpou = hydrated?.totalMasteredBunpou ?? 0;
-  const hydKotoba = hydrated?.totalMasteredKotoba ?? 0;
-  const hydQuiz = hydrated?.totalQuizSessions ?? 0;
-
-  const totalMasteredBunpou = Math.max(liveBunpou, hydBunpou);
-  const totalMasteredKotoba = Math.max(liveKotoba, hydKotoba);
+  const hasLive = Boolean(live);
+  const totalMasteredBunpou = hasLive
+    ? live!.totalMasteredBunpou
+    : hydrated?.totalMasteredBunpou ?? 0;
+  const totalMasteredKotoba = hasLive
+    ? live!.totalMasteredKotoba
+    : hydrated?.totalMasteredKotoba ?? 0;
   const totalMastered = totalMasteredBunpou + totalMasteredKotoba;
-  const totalQuizSessions = Math.max(liveQuiz, hydQuiz);
+  const totalQuizSessions = hasLive
+    ? live!.totalQuizSessions
+    : hydrated?.totalQuizSessions ?? 0;
 
   const lastQuizScore =
     live && live.lastQuizScore >= 0
@@ -119,7 +139,9 @@ export function mergeUserMonitoringRow(
   const lastQuizSummary =
     (live && live.lastQuizSummary) || (hydrated && hydrated.lastQuizSummary) || '';
 
-  const currentStreak = Math.max(live?.currentStreak ?? 0, hydrated?.currentStreak ?? 0);
+  const currentStreak = hasLive
+    ? live!.currentStreak
+    : hydrated?.currentStreak ?? 0;
 
   const liveUpdatedAtMs = live?.updatedAtMs ?? null;
   const presence = getPresenceStatus(liveUpdatedAtMs, nowMs);
@@ -144,6 +166,14 @@ export function mergeUserMonitoringRow(
     quizCurrentQuestion: quizInProgress ? live?.quizCurrentQuestion ?? 0 : 0,
     quizTotalQuestions: quizInProgress ? live?.quizTotalQuestions ?? 0 : 0,
     quizCorrectCount: quizInProgress ? live?.quizCorrectCount ?? 0 : 0,
+    quizFromChapter: quizInProgress ? live?.quizFromChapter ?? 0 : 0,
+    quizToChapter: quizInProgress ? live?.quizToChapter ?? 0 : 0,
+    quizPatternId: quizInProgress ? live?.quizPatternId ?? '' : '',
+    quizExampleIndex: quizInProgress ? live?.quizExampleIndex ?? 0 : 0,
+    quizChoiceIds: quizInProgress ? live?.quizChoiceIds ?? [] : [],
+    quizSelectedChoiceId: quizInProgress ? live?.quizSelectedChoiceId ?? '' : '',
+    quizAnswerCorrect: quizInProgress ? live?.quizAnswerCorrect ?? -1 : -1,
+    quizLiveAnswers: quizInProgress ? live?.quizLiveAnswers ?? [] : [],
     totalMasteredBunpou,
     totalMasteredKotoba,
     totalMastered,

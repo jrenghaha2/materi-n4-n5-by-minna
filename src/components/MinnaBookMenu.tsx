@@ -1,5 +1,6 @@
 import { BookOpen } from 'lucide-react';
 import type { AllBooksProgress, BookData, BookId } from '../types/bunpou';
+import { formatProgressPercent } from '../utils/rbac';
 
 interface MinnaBookMenuProps {
   books: BookData[];
@@ -44,7 +45,7 @@ export function MinnaBookMenu({
           const masteredCount = bucket?.mastered.size ?? 0;
           const difficultCount = bucket?.difficult.size ?? 0;
           const total = book.totalPatterns;
-          const pct = total > 0 ? Math.round((masteredCount / total) * 100) : 0;
+          const { label: pctLabel, barWidthPct } = formatProgressPercent(masteredCount, total);
           const accent = BOOK_ACCENTS[book.id];
 
           return (
@@ -80,7 +81,7 @@ export function MinnaBookMenu({
               <div className="mt-1 flex items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
                 <span className="font-jp truncate">{book.japaneseSubtitle}</span>
                 <span className="font-mono-num font-semibold shrink-0 text-slate-700 dark:text-slate-300">
-                  {masteredCount}/{total} hafal ({pct}%)
+                  {masteredCount}/{total} hafal ({pctLabel})
                   {difficultCount > 0 ? ` · ${difficultCount} sulit` : ''}
                 </span>
               </div>
@@ -88,7 +89,7 @@ export function MinnaBookMenu({
               <div className="mt-2 h-1.5 rounded-full bg-slate-200/85 dark:bg-slate-700/80 overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all duration-300 ${accent.bar}`}
-                  style={{ width: `${pct}%` }}
+                  style={{ width: `${barWidthPct}%` }}
                 />
               </div>
             </button>

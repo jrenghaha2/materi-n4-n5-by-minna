@@ -267,6 +267,40 @@
           "type": "number",
           "description": "Running correct answer count in active quiz (0..50)."
         },
+        "quizFromChapter": {
+          "type": "number",
+          "description": "Start chapter of active quiz scope (0..50)."
+        },
+        "quizToChapter": {
+          "type": "number",
+          "description": "End chapter of active quiz scope (0..50)."
+        },
+        "quizPatternId": {
+          "type": "string",
+          "maxLength": 32,
+          "description": "Active Bunpou pattern ID currently being tested (or empty string when idle)."
+        },
+        "quizExampleIndex": {
+          "type": "number",
+          "description": "Example sentence index (0..3) used for the active live quiz question."
+        },
+        "quizChoiceIds": {
+          "type": "array",
+          "description": "Up to 4 unique Bunpou pattern IDs representing the exact ordered answer choices shown to the learner."
+        },
+        "quizSelectedChoiceId": {
+          "type": "string",
+          "maxLength": 32,
+          "description": "Pattern ID chosen by the learner for the current live question, or empty string before answering."
+        },
+        "quizAnswerCorrect": {
+          "type": "number",
+          "description": "Live answer correctness state: -1 (unanswered), 0 (wrong), or 1 (correct)."
+        },
+        "quizLiveAnswers": {
+          "type": "array",
+          "description": "Up to 50 compact pure-ASCII tokens recording all answered questions so far in the ongoing quiz session."
+        },
         "totalMasteredBunpou": {
           "type": "number",
           "description": "Total mastered Bunpou patterns across N5 and N4."

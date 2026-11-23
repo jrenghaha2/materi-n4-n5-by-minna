@@ -410,7 +410,7 @@ export default function App() {
                 updatingRoleUid={adminMonitor.updatingRoleUid}
                 showFurigana={showFurigana}
                 onChangeUserRole={adminMonitor.changeUserRole}
-                onLoadUserDetail={adminMonitor.loadUserDetail}
+                onSubscribeUserDetail={adminMonitor.subscribeUserDetail}
               />
             ) : activeTab === 'flashcard' ? (
               <FlashcardPanel

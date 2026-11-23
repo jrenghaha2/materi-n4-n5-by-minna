@@ -4,6 +4,7 @@ import type { AllBooksQuizHistory, BookId, QuizSessionRecord } from '../types/bu
 import {
   fetchQuizHistoryDoc,
   saveQuizHistoryDoc,
+  subscribeQuizHistoryDoc,
 } from '../services/cloudSyncService';
 import { BOOK_IDS } from '../utils/bunpouSync';
 import { MAX_QUIZ_HISTORY_PER_BOOK, mergeQuizHistory } from '../utils/quizStats';
@@ -22,6 +23,13 @@ interface UseQuizHistorySyncOptions {
   ) => void;
 }
 
+function quizSig(list: QuizSessionRecord[]): string {
+  return list
+    .slice(0, 30)
+    .map(s => `${s.id}:${s.answers?.length ?? 0}`)
+    .join(',');
+}
+
 export function useQuizHistorySync({
   user,
   isVerified,
@@ -36,8 +44,11 @@ export function useQuizHistorySync({
   const historyRef = useRef(quizHistory);
   historyRef.current = quizHistory;
 
+  const pendingWritesRef = useRef<Record<BookId, number>>({ n5: 0, n4: 0 });
+
   const pushQuizHistory = useCallback(
     async (uid: string, bookId: BookId, sessions: QuizSessionRecord[]) => {
+      pendingWritesRef.current[bookId] += 1;
       try {
         await saveQuizHistoryDoc(uid, bookId, sessions);
       } catch (error) {
@@ -47,89 +58,132 @@ export function useQuizHistorySync({
             actionHref: getFirestoreUpgradeUrl(),
           });
         }
+      } finally {
+        pendingWritesRef.current[bookId] = Math.max(0, pendingWritesRef.current[bookId] - 1);
       }
     },
     [showToast]
   );
 
+  // Real-time onSnapshot subscription for both N5 & N4 quiz histories
+  useEffect(() => {
+    if (!user || !isVerified || !profileReady) return;
+
+    const uid = user.uid;
+    const initialized: Record<BookId, boolean> = { n5: false, n4: false };
+    let disposed = false;
+
+    const unsubs = BOOK_IDS.map(bookId =>
+      subscribeQuizHistoryDoc(
+        uid,
+        bookId,
+        remote => {
+          if (disposed) return;
+
+          const isFirst = !initialized[bookId];
+          initialized[bookId] = true;
+
+          if (!isFirst && pendingWritesRef.current[bookId] > 0) return;
+
+          const currentList = historyRef.current[bookId];
+
+          if (isFirst) {
+            const merged = mergeQuizHistory(currentList, remote ?? [], bookId);
+            const nextAll: AllBooksQuizHistory = {
+              ...historyRef.current,
+              [bookId]: merged,
+            };
+            historyRef.current = nextAll;
+            saveAllQuizHistoryToLocal(nextAll);
+            setQuizHistory(nextAll);
+
+            if (!remote || quizSig(merged) !== quizSig(remote)) {
+              void pushQuizHistory(uid, bookId, merged);
+            }
+            return;
+          }
+
+          if (!remote) return;
+          if (quizSig(currentList) === quizSig(remote)) return;
+
+          const nextAll: AllBooksQuizHistory = {
+            ...historyRef.current,
+            [bookId]: remote,
+          };
+          historyRef.current = nextAll;
+          saveAllQuizHistoryToLocal(nextAll);
+          setQuizHistory(nextAll);
+        }
+      )
+    );
+
+    return () => {
+      disposed = true;
+      for (const unsub of unsubs) unsub();
+    };
+  }, [user, isVerified, profileReady, pushQuizHistory]);
+
   const syncQuizHistoryWithCloud = useCallback(async () => {
     if (!user || !isVerified || !profileReady) return;
     setSyncingQuiz(true);
     try {
-      const current = historyRef.current;
-      const next: AllBooksQuizHistory = {
-        n5: [...current.n5],
-        n4: [...current.n4],
-      };
-
       for (const bookId of BOOK_IDS) {
         const remote = await fetchQuizHistoryDoc(user.uid, bookId);
-        const merged = mergeQuizHistory(next[bookId], remote ?? [], bookId);
-        next[bookId] = merged;
+        const latestLocal = historyRef.current[bookId];
+        const merged = mergeQuizHistory(latestLocal, remote ?? [], bookId);
+        const nextAll: AllBooksQuizHistory = {
+          ...historyRef.current,
+          [bookId]: merged,
+        };
+        historyRef.current = nextAll;
+        saveAllQuizHistoryToLocal(nextAll);
+        setQuizHistory(nextAll);
 
-        const remoteSig = (remote ?? [])
-          .slice(0, 30)
-          .map(s => `${s.id}:${s.answers?.length ?? 0}`)
-          .join(',');
-        const mergedSig = merged
-          .slice(0, 30)
-          .map(s => `${s.id}:${s.answers?.length ?? 0}`)
-          .join(',');
-
-        if (!remote || mergedSig !== remoteSig) {
-          await saveQuizHistoryDoc(user.uid, bookId, merged);
+        if (!remote || quizSig(merged) !== quizSig(remote)) {
+          await pushQuizHistory(user.uid, bookId, merged);
         }
       }
-
-      saveAllQuizHistoryToLocal(next);
-      setQuizHistory(next);
     } catch {
       // Keep local quiz history safely
     } finally {
       setSyncingQuiz(false);
     }
-  }, [user, isVerified, profileReady]);
-
-  useEffect(() => {
-    if (user && isVerified && profileReady) {
-      void syncQuizHistoryWithCloud();
-    }
-  }, [user, isVerified, profileReady, syncQuizHistoryWithCloud]);
+  }, [user, isVerified, profileReady, pushQuizHistory]);
 
   const recordQuizSession = useCallback(
     (session: QuizSessionRecord) => {
-      setQuizHistory(prev => {
-        const merged = mergeQuizHistory([session], prev[session.bookId], session.bookId).slice(
-          0,
-          MAX_QUIZ_HISTORY_PER_BOOK
-        );
-        const next: AllBooksQuizHistory = {
-          ...prev,
-          [session.bookId]: merged,
-        };
-        saveAllQuizHistoryToLocal(next);
-        if (user && isVerified && profileReady) {
-          void pushQuizHistory(user.uid, session.bookId, merged);
-        }
-        return next;
-      });
+      const prev = historyRef.current;
+      const merged = mergeQuizHistory([session], prev[session.bookId], session.bookId).slice(
+        0,
+        MAX_QUIZ_HISTORY_PER_BOOK
+      );
+      const next: AllBooksQuizHistory = {
+        ...prev,
+        [session.bookId]: merged,
+      };
+      historyRef.current = next;
+      setQuizHistory(next);
+      saveAllQuizHistoryToLocal(next);
+      if (user && isVerified && profileReady) {
+        void pushQuizHistory(user.uid, session.bookId, merged);
+      }
     },
     [user, isVerified, profileReady, pushQuizHistory]
   );
 
   const clearBookQuizHistory = useCallback(
     (bookId: BookId) => {
-      setQuizHistory(prev => {
-        const next: AllBooksQuizHistory = {
-          ...prev,
-          [bookId]: [],
-        };
-        saveAllQuizHistoryToLocal(next);
-        if (user && isVerified && profileReady) {
-          void pushQuizHistory(user.uid, bookId, []);
-        }
-        return next;
-      });
+      const prev = historyRef.current;
+      const next: AllBooksQuizHistory = {
+        ...prev,
+        [bookId]: [],
+      };
+      historyRef.current = next;
+      setQuizHistory(next);
+      saveAllQuizHistoryToLocal(next);
+      if (user && isVerified && profileReady) {
+        void pushQuizHistory(user.uid, bookId, []);
+      }
       showToast(`Riwayat kuis buku ${bookId.toUpperCase()} telah direset.`, 'info');
     },
     [user, isVerified, profileReady, pushQuizHistory, showToast]
@@ -148,6 +202,7 @@ export function useQuizHistorySync({
             ? mergeQuizHistory(current.n4, incoming.n4, 'n4')
             : incoming.n4.slice(0, MAX_QUIZ_HISTORY_PER_BOOK),
       };
+      historyRef.current = next;
       saveAllQuizHistoryToLocal(next);
       setQuizHistory(next);
 
