@@ -145,7 +145,9 @@ export function mergeUserMonitoringRow(
 
   const liveUpdatedAtMs = live?.updatedAtMs ?? null;
   const presence = getPresenceStatus(liveUpdatedAtMs, nowMs);
-  const quizInProgress = Boolean(live?.quizInProgress && presence === 'online');
+  const quizInProgress = Boolean(
+    live?.quizInProgress && (presence === 'online' || presence === 'recent')
+  );
 
   const lastActiveMs =
     liveUpdatedAtMs ?? hydrated?.lastActivityMs ?? user.updatedAtMs ?? user.createdAtMs ?? null;

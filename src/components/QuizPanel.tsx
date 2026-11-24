@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type {
   BookData,
   LiveQuizAnswerCorrect,
@@ -102,10 +102,16 @@ export function QuizPanel({
   const [historyModalOpen, setHistoryModalOpen] = useState<boolean>(false);
   const [inspectedSession, setInspectedSession] = useState<QuizSessionRecord | null>(null);
 
-  // Reset quiz range and state whenever book switches (N5 <-> N4)
+  const onQuizAbortedRef = useRef(onQuizAborted);
+  onQuizAbortedRef.current = onQuizAborted;
+  const prevBookIdRef = useRef(book.id);
+
+  // Reset quiz range and state ONLY when book actually switches (N5 <-> N4)
   useEffect(() => {
+    if (prevBookIdRef.current === book.id) return;
+    prevBookIdRef.current = book.id;
     stopJapaneseSpeech();
-    onQuizAborted?.();
+    onQuizAbortedRef.current?.();
     setPhase('setup');
     setFromChapter(minCh);
     setToChapter(maxCh);
@@ -115,7 +121,14 @@ export function QuizPanel({
     setSelectedChoiceId(null);
     setHistoryModalOpen(false);
     setInspectedSession(null);
-  }, [book.id, minCh, maxCh, onQuizAborted]);
+  }, [book.id, minCh, maxCh]);
+
+  // Cleanly end live quiz status if learner navigates away from the Quiz tab
+  useEffect(() => {
+    return () => {
+      onQuizAbortedRef.current?.();
+    };
+  }, []);
 
   const availableCount = useMemo(
     () =>

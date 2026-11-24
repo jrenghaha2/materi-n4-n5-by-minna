@@ -151,7 +151,10 @@ export interface UpsertLiveActivityPayload {
   currentStreak: number;
 }
 
-export async function upsertLiveActivityDoc(
+const liveActivityInFlight = new Map<string, Promise<void>>();
+const liveActivityPending = new Map<string, UpsertLiveActivityPayload>();
+
+async function writeLiveActivityDocNow(
   uid: string,
   payload: UpsertLiveActivityPayload
 ): Promise<void> {
@@ -197,6 +200,33 @@ export async function upsertLiveActivityDoc(
     logFirestoreError(error, OperationType.WRITE, path);
     throw error;
   }
+}
+
+export function upsertLiveActivityDoc(
+  uid: string,
+  payload: UpsertLiveActivityPayload
+): Promise<void> {
+  liveActivityPending.set(uid, payload);
+
+  const existing = liveActivityInFlight.get(uid);
+  if (existing) {
+    return existing;
+  }
+
+  const run = (async () => {
+    try {
+      while (liveActivityPending.has(uid)) {
+        const nextPayload = liveActivityPending.get(uid)!;
+        liveActivityPending.delete(uid);
+        await writeLiveActivityDocNow(uid, nextPayload);
+      }
+    } finally {
+      liveActivityInFlight.delete(uid);
+    }
+  })();
+
+  liveActivityInFlight.set(uid, run);
+  return run;
 }
 
 export interface CreateActivityEventPayload {

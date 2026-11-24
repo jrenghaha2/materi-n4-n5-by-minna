@@ -249,6 +249,28 @@ test('presence, legacy hydration merge, KPI calculation, and 5-mode sorting work
     ),
     ['u1']
   );
+
+  // Quiz remains visible while learner thinks longer than 2 min (recent: 5 min),
+  // and cleanly expires once offline (> 15 min)
+  const recentRow = mergeUserMonitoringRow(
+    users[0],
+    { ...liveU1, updatedAtMs: now - 5 * 60_000 },
+    undefined,
+    now
+  );
+  assert.equal(recentRow.presence, 'recent');
+  assert.equal(recentRow.quizInProgress, true);
+  assert.equal(recentRow.quizPatternId, 'n5-bab-14-p1');
+
+  const offlineRow = mergeUserMonitoringRow(
+    users[0],
+    { ...liveU1, updatedAtMs: now - 20 * 60_000 },
+    undefined,
+    now
+  );
+  assert.equal(offlineRow.presence, 'offline');
+  assert.equal(offlineRow.quizInProgress, false);
+  assert.equal(offlineRow.quizPatternId, '');
 });
 
 test('formatProgressPercent shows non-zero decimal percent and visible bar from the very first mastered item', () => {

@@ -21,8 +21,8 @@ import type {
 } from '../types/bunpou';
 import { normalizeEmail } from '../utils/rbac';
 
-const DEBOUNCE_MS = 300;
-const HEARTBEAT_MS = 60_000;
+const DEBOUNCE_MS = 250;
+const HEARTBEAT_MS = 45_000;
 
 function formatQuizModeLabel(mode: QuizMode | ''): string {
   if (mode === 'cloze') return 'Lengkapi Kalimat';
@@ -236,15 +236,16 @@ export function useLiveActivityReporter({
   // Debounced sync whenever tab, book, progress, or profile updates
   useEffect(() => {
     if (!canReport || !user) return;
-    const payload = buildPayload();
-    latestSnapshotRef.current = { uid: user.uid, payload };
+    latestSnapshotRef.current = { uid: user.uid, payload: buildPayload() };
 
     if (debounceTimerRef.current !== null) {
       window.clearTimeout(debounceTimerRef.current);
     }
     debounceTimerRef.current = window.setTimeout(() => {
       debounceTimerRef.current = null;
-      void upsertLiveActivityDoc(user.uid, payload).catch(() => {});
+      const freshPayload = buildPayload();
+      latestSnapshotRef.current = { uid: user.uid, payload: freshPayload };
+      void upsertLiveActivityDoc(user.uid, freshPayload).catch(() => {});
     }, DEBOUNCE_MS);
 
     return () => {
@@ -255,12 +256,14 @@ export function useLiveActivityReporter({
     };
   }, [canReport, user, buildPayload]);
 
-  // Lightweight heartbeat while tab is visible so online status (<= 2 min) stays fresh
+  // Lightweight heartbeat so online status (<= 2 min) & active quizzes stay fresh
   useEffect(() => {
     if (!canReport || !user) return;
 
     const sendHeartbeat = () => {
-      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+      const hidden = typeof document !== 'undefined' && document.visibilityState === 'hidden';
+      // Keep heartbeat running during an active quiz even if learner briefly switches browser tabs
+      if (hidden && !liveQuizRef.current.inProgress) return;
       const snap = latestSnapshotRef.current;
       if (!snap || snap.uid !== user.uid) return;
       void upsertLiveActivityDoc(snap.uid, snap.payload).catch(() => {});
@@ -389,6 +392,10 @@ export function useLiveActivityReporter({
           : `Bab ${record.fromChapter}–${record.toChapter}`;
 
       if (!canReport || !user) return;
+      if (debounceTimerRef.current !== null) {
+        window.clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
 
       const nextPayload: UpsertLiveActivityPayload = {
         ...buildPayload(EMPTY_LIVE_QUIZ),

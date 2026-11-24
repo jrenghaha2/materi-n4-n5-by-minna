@@ -3,6 +3,8 @@ import {
   Activity,
   ArrowUpDown,
   Check,
+  ChevronDown,
+  ChevronUp,
   Eye,
   GraduationCap,
   Loader2,
@@ -30,6 +32,7 @@ import {
   formatRelativeTimeId,
   getRoleLabel,
 } from '../../utils/rbac';
+import { LiveQuizInlineCard } from './LiveQuizInlineCard';
 import { LiveQuizMonitorModal } from './LiveQuizMonitorModal';
 import { UserDetailModal } from './UserDetailModal';
 
@@ -165,11 +168,40 @@ export function AdminPanel({
   const [usersSort, setUsersSort] = useState<AdminSortOption>('latest');
   const [draftRoles, setDraftRoles] = useState<Record<string, UserRole>>({});
 
-  // Real-time Detail Modal & Live Quiz Monitor Modal state (derived from live rows)
+  // Real-time Detail Modal, Inline Live Quiz expansion & Answer Key toggle (OFF by default)
   const [selectedUserUid, setSelectedUserUid] = useState<string | null>(null);
   const [liveQuizMonitorUid, setLiveQuizMonitorUid] = useState<string | null>(null);
+  const [collapsedQuizUids, setCollapsedQuizUids] = useState<Record<string, boolean>>({});
+  const [showAnswerKey, setShowAnswerKey] = useState<boolean>(false);
   const [detailReport, setDetailReport] = useState<UserDetailReport | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+
+  const toggleInlineLiveQuiz = (uid: string) => {
+    setCollapsedQuizUids(prev => ({
+      ...prev,
+      [uid]: !prev[uid],
+    }));
+  };
+
+  const presenceCounts = useMemo(() => {
+    let online = 0;
+    let recent = 0;
+    let quizzing = 0;
+    let offline = 0;
+    for (const r of rows) {
+      if (r.presence === 'online') online += 1;
+      else if (r.presence === 'recent') recent += 1;
+      else offline += 1;
+      if (r.quizInProgress) quizzing += 1;
+    }
+    return {
+      all: rows.length,
+      online,
+      recent,
+      quizzing,
+      offline,
+    };
+  }, [rows]);
 
   const selectedUser = useMemo(
     () => (selectedUserUid ? rows.find(r => r.uid === selectedUserUid) ?? null : null),
@@ -413,8 +445,49 @@ export function AdminPanel({
         {/* TAB 1: Aktivitas Real-Time */}
         {subTab === 'realtime' ? (
           <div className="p-4 sm:p-5 space-y-4">
-            {/* Search + Presence Filter + Sort */}
-            <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2.5">
+            {/* Status Filter Buttons with Live Counts (Semua / Online / Baru Aktif / Sedang Tes / Offline) */}
+            <div className="flex flex-wrap items-center gap-2">
+              {(
+                [
+                  { id: 'all', label: 'Semua', count: presenceCounts.all },
+                  { id: 'online', label: 'Online', count: presenceCounts.online },
+                  { id: 'recent', label: 'Baru Aktif', count: presenceCounts.recent },
+                  { id: 'quizzing', label: 'Sedang Tes', count: presenceCounts.quizzing },
+                  { id: 'offline', label: 'Offline', count: presenceCounts.offline },
+                ] as const
+              ).map(tab => {
+                const active = presenceFilter === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => setPresenceFilter(tab.id)}
+                    className={`min-h-[38px] px-3.5 py-1.5 rounded-xl border text-xs sm:text-sm font-semibold inline-flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap ${
+                      active
+                        ? 'border-slate-900 dark:border-indigo-500 bg-slate-900 dark:bg-indigo-600 text-white shadow-2xs'
+                        : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    <span>{tab.label}</span>
+                    <span
+                      className={`font-mono text-xs tabular-nums ${
+                        active
+                          ? 'text-white/85'
+                          : tab.id === 'quizzing' && tab.count > 0
+                          ? 'text-amber-600 dark:text-amber-400 font-bold'
+                          : 'text-slate-400 dark:text-slate-400'
+                      }`}
+                    >
+                      {tab.count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Search + Sort */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
               <div className="relative flex-1 min-w-0">
                 <Search
                   className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
@@ -430,42 +503,25 @@ export function AdminPanel({
                 />
               </div>
 
-              <div className="flex flex-wrap items-center gap-2 shrink-0">
+              <label className="inline-flex items-center gap-1.5 min-h-[40px] px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-200 shrink-0">
+                <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 shrink-0" aria-hidden="true" />
                 <select
-                  aria-label="Filter status kehadiran"
-                  value={presenceFilter}
-                  onChange={e =>
-                    setPresenceFilter(e.target.value as 'all' | PresenceStatus | 'quizzing')
-                  }
-                  className="min-h-[40px] px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 cursor-pointer"
+                  aria-label="Urutkan aktivitas real-time"
+                  value={realtimeSort}
+                  onChange={e => setRealtimeSort(e.target.value as AdminSortOption)}
+                  className="bg-transparent text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer"
                 >
-                  <option value="all">Semua Status</option>
-                  <option value="online">Sedang Online</option>
-                  <option value="quizzing">Sedang Kuis</option>
-                  <option value="recent">Baru Aktif</option>
-                  <option value="offline">Offline</option>
+                  {SORT_OPTIONS.map(opt => (
+                    <option
+                      key={opt.value}
+                      value={opt.value}
+                      className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+                    >
+                      {opt.label}
+                    </option>
+                  ))}
                 </select>
-
-                <label className="inline-flex items-center gap-1.5 min-h-[40px] px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-200">
-                  <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 shrink-0" aria-hidden="true" />
-                  <select
-                    aria-label="Urutkan aktivitas real-time"
-                    value={realtimeSort}
-                    onChange={e => setRealtimeSort(e.target.value as AdminSortOption)}
-                    className="bg-transparent text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer"
-                  >
-                    {SORT_OPTIONS.map(opt => (
-                      <option
-                        key={opt.value}
-                        value={opt.value}
-                        className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
-                      >
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
+              </label>
             </div>
 
             {loading ? (
@@ -478,7 +534,7 @@ export function AdminPanel({
                 Tidak ada pengguna yang cocok dengan filter pencarian saat ini.
               </div>
             ) : (
-              <div className="divide-y divide-slate-200 dark:divide-slate-800 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
+              <div className="space-y-3">
                 {realtimeRows.map(row => {
                   const initial = row.displayName.trim().charAt(0).toUpperCase() || 'U';
                   const quizPct =
@@ -488,136 +544,171 @@ export function AdminPanel({
                           Math.round((row.quizCurrentQuestion / row.quizTotalQuestions) * 100)
                         )
                       : 0;
+                  const isLiveQuizExpanded = row.quizInProgress && !collapsedQuizUids[row.uid];
 
                   return (
                     <div
                       key={row.uid}
-                      className="p-4 bg-white dark:bg-slate-900 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors flex flex-col lg:flex-row lg:items-center justify-between gap-3.5"
+                      className={`rounded-2xl border p-4 bg-white dark:bg-slate-900 transition-colors space-y-4 ${
+                        row.quizInProgress
+                          ? 'border-amber-200/90 dark:border-amber-800/60 shadow-2xs'
+                          : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50/50 dark:hover:bg-slate-800/30'
+                      }`}
                     >
-                      {/* User identity + Presence + Active module */}
-                      <div className="flex items-start gap-3 min-w-0 flex-1">
-                        {row.avatarUrl ? (
-                          <img
-                            src={row.avatarUrl}
-                            alt={row.displayName}
-                            referrerPolicy="no-referrer"
-                            className="w-9 h-9 rounded-full border border-slate-200 dark:border-slate-700 object-cover shrink-0 mt-0.5"
-                          />
-                        ) : (
-                          <span className="w-9 h-9 rounded-full border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-200 font-bold text-xs inline-flex items-center justify-center shrink-0 mt-0.5">
-                            {initial}
-                          </span>
-                        )}
+                      {/* Top Row: User Info + Metrics + Actions */}
+                      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                        {/* User identity + Presence + Active module + Quiz bar */}
+                        <div className="flex items-start gap-3 min-w-0 flex-1">
+                          {row.avatarUrl ? (
+                            <img
+                              src={row.avatarUrl}
+                              alt={row.displayName}
+                              referrerPolicy="no-referrer"
+                              className="w-10 h-10 rounded-full border border-slate-200 dark:border-slate-700 object-cover shrink-0 mt-0.5"
+                            />
+                          ) : (
+                            <span className="w-10 h-10 rounded-full border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-200 font-bold text-sm inline-flex items-center justify-center shrink-0 mt-0.5">
+                              {initial}
+                            </span>
+                          )}
 
-                        <div className="min-w-0 flex-1 space-y-1">
-                          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                            <span className="text-sm font-bold text-slate-900 dark:text-slate-50 truncate">
-                              {row.displayName}
-                            </span>
-                            <span className="text-slate-300 dark:text-slate-700" aria-hidden="true">
-                              ·
-                            </span>
-                            <PresenceLabel presence={row.presence} />
-                            <span className="text-slate-300 dark:text-slate-700" aria-hidden="true">
-                              ·
-                            </span>
-                            <RoleText role={row.role} isBootstrap={row.isBootstrapSuperAdmin} />
-                          </div>
-
-                          <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                            {row.email || 'Email belum tercatat'} · {row.moduleLabel} ·{' '}
-                            <span className="tabular-nums">
-                              {formatRelativeTimeId(row.lastActiveMs, nowMs)}
-                            </span>
-                          </p>
-
-                          {/* Live Quiz Progress Bar if currently taking a quiz */}
-                          {row.quizInProgress ? (
-                            <div className="pt-1 max-w-md space-y-1">
-                              <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-medium text-indigo-700 dark:text-indigo-300 tabular-nums">
-                                <span>
-                                  Mengerjakan Soal {row.quizCurrentQuestion}/{row.quizTotalQuestions}
-                                </span>
-                                <span className="flex items-center gap-2">
-                                  <span>Benar: {row.quizCorrectCount}</span>
-                                  <span
-                                    className={
-                                      row.quizAnswerCorrect === 1
-                                        ? 'text-emerald-700 dark:text-emerald-400 font-semibold'
-                                        : row.quizAnswerCorrect === 0
-                                        ? 'text-rose-700 dark:text-rose-400 font-semibold'
-                                        : 'text-slate-500 dark:text-slate-400'
-                                    }
-                                  >
-                                    ·{' '}
-                                    {row.quizAnswerCorrect === 1
-                                      ? 'Dijawab Benar'
-                                      : row.quizAnswerCorrect === 0
-                                      ? 'Dijawab Salah'
-                                      : 'Memilih jawaban...'}
-                                  </span>
-                                </span>
-                              </div>
-                              <div className="h-1.5 rounded-full bg-indigo-100 dark:bg-indigo-950 overflow-hidden">
-                                <div
-                                  className="h-full rounded-full bg-indigo-600 dark:bg-indigo-400 transition-all duration-300"
-                                  style={{ width: `${quizPct}%` }}
-                                />
-                              </div>
+                          <div className="min-w-0 flex-1 space-y-1">
+                            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                              <span className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-50 truncate">
+                                {row.displayName}
+                              </span>
+                              <span
+                                className="text-slate-300 dark:text-slate-700"
+                                aria-hidden="true"
+                              >
+                                ·
+                              </span>
+                              <PresenceLabel presence={row.presence} />
+                              <span
+                                className="text-slate-300 dark:text-slate-700"
+                                aria-hidden="true"
+                              >
+                                ·
+                              </span>
+                              <span className="text-xs text-slate-500 dark:text-slate-400 tabular-nums">
+                                {formatRelativeTimeId(row.lastActiveMs, nowMs)}
+                              </span>
+                              <span
+                                className="text-slate-300 dark:text-slate-700"
+                                aria-hidden="true"
+                              >
+                                ·
+                              </span>
+                              <RoleText role={row.role} isBootstrap={row.isBootstrapSuperAdmin} />
                             </div>
-                          ) : null}
-                        </div>
-                      </div>
 
-                      {/* Progress & Quiz metrics + Live Quiz & Detail buttons */}
-                      <div className="flex flex-wrap sm:flex-nowrap items-center justify-between lg:justify-end gap-3 shrink-0">
-                        <div className="flex items-center gap-4 text-xs tabular-nums">
-                          <div>
-                            <p className="text-slate-500 dark:text-slate-400">Hafalan</p>
-                            <p className="font-bold font-mono text-slate-900 dark:text-slate-100">
-                              {row.totalMastered}{' '}
-                              <span className="font-sans font-normal text-slate-500 dark:text-slate-400">
-                                ({row.totalMasteredBunpou}B/{row.totalMasteredKotoba}K)
+                            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                              {row.email || 'Email belum tercatat'} ·{' '}
+                              <span className="font-medium text-slate-700 dark:text-slate-300">
+                                {row.moduleLabel}
                               </span>
                             </p>
-                          </div>
 
-                          <div>
-                            <p className="text-slate-500 dark:text-slate-400">Tes / Kuis</p>
-                            <p className="font-bold font-mono text-slate-900 dark:text-slate-100">
-                              {row.totalQuizSessions} sesi
-                              {row.lastQuizScore >= 0 ? (
-                                <span className="text-indigo-700 dark:text-indigo-300">
-                                  {' '}
-                                  · {row.lastQuizScore}%
-                                </span>
-                              ) : null}
-                            </p>
+                            {/* Live Quiz Progress Bar if currently taking a quiz */}
+                            {row.quizInProgress ? (
+                              <div className="pt-1.5 max-w-md space-y-1.5">
+                                <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-mono tabular-nums">
+                                  <span className="font-bold text-amber-700 dark:text-amber-400">
+                                    Sedang Mengerjakan Tes: Soal {row.quizCurrentQuestion}/
+                                    {row.quizTotalQuestions}
+                                  </span>
+                                  <span className="font-bold text-emerald-700 dark:text-emerald-400">
+                                    {row.quizCorrectCount} benar
+                                  </span>
+                                </div>
+                                <div className="h-1.5 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+                                  <div
+                                    className="h-full rounded-full bg-amber-500 dark:bg-amber-400 transition-all duration-300"
+                                    style={{ width: `${Math.max(quizPct, 6)}%` }}
+                                  />
+                                </div>
+                              </div>
+                            ) : null}
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2 shrink-0">
-                          {row.quizInProgress ? (
+                        {/* Progress & Quiz Metrics + Expand Live Quiz & Detail buttons */}
+                        <div className="flex flex-wrap sm:flex-nowrap items-center justify-between lg:justify-end gap-4 shrink-0">
+                          <div className="flex items-center gap-5 text-xs tabular-nums">
+                            <div className="text-right">
+                              <p className="text-slate-500 dark:text-slate-400">Hafalan</p>
+                              <p className="text-sm font-bold font-mono text-slate-900 dark:text-slate-100">
+                                {row.totalMastered}
+                              </p>
+                              <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                                {row.totalMasteredBunpou}B / {row.totalMasteredKotoba}K
+                              </p>
+                            </div>
+
+                            <div className="text-right">
+                              <p className="text-slate-500 dark:text-slate-400">Sesi Tes</p>
+                              <p className="text-sm font-bold font-mono text-slate-900 dark:text-slate-100">
+                                {row.totalQuizSessions}
+                              </p>
+                            </div>
+
+                            <div className="text-right">
+                              <p className="text-slate-500 dark:text-slate-400">Skor Akhir</p>
+                              <p
+                                className={`text-sm font-bold font-mono ${
+                                  row.lastQuizScore >= 80
+                                    ? 'text-emerald-700 dark:text-emerald-400'
+                                    : row.lastQuizScore >= 60
+                                    ? 'text-amber-700 dark:text-amber-400'
+                                    : row.lastQuizScore >= 0
+                                    ? 'text-rose-700 dark:text-rose-400'
+                                    : 'text-slate-400 dark:text-slate-500'
+                                }`}
+                              >
+                                {row.lastQuizScore >= 0 ? `${row.lastQuizScore}%` : '—'}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0">
+                            {row.quizInProgress ? (
+                              <button
+                                type="button"
+                                aria-expanded={isLiveQuizExpanded}
+                                onClick={() => toggleInlineLiveQuiz(row.uid)}
+                                className="min-h-[38px] px-3.5 py-2 rounded-xl border border-amber-300 dark:border-amber-700/80 bg-amber-50/90 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-950/60 text-amber-800 dark:text-amber-200 text-xs font-semibold inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer transition-colors"
+                              >
+                                <Radio className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                                <span>{isLiveQuizExpanded ? 'Tutup Soal' : 'Lihat Soal'}</span>
+                                {isLiveQuizExpanded ? (
+                                  <ChevronUp className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                                ) : (
+                                  <ChevronDown className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                                )}
+                              </button>
+                            ) : null}
+
                             <button
                               type="button"
-                              onClick={() => setLiveQuizMonitorUid(row.uid)}
-                              className="min-h-[38px] px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer shadow-2xs"
+                              onClick={() => void handleOpenDetail(row)}
+                              className="min-h-[38px] px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer"
                             >
-                              <Radio className="w-3.5 h-3.5" aria-hidden="true" />
-                              <span>Cek Soal Live</span>
+                              <Eye className="w-3.5 h-3.5" aria-hidden="true" />
+                              <span>Detail</span>
                             </button>
-                          ) : null}
-
-                          <button
-                            type="button"
-                            onClick={() => void handleOpenDetail(row)}
-                            className="min-h-[38px] px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer"
-                          >
-                            <Eye className="w-3.5 h-3.5" aria-hidden="true" />
-                            <span>Detail</span>
-                          </button>
+                          </div>
                         </div>
                       </div>
+
+                      {/* Inline Expandable Live Quiz Question Monitor directly beneath user row */}
+                      {isLiveQuizExpanded ? (
+                        <LiveQuizInlineCard
+                          userRow={row}
+                          showFurigana={showFurigana}
+                          showAnswerKey={showAnswerKey}
+                          onToggleAnswerKey={() => setShowAnswerKey(v => !v)}
+                        />
+                      ) : null}
                     </div>
                   );
                 })}
@@ -989,6 +1080,8 @@ export function AdminPanel({
         userRow={liveQuizUser}
         nowMs={nowMs}
         showFurigana={showFurigana}
+        showAnswerKey={showAnswerKey}
+        onToggleAnswerKey={() => setShowAnswerKey(v => !v)}
         onOpenFullDetail={row => handleOpenDetail(row)}
         onClose={() => setLiveQuizMonitorUid(null)}
       />
