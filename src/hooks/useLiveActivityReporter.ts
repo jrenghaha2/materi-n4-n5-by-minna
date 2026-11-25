@@ -142,6 +142,7 @@ export function useLiveActivityReporter({
 }: UseLiveActivityReporterOptions) {
   const liveQuizRef = useRef<LiveQuizState>(EMPTY_LIVE_QUIZ);
   const debounceTimerRef = useRef<number | null>(null);
+  const retryTimerRef = useRef<number | null>(null);
   const latestSnapshotRef = useRef<{
     uid: string;
     payload: UpsertLiveActivityPayload;
@@ -217,20 +218,34 @@ export function useLiveActivityReporter({
     ]
   );
 
+  const buildPayloadRef = useRef(buildPayload);
+  buildPayloadRef.current = buildPayload;
+
   const flushNow = useCallback(
-    (quizOverride?: LiveQuizState) => {
+    (quizOverride?: LiveQuizState, allowRetry = true) => {
       if (!canReport || !user) return;
       if (debounceTimerRef.current !== null) {
         window.clearTimeout(debounceTimerRef.current);
         debounceTimerRef.current = null;
       }
-      const payload = buildPayload(quizOverride);
+      if (retryTimerRef.current !== null) {
+        window.clearTimeout(retryTimerRef.current);
+        retryTimerRef.current = null;
+      }
+      const payload = buildPayloadRef.current(quizOverride);
       latestSnapshotRef.current = { uid: user.uid, payload };
       void upsertLiveActivityDoc(user.uid, payload).catch(() => {
-        // Non-blocking telemetry: ignore transient offline or quota errors
+        if (!allowRetry || !liveQuizRef.current.inProgress) return;
+        retryTimerRef.current = window.setTimeout(() => {
+          retryTimerRef.current = null;
+          if (!liveQuizRef.current.inProgress) return;
+          const retryPayload = buildPayloadRef.current();
+          latestSnapshotRef.current = { uid: user.uid, payload: retryPayload };
+          void upsertLiveActivityDoc(user.uid, retryPayload).catch(() => {});
+        }, 1500);
       });
     },
-    [canReport, user, buildPayload]
+    [canReport, user]
   );
 
   // Debounced sync whenever tab, book, progress, or profile updates
@@ -243,7 +258,7 @@ export function useLiveActivityReporter({
     }
     debounceTimerRef.current = window.setTimeout(() => {
       debounceTimerRef.current = null;
-      const freshPayload = buildPayload();
+      const freshPayload = buildPayloadRef.current();
       latestSnapshotRef.current = { uid: user.uid, payload: freshPayload };
       void upsertLiveActivityDoc(user.uid, freshPayload).catch(() => {});
     }, DEBOUNCE_MS);
@@ -264,9 +279,9 @@ export function useLiveActivityReporter({
       const hidden = typeof document !== 'undefined' && document.visibilityState === 'hidden';
       // Keep heartbeat running during an active quiz even if learner briefly switches browser tabs
       if (hidden && !liveQuizRef.current.inProgress) return;
-      const snap = latestSnapshotRef.current;
-      if (!snap || snap.uid !== user.uid) return;
-      void upsertLiveActivityDoc(snap.uid, snap.payload).catch(() => {});
+      const freshPayload = buildPayloadRef.current();
+      latestSnapshotRef.current = { uid: user.uid, payload: freshPayload };
+      void upsertLiveActivityDoc(user.uid, freshPayload).catch(() => {});
     };
 
     const intervalId = window.setInterval(sendHeartbeat, HEARTBEAT_MS);
@@ -280,6 +295,10 @@ export function useLiveActivityReporter({
     return () => {
       window.clearInterval(intervalId);
       document.removeEventListener('visibilitychange', onVisibilityChange);
+      if (retryTimerRef.current !== null) {
+        window.clearTimeout(retryTimerRef.current);
+        retryTimerRef.current = null;
+      }
     };
   }, [canReport, user]);
 
@@ -395,6 +414,10 @@ export function useLiveActivityReporter({
       if (debounceTimerRef.current !== null) {
         window.clearTimeout(debounceTimerRef.current);
         debounceTimerRef.current = null;
+      }
+      if (retryTimerRef.current !== null) {
+        window.clearTimeout(retryTimerRef.current);
+        retryTimerRef.current = null;
       }
 
       const nextPayload: UpsertLiveActivityPayload = {

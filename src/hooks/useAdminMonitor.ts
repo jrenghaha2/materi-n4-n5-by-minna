@@ -100,6 +100,7 @@ export function useAdminMonitor({
     const unsubLive = subscribeLiveActivities(map => {
       liveLoaded = true;
       setLiveMap(map);
+      setNowMs(Date.now());
       markReady();
     }, handleStreamError);
 

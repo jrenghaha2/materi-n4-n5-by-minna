@@ -214,14 +214,23 @@ export function upsertLiveActivityDoc(
   }
 
   const run = (async () => {
+    let lastError: unknown = null;
     try {
       while (liveActivityPending.has(uid)) {
         const nextPayload = liveActivityPending.get(uid)!;
         liveActivityPending.delete(uid);
-        await writeLiveActivityDocNow(uid, nextPayload);
+        try {
+          await writeLiveActivityDocNow(uid, nextPayload);
+          lastError = null;
+        } catch (err) {
+          lastError = err;
+        }
       }
     } finally {
       liveActivityInFlight.delete(uid);
+    }
+    if (lastError !== null) {
+      throw lastError;
     }
   })();
 
@@ -340,7 +349,9 @@ export function subscribeLiveActivities(
           lastQuizSummary:
             typeof data.lastQuizSummary === 'string' ? data.lastQuizSummary.slice(0, 120) : '',
           currentStreak: clampInt(data.currentStreak, 0, 999, 0),
-          updatedAtMs: toMillis(data.updatedAt),
+          updatedAtMs:
+            toMillis(data.updatedAt) ??
+            (docSnap.metadata.hasPendingWrites ? Date.now() : null),
         });
       });
       onData(map);
