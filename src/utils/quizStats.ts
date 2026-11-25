@@ -373,6 +373,23 @@ export function decodeLiveQuizAnswers(raw: unknown): QuizSavedAnswer[] {
 }
 
 /**
+ * Computes the running wrong answer count for an active live quiz session,
+ * preferring exact recorded live answers with a safe fallback calculation.
+ */
+export function computeLiveQuizWrongCount(
+  liveAnswers: QuizSavedAnswer[],
+  currentQuestion: number,
+  correctCount: number,
+  answerCorrect: -1 | 0 | 1
+): number {
+  if (liveAnswers.length > 0) {
+    return liveAnswers.reduce((acc, a) => acc + (a.isCorrect ? 0 : 1), 0);
+  }
+  const answeredCount = Math.max(0, currentQuestion - 1) + (answerCorrect !== -1 ? 1 : 0);
+  return Math.max(0, answeredCount - Math.max(0, correctCount));
+}
+
+/**
  * Deterministically reconstructs the exact live QuizQuestion currently shown to a learner,
  * preserving the exact 4-option order (`choiceIds`), prompt, context sentence, and explanation.
  */

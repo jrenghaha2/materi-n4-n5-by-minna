@@ -551,7 +551,7 @@ export function AdminPanel({
                       key={row.uid}
                       className={`rounded-2xl border p-4 bg-white dark:bg-slate-900 transition-colors space-y-4 ${
                         row.quizInProgress
-                          ? 'border-amber-200/90 dark:border-amber-800/60 shadow-2xs'
+                          ? 'border-slate-200 dark:border-slate-800 shadow-2xs'
                           : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50/50 dark:hover:bg-slate-800/30'
                       }`}
                     >

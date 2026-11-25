@@ -121,14 +121,14 @@ service cloud.firestore {
       return val is string
         && val.size() >= 10
         && val.size() <= 32
-        && val.matches('^(n5|n4)-bab-[1-9][0-9]?-p[1-9][0-9]?$');
+        && val.matches('^[a-z0-9\\-]+$');
     }
 
     function isValidOptionalBunpouPatternId(val) {
       return val is string && (val == '' || isValidAnyBunpouPatternId(val));
     }
 
-    // Full-array dual-separator validation for up to 4 live quiz choice pattern IDs
+    // Lightweight full-array validation for up to 4 live quiz choice pattern IDs
     function isValidLiveQuizChoiceIds(arr) {
       return arr is list
         && arr.size() <= 4
@@ -140,13 +140,12 @@ service cloud.firestore {
             && arr[0].size() >= 10
             && arr[0].size() <= 32
             && arr.join(',').size() <= 140
-            && arr.join(',').matches('^(n5|n4)-bab-[1-9][0-9]?-p[1-9][0-9]?(,(n5|n4)-bab-[1-9][0-9]?-p[1-9][0-9]?)*$')
-            && arr.join('|').matches('^(n5|n4)-bab-[1-9][0-9]?-p[1-9][0-9]?(\\|(n5|n4)-bab-[1-9][0-9]?-p[1-9][0-9]?)*$')
+            && arr.join(',').matches('^[0-9a-z,\\-]+$')
           )
         );
     }
 
-    // Full-array dual-separator validation for running live quiz answers (up to 50 items):
+    // Lightweight full-array validation for running live quiz answers (up to 50 items):
     // Format per element: questionNo:modeCode:patternId:isCorrectBit:selectedPatternId:exampleIndex
     function isValidLiveQuizAnswers(arr) {
       return arr is list
@@ -158,10 +157,8 @@ service cloud.firestore {
             arr[0] is string
             && arr[0].size() >= 25
             && arr[0].size() <= 80
-            && arr[0].matches('^[1-9][0-9]?:[0-2]:(n5|n4)-bab-[1-9][0-9]?-p[1-9][0-9]?:[01]:(n5|n4)-bab-[1-9][0-9]?-p[1-9][0-9]?:[0-3]$')
             && arr.join(';').size() <= 4000
-            && arr.join(';').matches('^[1-9][0-9]?:[0-2]:(n5|n4)-bab-[1-9][0-9]?-p[1-9][0-9]?:[01]:(n5|n4)-bab-[1-9][0-9]?-p[1-9][0-9]?:[0-3](;[1-9][0-9]?:[0-2]:(n5|n4)-bab-[1-9][0-9]?-p[1-9][0-9]?:[01]:(n5|n4)-bab-[1-9][0-9]?-p[1-9][0-9]?:[0-3])*$')
-            && arr.join('#').matches('^[1-9][0-9]?:[0-2]:(n5|n4)-bab-[1-9][0-9]?-p[1-9][0-9]?:[01]:(n5|n4)-bab-[1-9][0-9]?-p[1-9][0-9]?:[0-3](#[1-9][0-9]?:[0-2]:(n5|n4)-bab-[1-9][0-9]?-p[1-9][0-9]?:[01]:(n5|n4)-bab-[1-9][0-9]?-p[1-9][0-9]?:[0-3])*$')
+            && arr.join(';').matches('^[0-9a-z:\\-;]+$')
           )
         );
     }
