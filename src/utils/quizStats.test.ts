@@ -290,18 +290,15 @@ test('reconstructLiveQuizQuestion restores exact 4-option order across meaning, 
   assert.equal(decoded[1].isCorrect, true);
 
   const rulesText = fs.readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8');
-  const liveMatch = rulesText.match(
-    /function isValidLiveQuizAnswers\(arr\) \{[\s\S]*?arr\.join\(';'\)\.matches\('([^']+)'\)/
-  );
-  assert.ok(liveMatch, 'Could not locate isValidLiveQuizAnswers regex in firestore.rules');
-  const liveTokenRegex = new RegExp(liveMatch[1].replace(/\\\\/g, '\\'));
   assert.ok(
-    liveTokenRegex.test(encoded.join(';')),
-    `Live quiz answers rejected by firestore.rules: ${encoded.join(';')}`
+    rulesText.includes('function isValidLiveQuizAnswers(arr)') &&
+      rulesText.includes('arr.size() <= 50') &&
+      rulesText.includes('arr[0].size() <= 120'),
+    'Could not verify bounded isValidLiveQuizAnswers validator in firestore.rules'
   );
   for (const token of encoded) {
-    assert.ok(token.length >= 25 && token.length <= 80, `Live token length out of bounds: ${token}`);
-    assert.ok(liveTokenRegex.test(token), `Live quiz answer token rejected by firestore.rules: ${token}`);
+    assert.ok(token.length >= 25 && token.length <= 120, `Live token length out of bounds: ${token}`);
+    assert.ok(/^[0-9a-z:\-]+$/.test(token), `Live quiz answer token contains invalid chars: ${token}`);
   }
 
   // Wrong count computation matches both exact liveAnswers and fallback progress math

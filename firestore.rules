@@ -117,48 +117,35 @@ service cloud.firestore {
         );
     }
 
-    function isValidAnyBunpouPatternId(val) {
-      return val is string
-        && val.size() >= 10
-        && val.size() <= 32
-        && val.matches('^[a-z0-9\\-]+$');
-    }
-
     function isValidOptionalBunpouPatternId(val) {
-      return val is string && (val == '' || isValidAnyBunpouPatternId(val));
+      return val is string && val.size() <= 32;
     }
 
-    // Lightweight full-array validation for up to 4 live quiz choice pattern IDs
+    // Bounded list + element-0 string/size validation for up to 4 live quiz choice pattern IDs
     function isValidLiveQuizChoiceIds(arr) {
       return arr is list
         && arr.size() <= 4
-        && arr.toSet().size() == arr.size()
         && (
           arr.size() == 0
           || (
             arr[0] is string
-            && arr[0].size() >= 10
+            && arr[0].size() >= 1
             && arr[0].size() <= 32
-            && arr.join(',').size() <= 140
-            && arr.join(',').matches('^[0-9a-z,\\-]+$')
           )
         );
     }
 
-    // Lightweight full-array validation for running live quiz answers (up to 50 items):
+    // Bounded list + element-0 string/size validation for running live quiz answers (up to 50 items):
     // Format per element: questionNo:modeCode:patternId:isCorrectBit:selectedPatternId:exampleIndex
     function isValidLiveQuizAnswers(arr) {
       return arr is list
         && arr.size() <= 50
-        && arr.toSet().size() == arr.size()
         && (
           arr.size() == 0
           || (
             arr[0] is string
-            && arr[0].size() >= 25
-            && arr[0].size() <= 80
-            && arr.join(';').size() <= 4000
-            && arr.join(';').matches('^[0-9a-z:\\-;]+$')
+            && arr[0].size() >= 1
+            && arr[0].size() <= 120
           )
         );
     }

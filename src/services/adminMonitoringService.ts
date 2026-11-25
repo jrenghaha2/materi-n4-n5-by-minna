@@ -153,51 +153,93 @@ export interface UpsertLiveActivityPayload {
 
 const liveActivityInFlight = new Map<string, Promise<void>>();
 const liveActivityPending = new Map<string, UpsertLiveActivityPayload>();
+const LIVE_WRITE_TIMEOUT_MS = 8_000;
+
+function buildLiveActivityFirestoreRecord(
+  uid: string,
+  payload: UpsertLiveActivityPayload,
+  includeLiveAnswers = true
+) {
+  const activeQuiz = Boolean(payload.quizInProgress);
+  return {
+    uid,
+    displayName: sanitizeDisplayName(payload.displayName, 'Pengguna'),
+    email: normalizeEmail(payload.email),
+    avatarUrl: sanitizeAvatarUrl(payload.avatarUrl),
+    role: sanitizeUserRole(payload.role),
+    status: sanitizeStatus(payload.status),
+    activeTab: sanitizeTab(payload.activeTab),
+    activeBookId: payload.activeBookId === 'n4' ? 'n4' : 'n5',
+    moduleLabel: String(payload.moduleLabel || '').trim().slice(0, 80),
+    quizInProgress: activeQuiz,
+    quizMode: activeQuiz ? sanitizeQuizModeOrEmpty(payload.quizMode) : '',
+    quizBookId: activeQuiz ? sanitizeBookIdOrEmpty(payload.quizBookId) : '',
+    quizCurrentQuestion: activeQuiz ? clampInt(payload.quizCurrentQuestion, 0, 50, 0) : 0,
+    quizTotalQuestions: activeQuiz ? clampInt(payload.quizTotalQuestions, 0, 50, 0) : 0,
+    quizCorrectCount: activeQuiz ? clampInt(payload.quizCorrectCount, 0, 50, 0) : 0,
+    quizFromChapter: activeQuiz ? clampInt(payload.quizFromChapter, 0, 50, 0) : 0,
+    quizToChapter: activeQuiz ? clampInt(payload.quizToChapter, 0, 50, 0) : 0,
+    quizPatternId: activeQuiz ? sanitizeOptionalPatternId(payload.quizPatternId) : '',
+    quizExampleIndex: activeQuiz ? clampInt(payload.quizExampleIndex, 0, 3, 0) : 0,
+    quizChoiceIds: activeQuiz ? sanitizeChoiceIds(payload.quizChoiceIds) : [],
+    quizSelectedChoiceId: activeQuiz
+      ? sanitizeOptionalPatternId(payload.quizSelectedChoiceId)
+      : '',
+    quizAnswerCorrect: activeQuiz ? sanitizeAnswerCorrect(payload.quizAnswerCorrect) : -1,
+    quizLiveAnswers:
+      activeQuiz && includeLiveAnswers ? encodeLiveQuizAnswers(payload.quizLiveAnswers) : [],
+    totalMasteredBunpou: clampInt(payload.totalMasteredBunpou, 0, 300, 0),
+    totalMasteredKotoba: clampInt(payload.totalMasteredKotoba, 0, 2000, 0),
+    totalMastered: clampInt(payload.totalMastered, 0, 2300, 0),
+    totalQuizSessions: clampInt(payload.totalQuizSessions, 0, 5000, 0),
+    lastQuizScore: clampInt(payload.lastQuizScore, -1, 100, -1),
+    lastQuizSummary: String(payload.lastQuizSummary || '').trim().slice(0, 120),
+    currentStreak: clampInt(payload.currentStreak, 0, 999, 0),
+    updatedAt: serverTimestamp(),
+  };
+}
+
+function raceWithTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timerId = setTimeout(() => {
+      reject(new Error(`Live activity write timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+    promise.then(
+      val => {
+        clearTimeout(timerId);
+        resolve(val);
+      },
+      err => {
+        clearTimeout(timerId);
+        reject(err);
+      }
+    );
+  });
+}
 
 async function writeLiveActivityDocNow(
   uid: string,
   payload: UpsertLiveActivityPayload
 ): Promise<void> {
   const path = `liveActivity/${uid}`;
+  const docRef = doc(db, 'liveActivity', uid);
+  const fullRecord = buildLiveActivityFirestoreRecord(uid, payload, true);
   try {
-    const activeQuiz = Boolean(payload.quizInProgress);
-    await setDoc(doc(db, 'liveActivity', uid), {
-      uid,
-      displayName: sanitizeDisplayName(payload.displayName, 'Pengguna'),
-      email: normalizeEmail(payload.email),
-      avatarUrl: sanitizeAvatarUrl(payload.avatarUrl),
-      role: sanitizeUserRole(payload.role),
-      status: sanitizeStatus(payload.status),
-      activeTab: sanitizeTab(payload.activeTab),
-      activeBookId: payload.activeBookId === 'n4' ? 'n4' : 'n5',
-      moduleLabel: String(payload.moduleLabel || '').trim().slice(0, 80),
-      quizInProgress: activeQuiz,
-      quizMode: activeQuiz ? sanitizeQuizModeOrEmpty(payload.quizMode) : '',
-      quizBookId: activeQuiz ? sanitizeBookIdOrEmpty(payload.quizBookId) : '',
-      quizCurrentQuestion: activeQuiz ? clampInt(payload.quizCurrentQuestion, 0, 50, 0) : 0,
-      quizTotalQuestions: activeQuiz ? clampInt(payload.quizTotalQuestions, 0, 50, 0) : 0,
-      quizCorrectCount: activeQuiz ? clampInt(payload.quizCorrectCount, 0, 50, 0) : 0,
-      quizFromChapter: activeQuiz ? clampInt(payload.quizFromChapter, 0, 50, 0) : 0,
-      quizToChapter: activeQuiz ? clampInt(payload.quizToChapter, 0, 50, 0) : 0,
-      quizPatternId: activeQuiz ? sanitizeOptionalPatternId(payload.quizPatternId) : '',
-      quizExampleIndex: activeQuiz ? clampInt(payload.quizExampleIndex, 0, 3, 0) : 0,
-      quizChoiceIds: activeQuiz ? sanitizeChoiceIds(payload.quizChoiceIds) : [],
-      quizSelectedChoiceId: activeQuiz
-        ? sanitizeOptionalPatternId(payload.quizSelectedChoiceId)
-        : '',
-      quizAnswerCorrect: activeQuiz ? sanitizeAnswerCorrect(payload.quizAnswerCorrect) : -1,
-      quizLiveAnswers: activeQuiz ? encodeLiveQuizAnswers(payload.quizLiveAnswers) : [],
-      totalMasteredBunpou: clampInt(payload.totalMasteredBunpou, 0, 300, 0),
-      totalMasteredKotoba: clampInt(payload.totalMasteredKotoba, 0, 2000, 0),
-      totalMastered: clampInt(payload.totalMastered, 0, 2300, 0),
-      totalQuizSessions: clampInt(payload.totalQuizSessions, 0, 5000, 0),
-      lastQuizScore: clampInt(payload.lastQuizScore, -1, 100, -1),
-      lastQuizSummary: String(payload.lastQuizSummary || '').trim().slice(0, 120),
-      currentStreak: clampInt(payload.currentStreak, 0, 999, 0),
-      updatedAt: serverTimestamp(),
-    });
+    await raceWithTimeout(setDoc(docRef, fullRecord), LIVE_WRITE_TIMEOUT_MS);
   } catch (error) {
     logFirestoreError(error, OperationType.WRITE, path);
+    // Fallback: if an active quiz update with non-empty quizLiveAnswers fails,
+    // immediately retry with quizLiveAnswers: [] so live question/choice/answer sync never freezes.
+    if (fullRecord.quizInProgress && fullRecord.quizLiveAnswers.length > 0) {
+      try {
+        const fallbackRecord = buildLiveActivityFirestoreRecord(uid, payload, false);
+        await raceWithTimeout(setDoc(docRef, fallbackRecord), LIVE_WRITE_TIMEOUT_MS);
+        return;
+      } catch (fallbackError) {
+        logFirestoreError(fallbackError, OperationType.WRITE, path);
+        throw fallbackError;
+      }
+    }
     throw error;
   }
 }

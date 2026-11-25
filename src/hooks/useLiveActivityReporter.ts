@@ -222,7 +222,7 @@ export function useLiveActivityReporter({
   buildPayloadRef.current = buildPayload;
 
   const flushNow = useCallback(
-    (quizOverride?: LiveQuizState, allowRetry = true) => {
+    (quizOverride?: LiveQuizState, retriesRemaining = 2) => {
       if (!canReport || !user) return;
       if (debounceTimerRef.current !== null) {
         window.clearTimeout(debounceTimerRef.current);
@@ -235,14 +235,19 @@ export function useLiveActivityReporter({
       const payload = buildPayloadRef.current(quizOverride);
       latestSnapshotRef.current = { uid: user.uid, payload };
       void upsertLiveActivityDoc(user.uid, payload).catch(() => {
-        if (!allowRetry || !liveQuizRef.current.inProgress) return;
+        if (retriesRemaining <= 0 || !liveQuizRef.current.inProgress) return;
+        const delayMs = retriesRemaining === 2 ? 1500 : 4000;
         retryTimerRef.current = window.setTimeout(() => {
           retryTimerRef.current = null;
           if (!liveQuizRef.current.inProgress) return;
           const retryPayload = buildPayloadRef.current();
           latestSnapshotRef.current = { uid: user.uid, payload: retryPayload };
-          void upsertLiveActivityDoc(user.uid, retryPayload).catch(() => {});
-        }, 1500);
+          void upsertLiveActivityDoc(user.uid, retryPayload).catch(() => {
+            if (retriesRemaining - 1 > 0 && liveQuizRef.current.inProgress) {
+              flushNow(undefined, retriesRemaining - 1);
+            }
+          });
+        }, delayMs);
       });
     },
     [canReport, user]
