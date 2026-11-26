@@ -284,13 +284,18 @@ test('furigana alignment places ruby strictly over kanji only and never over oku
   }
 });
 
-test('all 185 patterns produce spoiler-free quiz labels and 100% valid cloze blanking', () => {
+test('all 185 patterns produce unique spoiler-free quiz labels and 100% valid cloze blanking across all 740 examples', () => {
   const PAREN_LATIN_CLUE_REGEX = /[（(][^）)]*[a-z]{3,}[^）)]*[）)]/;
   const INDONESIAN_CLUE_WORD_REGEX =
     /\b(?:tujuan|agar|katanya|pengandaian|seharusnya|kemungkinan|menyatakan|menanyakan|meminta|melarang|mengajak|berencana|rencana|saran|alasan|pasif|kausatif|hormat|merendah|cara|membentuk|kalimat|percakapan|kasual|negatif|lampau|subjek|objek|tempat|waktu|kendaraan|orang|jumlah|frekuensi|perbandingan)\b/i;
 
   const spoilerViolations: string[] = [];
   const clozeFailures: string[] = [];
+  const duplicateLabels: string[] = [];
+  const seenByBook: Record<string, Map<string, string>> = {
+    n5: new Map(),
+    n4: new Map(),
+  };
 
   for (const p of ALL_MINNA_PATTERNS) {
     const label = stripFuriganaMarkup(getQuizPatternLabel(p));
@@ -298,19 +303,62 @@ test('all 185 patterns produce spoiler-free quiz labels and 100% valid cloze bla
       spoilerViolations.push(`${p.id}: "${label}" (from "${p.title}")`);
     }
 
-    // Check at least 1 of the 4 examples produces a clean ruby-safe cloze blank
-    const hasCloze = p.examples.some(ex => {
-      const res = buildClozeForExample(p, ex.japanese);
-      return Boolean(
-        res &&
-          res.clozeMarkup.includes('（　　）') &&
-          !res.clozeMarkup.includes('{|') &&
-          !res.clozeMarkup.includes('|}')
-      );
-    });
-    if (!hasCloze) {
-      clozeFailures.push(`${p.id} (${label})`);
+    const prevId = seenByBook[p.bookId].get(label);
+    if (prevId) {
+      duplicateLabels.push(`${p.bookId} "${label}": ${prevId} vs ${p.id}`);
+    } else {
+      seenByBook[p.bookId].set(label, p.id);
     }
+
+    // Check EVERY single example (all 740 reibun) produces a clean ruby-safe cloze blank
+    p.examples.forEach((ex, idx) => {
+      const res = buildClozeForExample(p, ex.japanese);
+      if (
+        !res ||
+        !res.clozeMarkup.includes('（　　）') ||
+        res.clozeMarkup.includes('{|') ||
+        res.clozeMarkup.includes('|}')
+      ) {
+        clozeFailures.push(`${p.id} ex${idx + 1} (${label})`);
+        return;
+      }
+      const clozePlain = stripFuriganaMarkup(res.clozeMarkup);
+      const [before = '', after = ''] = clozePlain.split('（　　）');
+      const beforeChar = before.slice(-1);
+      const afterChar = after.slice(0, 1);
+      if (
+        res.matchedText.length === 1 &&
+        /[\u3040-\u309f]/.test(beforeChar) &&
+        /[\u3040-\u309f]/.test(afterChar)
+      ) {
+        clozeFailures.push(`${p.id} ex${idx + 1} mid-word split [${res.matchedText}]: ${clozePlain}`);
+      }
+    });
+  }
+
+  // Regression guard: affirmative-only patterns must not carry contradictory negative examples
+  const affirmativeOnlyIds = [
+    'n4-bab-27-p1',
+    'n4-bab-36-p2',
+    'n4-bab-38-p4',
+    'n5-bab-5-p3',
+    'n5-bab-5-p4',
+    'n5-bab-7-p3',
+    'n5-bab-10-p2',
+    'n5-bab-13-p2',
+    'n5-bab-18-p2',
+    'n5-bab-19-p2',
+  ];
+  const polarityViolations: string[] = [];
+  for (const id of affirmativeOnlyIds) {
+    const p = ALL_MINNA_PATTERNS.find(item => item.id === id);
+    assert.ok(p, `Pattern ${id} not found`);
+    p.examples.forEach((ex, idx) => {
+      const plain = stripFuriganaMarkup(ex.japanese);
+      if (/ません|ないです|ありません|なく\s*なりました/.test(plain)) {
+        polarityViolations.push(`${id} ex${idx + 1}: ${plain}`);
+      }
+    });
   }
 
   assert.deepEqual(
@@ -319,9 +367,19 @@ test('all 185 patterns produce spoiler-free quiz labels and 100% valid cloze bla
     `Quiz spoiler clues leaked in labels:\n${spoilerViolations.join('\n')}`
   );
   assert.deepEqual(
+    duplicateLabels,
+    [],
+    `Duplicate quiz labels within the same book:\n${duplicateLabels.join('\n')}`
+  );
+  assert.deepEqual(
     clozeFailures,
     [],
-    `Patterns failed cloze blanking:\n${clozeFailures.join('\n')}`
+    `Examples failed clean cloze blanking:\n${clozeFailures.join('\n')}`
+  );
+  assert.deepEqual(
+    polarityViolations,
+    [],
+    `Opposite-polarity examples found in affirmative-only patterns:\n${polarityViolations.join('\n')}`
   );
 });
 

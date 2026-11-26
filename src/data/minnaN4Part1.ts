@@ -58,7 +58,7 @@ export const MINNA_N4_CHAPTERS_PART_1: RawChapterDef[] = [
         examples: [
           { japanese: 'わたしは {日本語|にほんご}が {話|はな}せます。', indonesian: 'Saya bisa berbicara bahasa Jepang.' },
           { japanese: '{漢字|かんじ}が {少|すこ}し {読|よ}めます。', indonesian: 'Saya bisa membaca kanji sedikit.' },
-          { japanese: 'あしたは {用事|ようじ}が あるので、{来|こ}られません。', indonesian: 'Karena besok ada urusan, saya tidak bisa datang.' },
+          { japanese: 'ミラーさんは {刺身|さしみ}が {食|た}べられます。', indonesian: 'Mr. Miller bisa makan sashimi.' },
           { japanese: 'ここでは クレジットカードが {使|つか}えますか。', indonesian: 'Apakah di sini bisa menggunakan kartu kredit?' },
         ],
       },
@@ -273,7 +273,7 @@ export const MINNA_N4_CHAPTERS_PART_1: RawChapterDef[] = [
       {
         title: '〜つもりです',
         formulas: ['KK (F.Kamus) + つもりです', 'KK (F.ない) + つもりです'],
-        meaning: 'berencana / bertekad kuat untuk melakukan ...',
+        meaning: 'berencana / bertekad kuat untuk melakukan (atau tidak melakukan) ...',
         notes: 'Menyatakan niat yang lebih tegas dan mantap dibandingkan 〜ようと思っています. Gunakan bentuk ない (〜ないつもりです) untuk menyatakan tekad tidak melakukan sesuatu.',
         examples: [
           { japanese: '{来年|らいねん}、{国|くに}へ {帰|かえ}る つもりです。', indonesian: 'Tahun depan saya berencana pulang ke negara saya.' },
@@ -543,7 +543,7 @@ export const MINNA_N4_CHAPTERS_PART_1: RawChapterDef[] = [
         examples: [
           { japanese: '{日本語|にほんご}が {話|はな}せるように なりました。', indonesian: 'Sekarang saya jadi bisa berbicara bahasa Jepang.' },
           { japanese: 'テレビの ニュースが だいたい わかるように なりました。', indonesian: 'Saya sekarang jadi kira-kira mengerti berita di TV.' },
-          { japanese: '{健康|けんこう}のために、{甘|あま}い {物|もの}を {食|た}べなく なりました。', indonesian: 'Demi kesehatan, saya jadi tidak makan makanan manis lagi.' },
+          { japanese: '{毎日|まいにち} {練習|れんしゅう}して、100メートル {泳|およ}げるように なりました。', indonesian: 'Setelah berlatih setiap hari, sekarang saya jadi bisa berenang 100 meter.' },
           { japanese: '{自転車|じてんしゃ}に {乗|の}れるように なりました。', indonesian: 'Sekarang sudah bisa naik sepeda.' },
         ],
       },
@@ -597,9 +597,9 @@ export const MINNA_N4_CHAPTERS_PART_1: RawChapterDef[] = [
         notes: 'Jika menyebut penemu, penulis, atau arsitek suatu karya besar, pelaku ditandai によって (oleh), bukan に.',
         examples: [
           { japanese: 'この {本|ほん}は {世界中|せかいじゅう}で {読|よ}まれて います。', indonesian: 'Buku ini dibaca di seluruh dunia.' },
-          { japanese: '{来月|らいげつ}、{東京|とうきょう}で {国際|こくさい}{会議|かいぎ}が {開|ひら}かれます。', indonesian: 'Bulan depan konferensi internasional akan diadakan di Tokyo.' },
+          { japanese: '{電話|でんわ}は ベルによって {発明|はつめい}されました。', indonesian: 'Telepon ditemukan oleh Bell.' },
           { japanese: '{日本|にほん}の {車|くるま}は {世界|せかい}へ {輸出|ゆしゅつ}されて います。', indonesian: 'Mobil buatan Jepang diekspor ke seluruh dunia.' },
-          { japanese: 'この お{寺|てら}は 500{年|ねん}まえに {建|た}てられました。', indonesian: 'Kuil ini dibangun 500 tahun yang lalu.' },
+          { japanese: 'この お{寺|てら}は {有名|ゆうめい}な {建築家|けんちくか}によって {建|た}てられました。', indonesian: 'Kuil ini dibangun oleh arsitek terkenal.' },
         ],
       },
     ],
@@ -653,7 +653,7 @@ export const MINNA_N4_CHAPTERS_PART_1: RawChapterDef[] = [
         examples: [
           { japanese: '{田中|たなか}さんが {結婚|けっこん}するのを {知|し}って いますか。', indonesian: 'Tahukah kamu bahwa Sdr. Tanaka akan menikah?' },
           { japanese: '{駅|えき}の {前|まえ}に {新|あたら}しい {病院|びょういん}が できたのを {知|し}って いますか。', indonesian: 'Tahukah kamu bahwa di depan stasiun baru berdiri rumah sakit baru?' },
-          { japanese: 'あした {試験|しけん}が あるのを {知|し}りませんでした。', indonesian: 'Saya tidak tahu kalau besok ada ujian.' },
+          { japanese: 'あした {試験|しけん}が あるのを {知|し}って いますか。', indonesian: 'Tahukah kamu bahwa besok ada ujian?' },
           { japanese: 'ミラーさんが {来月|らいげつ} {転勤|てんきん}するのを {知|し}って いますか。', indonesian: 'Apakah Anda tahu Mr. Miller akan pindah tugas bulan depan?' },
         ],
       },

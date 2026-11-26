@@ -281,7 +281,7 @@ export const MINNA_N5_CHAPTERS_PART_1: RawChapterDef[] = [
         notes: 'Khusus berjalan kaki memakai 歩いて (tanpa partikel で).',
         examples: [
           { japanese: '{電車|でんしゃ}で {大阪|おおさか}へ {行|い}きます。', indonesian: 'Saya pergi ke Osaka naik kereta.' },
-          { japanese: '{駅|えき}から {歩|ある}いて {帰|かえ}ります。', indonesian: 'Saya pulang dari stasiun dengan berjalan kaki.' },
+          { japanese: 'バスで {会社|かいしゃ}へ {行|い}きます。', indonesian: 'Saya pergi ke kantor naik bus.' },
           { japanese: '{新幹線|しんかんせん}で {東京|とうきょう}へ {行|い}きました。', indonesian: 'Saya pergi ke Tokyo naik Shinkansen.' },
           { japanese: '{毎日|まいにち} {自転車|じてんしゃ}で {学校|がっこう}へ {来|き}ます。', indonesian: 'Setiap hari saya datang ke sekolah naik sepeda.' },
         ],
@@ -294,7 +294,7 @@ export const MINNA_N5_CHAPTERS_PART_1: RawChapterDef[] = [
         examples: [
           { japanese: '{家族|かぞく}と {日本|にほん}へ {来|き}ました。', indonesian: 'Saya datang ke Jepang bersama keluarga.' },
           { japanese: '{友|とも}だちと {映画館|えいがかん}へ {行|い}きます。', indonesian: 'Saya pergi ke bioskop bersama teman.' },
-          { japanese: 'ひとりで {東京|とうきょう}へ {行|い}きました。', indonesian: 'Saya pergi ke Tokyo sendirian.' },
+          { japanese: '{母|はは}と スーパーへ {行|い}きました。', indonesian: 'Saya pergi ke supermarket bersama ibu.' },
           { japanese: '{彼女|かのじょ}と {公園|こうえん}を {散歩|さんぽ}します。', indonesian: 'Saya jalan-jalan di taman bersama pacar.' },
         ],
       },
@@ -404,7 +404,7 @@ export const MINNA_N5_CHAPTERS_PART_1: RawChapterDef[] = [
         examples: [
           { japanese: '{母|はは}に セーターを もらいました。', indonesian: 'Saya menerima sweter dari ibu.' },
           { japanese: '{山田|やまだ}さんから {日本語|にほんご}の {辞書|じしょ}を もらいました。', indonesian: 'Saya menerima kamus bahasa Jepang dari Sdr. Yamada.' },
-          { japanese: '{銀行|ぎんこう}から お{金|かね}を {借|か}りました。', indonesian: 'Saya meminjam uang dari bank.' },
+          { japanese: '{会社|かいしゃ}から {新|あたら}しい パソコンを もらいました。', indonesian: 'Saya menerima komputer baru dari perusahaan.' },
           { japanese: '{クリスマス|くりすます}に {恋人|こいびと}から {時計|とけい}を もらいました。'.replace('{クリスマス|くりすます}', 'クリスマス'), indonesian: 'Saat Natal saya menerima jam tangan dari pacar.' },
         ],
       },
@@ -513,9 +513,9 @@ export const MINNA_N5_CHAPTERS_PART_1: RawChapterDef[] = [
         notes: 'Sering dipadukan dengan kata keterangan tingkat: よく, だいたい, 少し, あまり, 全然.',
         examples: [
           { japanese: 'ミラーさんは {日本語|にほんご}が {少|すこ}し {分|わ}かります。', indonesian: 'Mr. Miller mengerti bahasa Jepang sedikit.' },
-          { japanese: '{時間|じかん}が ありません。', indonesian: 'Saya tidak punya waktu.' },
+          { japanese: 'あしたは {友|とも}だちと {約束|やくそく}が あります。', indonesian: 'Besok saya ada janji dengan teman.' },
           { japanese: '{英語|えいご}は だいたい {分|わ}かりますが、フランス{語|ご}は {全然|ぜんぜん} {分|わ}かりません。', indonesian: 'Bahasa Inggris saya kira-kira paham, tapi bahasa Prancis sama sekali tidak paham.' },
-          { japanese: '{細|こま}かい お{金|かね}が ありますか。…いいえ、ありません。', indonesian: 'Apakah punya uang receh? …Tidak punya.' },
+          { japanese: '{細|こま}かい お{金|かね}が ありますか。…はい、あります。', indonesian: 'Apakah punya uang receh? …Ya, punya.' },
         ],
       },
       {
@@ -582,7 +582,7 @@ export const MINNA_N5_CHAPTERS_PART_1: RawChapterDef[] = [
           { japanese: '{机|つくえ}の {上|うえ}に {写真|しゃしん}が あります。', indonesian: 'Di atas meja ada foto.' },
           { japanese: '{教室|きょうしつ}に {学生|がくせい}が います。', indonesian: 'Di dalam kelas ada pelajar.' },
           { japanese: '{駅|えき}の {前|まえ}に バス{停|てい}が あります。', indonesian: 'Di depan stasiun ada halte bus.' },
-          { japanese: '{冷蔵庫|れいぞうこ}の {中|なか}に {何|なに}も ありません。', indonesian: 'Di dalam kulkas tidak ada apa-apa.' },
+          { japanese: '{冷蔵庫|れいぞうこ}の {中|なか}に {牛乳|ぎゅうにゅう}が あります。', indonesian: 'Di dalam kulkas ada susu.' },
         ],
       },
       {
@@ -703,7 +703,7 @@ export const MINNA_N5_CHAPTERS_PART_1: RawChapterDef[] = [
         examples: [
           { japanese: '{飛行機|ひこうき}は {船|ふね}より {速|はや}いです。', indonesian: 'Pesawat lebih cepat daripada kapal.' },
           { japanese: '{東京|とうきょう}は {京都|きょうと}より {人|ひと}が {多|おお}いです。', indonesian: 'Tokyo lebih banyak penduduknya daripada Kyoto.' },
-          { japanese: 'きのうより {今日|きょう}のほうが {暖|あたた}かいです。', indonesian: 'Hari ini lebih hangat daripada kemarin.' },
+          { japanese: '{今日|きょう}は きのうより {暖|あたた}かいです。', indonesian: 'Hari ini lebih hangat daripada kemarin.' },
           { japanese: '{北海道|ほっかいどう}は {九州|きゅうしゅう}より ずっと {広|ひろ}いです。', indonesian: 'Hokkaido jauh lebih luas daripada Kyushu.' },
         ],
       },
@@ -757,7 +757,7 @@ export const MINNA_N5_CHAPTERS_PART_1: RawChapterDef[] = [
         notes: 'Partikel を dapat diganti menjadi が (てんぷらが 食べたいです). Konjugasinya sama seperti KS-い (たくないです).',
         examples: [
           { japanese: '{沖縄|おきなわ}へ {行|い}きたいです。', indonesian: 'Saya ingin pergi ke Okinawa.' },
-          { japanese: '{おなか|おなか}が いっぱいですから、{何|なに}も {食|た}べたくないです。'.replace('{おなか|おなか}', 'おなか'), indonesian: 'Karena sudah kenyang, saya tidak ingin makan apa pun.' },
+          { japanese: '{夏休|なつやす}みに {国|くに}へ {帰|かえ}りたいです。', indonesian: 'Pada liburan musim panas saya ingin pulang ke negara asal.' },
           { japanese: 'のどが {渇|かわ}きましたから、{冷|つめ}たい {水|みず}が {飲|の}みたいです。', indonesian: 'Karena haus, saya ingin minum air dingin.' },
           { japanese: '{日本|にほん}の {会社|かいしゃ}で {働|はたら}きたいです。', indonesian: 'Saya ingin bekerja di perusahaan Jepang.' },
         ],

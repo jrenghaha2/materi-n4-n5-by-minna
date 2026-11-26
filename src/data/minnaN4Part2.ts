@@ -167,7 +167,7 @@ export const MINNA_N4_CHAPTERS_PART_2: RawChapterDef[] = [
         notes: 'Menjelaskan kegunaan suatu alat, benda, atau berapa sumber daya yang dibutuhkan untuk melakukan suatu aksi.',
         examples: [
           { japanese: 'この はさみは {花|はな}を {切|き}るのに {使|つか}います。', indonesian: 'Gunting ini digunakan untuk memotong bunga.' },
-          { japanese: 'この かばんは {旅行|りょこう}に {便利|べんり}です。', indonesian: 'Tas ini praktis untuk bepergian.' },
+          { japanese: 'この かばんは {旅行|りょこう}に {行|い}くのに {便利|べんり}です。', indonesian: 'Tas ini praktis untuk pergi berwisata.' },
           { japanese: 'この アプリは {漢字|かんじ}を {覚|おぼ}えるのに とても いいです。', indonesian: 'Aplikasi ini sangat bagus untuk menghafal kanji.' },
           { japanese: '{東京|とうきょう}で {家|いえ}を {建|た}てるのに たくさん お{金|かね}が かかります。', indonesian: 'Untuk membangun rumah di Tokyo dibutuhkan banyak uang.' },
         ],
@@ -404,7 +404,7 @@ export const MINNA_N4_CHAPTERS_PART_2: RawChapterDef[] = [
         examples: [
           { japanese: '{子|こ}どもを {公園|こうえん}で {遊|あそ}ばせます。', indonesian: 'Saya membiarkan anak bermain di taman. (遊ぶ = intransitif → を)' },
           { japanese: '{子|こ}どもに {野菜|やさい}を {食|た}べさせます。', indonesian: 'Saya menyuruh anak makan sayur. (食べる = transitif → に)' },
-          { japanese: '{熱|ねつ}が あるので、{息子|むすこ}を {学校|がっこう}へ {行|い}かせませんでした。', indonesian: 'Karena demam, saya tidak membiarkan putra saya pergi ke sekolah.' },
+          { japanese: '{父|ちち}は {息子|むすこ}を {一人|ひとり}で {東京|とうきょう}へ {行|い}かせました。', indonesian: 'Ayah membiarkan putranya pergi ke Tokyo sendirian. (行く = intransitif → を)' },
           { japanese: '{社長|しゃちょう}は {社員|しゃいん}に {自由|じゆう}に {意見|いけん}を {言|い}わせます。', indonesian: 'Direktur membiarkan karyawan menyampaikan pendapat secara bebas.' },
         ],
       },

@@ -247,7 +247,7 @@ export const MINNA_N5_CHAPTERS_PART_2: RawChapterDef[] = [
           { japanese: 'ミラーさんは {漢字|かんじ}を {読|よ}むことが できます。', indonesian: 'Mr. Miller bisa membaca huruf kanji.' },
           { japanese: 'わたしは {日本語|にほんご}が できます。', indonesian: 'Saya bisa berbahasa Jepang.' },
           { japanese: 'カードで {払|はら}うことが できますか。…はい、できます。', indonesian: 'Apakah bisa membayar dengan kartu? …Ya, bisa.' },
-          { japanese: 'この {川|かわ}で {泳|およ}ぐことが できますか。…いいえ、できません。', indonesian: 'Apakah bisa berenang di sungai ini? …Tidak bisa.' },
+          { japanese: 'ここで {写真|しゃしん}を {撮|と}ることが できます。', indonesian: 'Di sini diperbolehkan mengambil foto.' },
         ],
       },
       {
@@ -300,9 +300,9 @@ export const MINNA_N5_CHAPTERS_PART_2: RawChapterDef[] = [
         notes: 'Menyatakan pengalaman hidup secara umum, bukan kejadian rutin minggu lalu. Bentuk negatifnya memakai 〜たことが ありません (belum pernah).',
         examples: [
           { japanese: '{馬|うま}に {乗|の}ったことが あります。', indonesian: 'Saya pernah menunggang kuda.' },
-          { japanese: '{北海道|ほっかいどう}へ {行|い}ったことが ありません。', indonesian: 'Saya belum pernah pergi ke Hokkaido.' },
+          { japanese: '{北海道|ほっかいどう}へ {行|い}ったことが あります。', indonesian: 'Saya pernah pergi ke Hokkaido.' },
           { japanese: '{納豆|なっとう}を {食|た}べたことが ありますか。…はい、{一度|いちど} あります。', indonesian: 'Apakah pernah makan natto? …Ya, pernah sekali.' },
-          { japanese: '{富士山|ふじさん}に {登|のぼ}ったことが ありますか。…いいえ、まだ ありません。', indonesian: 'Apakah pernah mendaki Gunung Fuji? …Belum pernah.' },
+          { japanese: '{富士山|ふじさん}に {登|のぼ}ったことが ありますか。…はい、{二回|にかい} あります。', indonesian: 'Apakah pernah mendaki Gunung Fuji? …Ya, pernah dua kali.' },
         ],
       },
       {
@@ -407,7 +407,7 @@ export const MINNA_N5_CHAPTERS_PART_2: RawChapterDef[] = [
         title: '〜でしょう？',
         formulas: ['Kalimat (F.Biasa) + でしょう？（KB/KS-な tanpa だ）'],
         meaning: '... kan? (meminta konfirmasi / persetujuan lawan bicara)',
-        warnings: 'Untuk KB dan KS-な, だ dihilangkan sebelum でしょう (きれいでしょう？, bukan *きれいでしょう？ dengan だ).',
+        warnings: 'Untuk KB dan KS-な, だ dihilangkan sebelum でしょう (きれいでしょう？, bukan *きれいだでしょう？).',
         examples: [
           { japanese: 'あした パーティーに {行|い}くでしょう？…ええ、{行|い}きます。', indonesian: 'Besok datang ke pesta kan? …Ya, datang.' },
           { japanese: '{北海道|ほっかいどう}は {寒|さむ}かったでしょう？…はい、とても {寒|さむ}かったです。', indonesian: 'Di Hokkaido dingin kan? …Ya, dingin sekali.' },
